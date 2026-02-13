@@ -13,6 +13,23 @@ const init = () => {
 
     const columns = { todo: document.getElementById('column-todo'), doing: document.getElementById('column-doing'), done: document.getElementById('column-done') };
 
+    // --- LÓGICA DE TABS DO KANBAN MOBILE ---
+    const mobileKanbanTabs = document.querySelectorAll('.mobile-kanban-tab');
+    if (mobileKanbanTabs.length > 0) {
+        mobileKanbanTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                // Remove active class from all tabs
+                mobileKanbanTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // Hide all columns, show target
+                document.querySelectorAll('.kanban-column').forEach(col => col.classList.remove('active-mobile-column'));
+                const targetId = tab.dataset.target;
+                document.getElementById(targetId).classList.add('active-mobile-column');
+            });
+        });
+    }
+
     const orderModal = document.getElementById('order-modal');
     const orderForm = document.getElementById('order-form');
     const orderModalTitle = document.getElementById('order-modal-title');
@@ -558,8 +575,8 @@ const init = () => {
     const createOrderCard = (order) => {
         const client = clients.find(c => c.id === order.clientId);
         const card = document.createElement('div');
-        const borderClass = order.isArtOnly ? 'border-purple-500' : 'border-white/10';
-        card.className = `kanban-card bg-gray-800 p-3 rounded-lg border ${borderClass} shadow-lg cursor-pointer hover:border-cyan-400 relative`;
+        const borderClass = order.isArtOnly ? 'border-l-4 border-purple-500' : 'border border-white/10';
+        card.className = `kanban-card bg-gray-800 p-4 rounded-xl ${borderClass} shadow-lg cursor-pointer hover:border-cyan-400 relative transition-all`;
         card.setAttribute('draggable', true);
         card.dataset.id = order.id;
 
@@ -569,49 +586,82 @@ const init = () => {
         today.setHours(0, 0, 0, 0);
         const diffTime = deadline - today;
         const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-        let deadlineColor = 'text-gray-400';
-        let deadlineText = `Vence em ${diffDays} dias`;
-        if (diffDays < 0) { deadlineColor = 'text-red-500 font-bold'; deadlineText = `Atrasado há ${Math.abs(diffDays)} dias`; }
-        else if (diffDays === 0) { deadlineColor = 'text-red-500 font-bold animate-pulse'; deadlineText = "Vence Hoje!"; }
-        else if (diffDays === 1) { deadlineColor = 'text-yellow-400 font-semibold'; deadlineText = "Vence Amanhã!"; }
-        else if (diffDays <= 3) { deadlineColor = 'text-yellow-400 font-semibold'; }
+        
+        let deadlineBadge = `<span class="text-xs text-gray-400 bg-white/5 px-2 py-1 rounded">${diffDays} dias</span>`;
+        if (diffDays < 0) { deadlineBadge = `<span class="text-xs text-white bg-red-500 px-2 py-1 rounded font-bold">-${Math.abs(diffDays)}d</span>`; }
+        else if (diffDays === 0) { deadlineBadge = `<span class="text-xs text-white bg-red-500 px-2 py-1 rounded font-bold">Hoje</span>`; }
+        else if (diffDays === 1) { deadlineBadge = `<span class="text-xs text-gray-900 bg-yellow-400 px-2 py-1 rounded font-bold">Amanhã</span>`; }
+        else if (diffDays <= 3) { deadlineBadge = `<span class="text-xs text-gray-900 bg-yellow-400 px-2 py-1 rounded font-bold">${diffDays}d</span>`; }
 
         const totalTasks = order.checklist ? Object.keys(order.checklist).length : 0;
         const completedTasks = order.checklist ? Object.values(order.checklist).filter(task => task.completed).length : 0;
         const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
-        let deleteButtonHTML = '';
-        if (order.status === 'done') {
-            deleteButtonHTML = `<button onclick="window.removeOrder(${order.id})" class="absolute top-2 right-2 text-gray-500 hover:text-red-400" title="Excluir Pedido Concluído"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg></button>`;
-        }
-
-        let noteIconHTML = '';
-        if (order.notes) { noteIconHTML = `<div class="absolute top-2 left-3 text-gray-500" title="${order.notes}">🗒️</div>`; }
-
-        let paymentStatusHTML = '';
+        // Payment Status Logic
         const total = order.totalValue || 0;
         const paid = order.amountPaid || 0;
-        if (order.isPaid && total > 0) {
-            if (paid >= total) {
-                paymentStatusHTML = `<div class="text-xs font-bold text-green-400">${formatCurrency(paid)} / ${formatCurrency(total)}</div>`;
-            } else if (paid > 0) {
-                paymentStatusHTML = `<div class="text-xs font-bold text-yellow-400">${formatCurrency(paid)} / ${formatCurrency(total)}</div>`;
-            }
+        let payStatus = '';
+        if (total > 0) {
+             if (order.isPaid || paid >= total) payStatus = '<span class="w-2 h-2 rounded-full bg-green-500" title="Pago"></span>';
+             else if (paid > 0) payStatus = '<span class="w-2 h-2 rounded-full bg-yellow-500" title="Parcial"></span>';
+             else payStatus = '<span class="w-2 h-2 rounded-full bg-red-500" title="Pendente"></span>';
         }
 
+        // Layout "Mercado Livre" Style
         card.innerHTML = `
-            ${deleteButtonHTML}
-            ${noteIconHTML}
             <div onclick="window.openOrderModal(${order.id})">
-                <p class="font-bold pr-6">${order.description}</p>
-                <p class="text-sm text-gray-400 mb-2">Cliente: <span class="font-semibold text-cyan-300">${client ? client.name : 'Não encontrado'}</span></p>
-                <div class="w-full bg-white/10 rounded-full h-2 mb-2">
-                    <div class="bg-cyan-500 h-2 rounded-full" style="width: ${progress}%"></div>
+                <!-- Header: Title & Status -->
+                <div class="flex justify-between items-start mb-2">
+                    <h3 class="font-bold text-base text-white leading-tight pr-2">${order.description}</h3>
+                    ${order.notes ? '<span class="text-xs text-yellow-400" title="Tem notas">📝</span>' : ''}
                 </div>
-                <div class="flex justify-between items-center mt-2">
-                    <div class="text-xs">${completedTasks}/${totalTasks} tarefas</div>
-                    ${paymentStatusHTML}
-                    <div class="text-xs ${deadlineColor}">${deadlineText}</div>
+
+                <!-- Subheader: Client -->
+                <p class="text-sm text-gray-400 mb-3 flex items-center gap-1">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    ${client ? client.name : 'Sem cliente'}
+                </p>
+
+                <!-- Grid Metadata -->
+                <div class="grid grid-cols-2 gap-y-2 gap-x-4 text-xs text-gray-300 mb-3 bg-black/20 p-2 rounded-lg">
+                    <div class="flex flex-col">
+                        <span class="text-gray-500 text-[10px] uppercase">Técnica</span>
+                        <span class="font-medium">${order.printType === 'dtf' ? 'DTF' : (order.printType === 'silk' ? 'Silk' : 'Arte')}</span>
+                    </div>
+                    <div class="flex flex-col items-end">
+                        <span class="text-gray-500 text-[10px] uppercase">Prazo</span>
+                        ${deadlineBadge}
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-gray-500 text-[10px] uppercase">Progresso</span>
+                        <div class="flex items-center gap-2">
+                            <div class="w-12 bg-gray-700 rounded-full h-1.5 mt-1">
+                                <div class="bg-cyan-500 h-1.5 rounded-full" style="width: ${progress}%"></div>
+                            </div>
+                            <span>${Math.round(progress)}%</span>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-end">
+                        <span class="text-gray-500 text-[10px] uppercase">Pagamento</span>
+                        <div class="flex items-center gap-1 mt-0.5">
+                            ${payStatus}
+                            <span>${formatCurrency(total)}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Actions -->
+                <div class="flex justify-end items-center gap-3 pt-2 border-t border-white/5">
+                    ${order.status === 'done' ? 
+                        `<button onclick="event.stopPropagation(); window.removeOrder(${order.id})" class="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 px-2 py-1 rounded hover:bg-red-500/10 transition-colors">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            Excluir
+                        </button>` : ''
+                    }
+                    <span class="text-xs text-cyan-400 font-semibold flex items-center gap-1">
+                        Ver Detalhes
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </span>
                 </div>
             </div>
         `;
