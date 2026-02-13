@@ -28,6 +28,41 @@ const init = () => {
                 document.getElementById(targetId).classList.add('active-mobile-column');
             });
         });
+
+        // --- SWIPE GESTURE (KANBAN MOBILE) ---
+        const kanbanView = document.getElementById('view-quadro');
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        if (kanbanView) {
+            kanbanView.addEventListener('touchstart', (e) => {
+                touchStartX = e.changedTouches[0].screenX;
+                touchStartY = e.changedTouches[0].screenY;
+            }, { passive: true });
+
+            kanbanView.addEventListener('touchend', (e) => {
+                const touchEndX = e.changedTouches[0].screenX;
+                const touchEndY = e.changedTouches[0].screenY;
+                const diffX = touchEndX - touchStartX;
+                const diffY = touchEndY - touchStartY;
+
+                // Se o movimento for horizontal (> 50px) e maior que o vertical (para não atrapalhar scroll)
+                if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
+                    const tabs = Array.from(mobileKanbanTabs);
+                    const activeIndex = tabs.findIndex(t => t.classList.contains('active'));
+                    
+                    if (activeIndex !== -1) {
+                        if (diffX < 0) {
+                            // Swipe Left (dedo vai para esquerda) -> Próxima aba (direita)
+                            if (activeIndex < tabs.length - 1) tabs[activeIndex + 1].click();
+                        } else {
+                            // Swipe Right (dedo vai para direita) -> Aba anterior (esquerda)
+                            if (activeIndex > 0) tabs[activeIndex - 1].click();
+                        }
+                    }
+                }
+            }, { passive: true });
+        }
     }
 
     const orderModal = document.getElementById('order-modal');
