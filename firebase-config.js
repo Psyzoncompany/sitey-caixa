@@ -81,7 +81,12 @@ window.cloudSync = {
 
     // Envia dados do localStorage para a nuvem
     push: async function() {
-        if (!this.user || this.isSyncing) return; // Não envia se estivermos baixando da nuvem
+        if (!this.user) return;
+        
+        if (this.isSyncing) {
+            this.schedulePush(); // Tenta novamente em breve se estiver ocupado
+            return;
+        }
         // console.log("☁️ Enviando alterações (Upload)..."); // Comentado para não poluir console
 
         const dataToSave = {};
@@ -108,9 +113,8 @@ window.cloudSync = {
 
     // Debounce para evitar muitos envios seguidos
     schedulePush: function() {
-        if (this.isSyncing) return;
         if (this.timeout) clearTimeout(this.timeout);
-        this.timeout = setTimeout(() => this.push(), 2000); // Espera 2s após a última alteração
+        this.timeout = setTimeout(() => this.push(), 1000); // Espera 1s após a última alteração
     }
 };
 
