@@ -39,9 +39,9 @@
       </div>
     </header>
 
-    <main class="flex-1 p-4 md:p-6 lg:p-8 flex gap-6">
+    <main class="flex-1 p-4 md:p-6 lg:p-8 flex flex-col lg:flex-row gap-6">
       <!-- Sidebar: search + notes list -->
-      <aside class="w-80 glass-card p-4 flex flex-col gap-4">
+      <aside class="w-full lg:w-80 glass-card p-4 flex flex-col gap-4 h-64 lg:h-auto">
         <div class="flex items-center gap-2">
           <input id="search-input" type="search" placeholder="Pesquisar notas..." class="flex-1 p-2 rounded bg-white/5 placeholder-gray-400">
           <button id="new-tab-btn" title="Nova Nota" class="p-2 rounded-md hover:bg-white/10">+</button>
@@ -80,7 +80,7 @@
           </div>
         </div>
 
-        <div class="mb-2 flex items-center gap-2">
+        <div class="mb-2 flex flex-wrap items-center gap-2">
           <button id="bold-btn" title="Negrito" class="p-2 rounded bg-white/5">B</button>
           <button id="italic-btn" title="Itálico" class="p-2 rounded bg-white/5">I</button>
           <button id="checklist-btn" title="Inserir checklist" class="p-2 rounded bg-white/5">
@@ -109,11 +109,11 @@
         <div class="flex-1 flex relative">
           <div id="line-numbers" class="w-12 text-right pr-4 text-gray-500 font-mono select-none overflow-y-hidden"></div>
           <!-- usando textarea para simplicidade e compatibilidade -->
-          <div class="flex-1 flex gap-4 min-h-[360px]">
+          <div class="flex-1 flex flex-col xl:flex-row gap-4 min-h-[360px]">
             <textarea id="notepad-editor" class="flex-1 w-full p-4 rounded-b-lg bg-transparent text-gray-200 resize-none notepad-font"></textarea>
 
             <!-- Checklist panel -->
-            <aside id="checklist-panel" class="w-72 glass-card p-3 flex flex-col gap-2">
+            <aside id="checklist-panel" class="w-full xl:w-72 glass-card p-3 flex flex-col gap-2 h-64 xl:h-auto">
               <div class="flex items-center justify-between">
                 <strong class="text-sm">Checklist</strong>
                 <div class="text-xs text-gray-400" id="checklist-progress">0%</div>
@@ -132,7 +132,7 @@
           </div>
          </div>
 
-        <div class="border-t border-white/10 mt-2 pt-2 flex items-center gap-4">
+        <div class="border-t border-white/10 mt-2 pt-2 flex flex-wrap items-center gap-4">
             <button id="save-file-btn" class="btn-shine text-xs py-1 px-3">Salvar no PC</button>
             <button id="uppercase-btn" class="text-xs py-1 px-3 rounded-md bg-white/10 hover:bg-white/20">MAIÚSCULAS</button>
             <button id="lowercase-btn" class="text-xs py-1 px-3 rounded-md bg-white/10 hover:bg-white/20">minúsculas</button>

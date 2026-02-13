@@ -10,7 +10,7 @@ body {
 
 /* --- Cards (Material Design) --- */
 /* O nome da classe '.glass-card' foi mantido para compatibilidade */
-.glass-card {
+.glass-card, .glass-card-fullscreen {
   background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
   border-radius: var(--glass-radius);
   border: 1px solid var(--glass-border);
@@ -111,6 +111,10 @@ body {
 ::-webkit-scrollbar-thumb:hover {
     background: #4f8ef7;
 }
+
+/* Smooth scrolling for mobile containers */
+.overflow-x-auto { -webkit-overflow-scrolling: touch; }
+.overflow-y-auto { -webkit-overflow-scrolling: touch; }
 
 /* --- CLASSES PARA GRADIENTE DE PROGRESSO (Mantidas) --- */
 .bg-gradient-green {
