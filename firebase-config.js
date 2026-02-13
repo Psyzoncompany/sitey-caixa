@@ -50,6 +50,7 @@ let pushNeededAfterSync = false;
 window.cloudSync = {
     user: null,
     isSyncing: false, // Evita loop infinito (Nuver -> Local -> Nuvem)
+    isInternalWrite: false, // Nova flag para identificar escritas internas do sistema
     
     // Puxa dados da nuvem para o localStorage
     pull: async function() {
@@ -63,6 +64,7 @@ window.cloudSync = {
 
             if (docSnap.exists()) {
                 this.isSyncing = true; // Bloqueia o push enquanto salva no local
+                this.isInternalWrite = true; // Marca que estamos escrevendo dados da nuvem
                 try {
                     const data = docSnap.data();
                     // Atualiza localStorage com dados da nuvem
@@ -76,6 +78,7 @@ window.cloudSync = {
                     console.log("✅ Dados sincronizados com sucesso!");
                 } finally {
                     this.isSyncing = false; // Libera o push (garantido mesmo se der erro)
+                    this.isInternalWrite = false; // Desmarca a flag
                     if (pushNeededAfterSync) {
                         pushNeededAfterSync = false;
                         this.schedulePush();
@@ -87,6 +90,7 @@ window.cloudSync = {
         } catch (error) {
             console.error("❌ Erro ao baixar dados:", error);
             this.isSyncing = false; // Garante desbloqueio em caso de erro de rede
+            this.isInternalWrite = false;
             if (pushNeededAfterSync) {
                 pushNeededAfterSync = false;
                 this.schedulePush();
@@ -151,6 +155,7 @@ onAuthStateChanged(auth, (user) => {
 
             if (docSnap.exists()) {
                 window.cloudSync.isSyncing = true;
+                window.cloudSync.isInternalWrite = true;
                 try {
                     const data = docSnap.data();
                     Object.keys(data).forEach(key => {
@@ -164,6 +169,7 @@ onAuthStateChanged(auth, (user) => {
                     });
                 } finally {
                     window.cloudSync.isSyncing = false;
+                    window.cloudSync.isInternalWrite = false;
                     if (pushNeededAfterSync) {
                         pushNeededAfterSync = false;
                         window.cloudSync.schedulePush();
@@ -197,6 +203,9 @@ const originalSetItem = localStorage.setItem;
 localStorage.setItem = function(key, value) {
     originalSetItem.apply(this, arguments);
     if (SYNC_KEYS.includes(key)) {
+        if (window.cloudSync.isInternalWrite) {
+            return; // Se for escrita interna (da nuvem), ignora e não agenda push
+        }
         if (window.cloudSync.isSyncing) {
             pushNeededAfterSync = true; // Marca que uma alteração precisa ser salva
         } else {
@@ -210,6 +219,9 @@ const originalRemoveItem = localStorage.removeItem;
 localStorage.removeItem = function(key) {
     originalRemoveItem.apply(this, arguments);
     if (SYNC_KEYS.includes(key)) {
+        if (window.cloudSync.isInternalWrite) {
+            return;
+        }
         if (window.cloudSync.isSyncing) {
             pushNeededAfterSync = true; // Marca que uma alteração precisa ser salva
         } else {
