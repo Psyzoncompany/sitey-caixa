@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="pt-br" class="scroll-smooth">
 <head>
+  <!-- Script de Proteção de Login -->
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PSYZON - Dashboard Financeiro</title>
@@ -10,6 +12,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link href="style.css" rel="stylesheet">
+  <!-- Firebase Config (Carrega Auth e Sync) -->
+  <script type="module" src="firebase-config.js"></script>
 </head>
 <body class="bg-gray-900 text-gray-200">
   <div class="flex flex-col min-h-screen">
@@ -31,6 +35,7 @@
               <a href="historico.html" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium">Histórico</a>
               <a href="relatorios.html" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium">Relatórios</a>
               <a href="configuracoes.html" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium">Configurações</a>
+              <button onclick="window.firebaseAuth.logout()" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium hover:text-red-400">Sair</button>
             </nav>
           </div>
           <div class="-mr-2 flex md:hidden">
@@ -52,6 +57,7 @@
           <a href="historico.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Histórico</a>
           <a href="relatorios.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Relatórios</a>
           <a href="configuracoes.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Configurações</a>
+          <button onclick="window.firebaseAuth.logout()" class="w-full text-left text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium hover:text-red-400">Sair</button>
         </div>
       </div>
     </header>
@@ -115,6 +121,7 @@
         </div>
         <div class="glass-card p-6">
           <h3 class="text-xl font-bold mb-4">Compras de Malha (Mês Atual)</h3>
+          
           <div class="relative h-80 md:h-96">
             <canvas id="fabricChart"></canvas>
           </div>
@@ -193,7 +200,40 @@
     </div>
     <div id="notification-container" class="fixed bottom-5 right-5 z-[100] w-full max-w-xs space-y-3"></div>
   </div>
-  <script src="script.js"></script>
-  <script src="theme-toggle.js"></script>
+  <script>
+    (function () {
+      let loaded = false;
+
+      const loadScript = (src) => {
+        if (loaded) return;
+        loaded = true;
+        const s = document.createElement("script");
+        s.src = src;
+        document.body.appendChild(s);
+      };
+
+      const timeoutId = setTimeout(() => {
+        console.warn("Firebase está demorando, carregando site sem sincronização");
+        loadScript("script.js");
+      }, 5000);
+      
+      // Aguarda o objeto cloudSync estar disponível (carregado pelo firebase-config.js)
+      const checkSync = setInterval(() => {
+        if (window.cloudSync) {
+            clearInterval(checkSync);
+            window.cloudSync.pull()
+                .then(() => {
+                clearTimeout(timeoutId);
+                loadScript("script.js");
+                })
+                .catch((e) => {
+                clearTimeout(timeoutId);
+                console.error("Falha ao sincronizar Firebase, carregando site normalmente:", e);
+                loadScript("script.js");
+                });
+        }
+      }, 100);
+    })();
+  </script>
 </body>
 </html>

@@ -9,6 +9,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link href="style.css" rel="stylesheet">
+    <!-- Firebase Config -->
+    <script type="module" src="firebase-config.js"></script>
 </head>
 <body class="bg-gray-900 text-gray-200">
   <div class="flex flex-col min-h-screen">
@@ -138,7 +140,17 @@
       </section>
     </main>
   </div>
-  <script src="bloco_de_notas.js"></script>
+  <script>
+    // Carrega bloco_de_notas.js apenas após tentar sincronizar
+    const checkSync = setInterval(() => {
+        if (window.cloudSync) {
+            clearInterval(checkSync);
+            window.cloudSync.pull().finally(() => {
+                const s = document.createElement('script'); s.src = "bloco_de_notas.js"; document.body.appendChild(s);
+            });
+        }
+    }, 100);
+  </script>
     <script src="theme-toggle.js"></script>
 </body>
 </html>
