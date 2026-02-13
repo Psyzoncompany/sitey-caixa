@@ -46,6 +46,51 @@ const authReady = new Promise(resolve => resolveAuth = resolve);
 // Flag para enfileirar um push se uma alteração do usuário ocorrer durante a sincronização
 let pushNeededAfterSync = false;
 
+// Som de sucesso sutil (Web Audio API)
+const playSuccessSound = () => {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, ctx.currentTime); // Nota A5
+        gain.gain.setValueAtTime(0.05, ctx.currentTime); // Volume baixo (5%)
+        gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.15);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.15);
+    } catch (e) {}
+};
+
+// Helper para o indicador visual de salvamento
+const updateSavingIndicator = (status) => {
+    let indicator = document.getElementById('saving-indicator');
+    if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'saving-indicator';
+        indicator.style.cssText = "position:fixed;bottom:20px;right:20px;background:rgba(15, 23, 42, 0.9);color:#e2e8f0;padding:8px 16px;border-radius:9999px;font-size:12px;font-family:sans-serif;z-index:9999;display:flex;align-items:center;gap:8px;backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,0.1);transition:opacity 0.5s ease;opacity:0;pointer-events:none;";
+        document.body.appendChild(indicator);
+        const style = document.createElement('style');
+        style.innerHTML = `@keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }`;
+        document.head.appendChild(style);
+    }
+
+    if (status === 'saving') {
+        indicator.innerHTML = '<span style="width:8px;height:8px;background:#facc15;border-radius:50%;display:inline-block;animation:pulse-dot 1s infinite;"></span> Salvando...';
+        indicator.style.opacity = '1';
+    } else if (status === 'saved') {
+        indicator.innerHTML = '<span style="width:8px;height:8px;background:#4ade80;border-radius:50%;display:inline-block;"></span> Salvo';
+        setTimeout(() => { indicator.style.opacity = '0'; }, 2000);
+    } else if (status === 'error') {
+        indicator.innerHTML = '<span style="width:8px;height:8px;background:#ef4444;border-radius:50%;display:inline-block;"></span> Erro ao salvar';
+        indicator.style.opacity = '1';
+        setTimeout(() => { indicator.style.opacity = '0'; }, 5000);
+    }
+};
+
 // Objeto global de sincronização
 window.cloudSync = {
     user: null,
@@ -125,14 +170,18 @@ window.cloudSync = {
         try {
             await setDoc(doc(db, "users", this.user.uid), dataToSave, { merge: true });
             // console.log("✅ Alterações salvas na nuvem.");
+            playSuccessSound();
+            updateSavingIndicator('saved');
         } catch (error) {
             console.error("❌ Erro ao salvar na nuvem:", error);
+            updateSavingIndicator('error');
         }
     },
 
     // Debounce para evitar muitos envios seguidos
     schedulePush: function() {
         if (this.timeout) clearTimeout(this.timeout);
+        updateSavingIndicator('saving');
         this.timeout = setTimeout(() => this.push(), 500); // Espera 0.5s (mais rápido no mobile)
     }
 };
