@@ -233,6 +233,12 @@
             const orderIndex = orders.findIndex(o => o.id === oid);
             
             orders[orderIndex] = currentOrder; // currentOrder was modified by reference above
+            
+            // Automação Hipocampo IA: Mover para Produção se aprovado
+            if (status === 'approved' && orders[orderIndex].status === 'todo') {
+                orders[orderIndex].status = 'doing';
+                // Aqui poderíamos adicionar um log ou notificação no objeto do pedido se necessário
+            }
 
             await updateDoc(docRef, { productionOrders: orders });
         }

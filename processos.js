@@ -637,7 +637,7 @@ const init = () => {
 
                 <!-- Grid Metadata -->
                 <div class="grid grid-cols-2 gap-y-2 gap-x-4 text-xs text-gray-300 mb-3 bg-black/20 p-2 rounded-lg">
-                    <div class="flex flex-col">
+                    <div class="flex flex-col hidden md:flex">
                         <span class="text-gray-500 text-[10px] uppercase">Técnica</span>
                         <span class="font-medium">${order.printType === 'dtf' ? 'DTF' : (order.printType === 'silk' ? 'Silk' : 'Arte')}</span>
                     </div>
@@ -654,7 +654,7 @@ const init = () => {
                             <span>${Math.round(progress)}%</span>
                         </div>
                     </div>
-                    <div class="flex flex-col items-end">
+                    <div class="flex flex-col items-end hidden md:flex">
                         <span class="text-gray-500 text-[10px] uppercase">Pagamento</span>
                         <div class="flex items-center gap-1 mt-0.5">
                             ${payStatus}
@@ -734,6 +734,109 @@ const init = () => {
             e.dataTransfer.setData('text/plain', e.target.dataset.id);
         }
     });
+
+    // --- TOUCH DRAG & DROP (MOBILE) ---
+    let touchDragItem = null;
+    let touchGhost = null;
+    let longPressTimer = null;
+    let isDragging = false;
+    let touchStartCoords = null;
+
+    const handleTouchStart = (e) => {
+        const card = e.target.closest('.kanban-card');
+        if (!card) return;
+        if (e.target.closest('button') || e.target.closest('a') || e.target.closest('.btn-action')) return;
+
+        touchDragItem = card;
+        touchStartCoords = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        isDragging = false;
+
+        longPressTimer = setTimeout(() => {
+            isDragging = true;
+            if (navigator.vibrate) navigator.vibrate(50);
+            
+            const rect = card.getBoundingClientRect();
+            touchGhost = card.cloneNode(true);
+            touchGhost.style.position = 'fixed';
+            touchGhost.style.width = `${rect.width}px`;
+            touchGhost.style.height = `${rect.height}px`;
+            touchGhost.style.left = `${rect.left}px`;
+            touchGhost.style.top = `${rect.top}px`;
+            touchGhost.style.opacity = '0.9';
+            touchGhost.style.zIndex = '10000';
+            touchGhost.style.pointerEvents = 'none';
+            touchGhost.style.transform = 'scale(1.05) rotate(2deg)';
+            touchGhost.style.boxShadow = '0 15px 30px rgba(0,0,0,0.5)';
+            touchGhost.classList.add('glass-card'); 
+            document.body.appendChild(touchGhost);
+            
+            card.classList.add('opacity-30');
+        }, 400); 
+    };
+
+    const handleTouchMove = (e) => {
+        if (!touchDragItem) return;
+        const touch = e.touches[0];
+        
+        if (!isDragging) {
+            const dx = Math.abs(touch.clientX - touchStartCoords.x);
+            const dy = Math.abs(touch.clientY - touchStartCoords.y);
+            if (dx > 10 || dy > 10) {
+                clearTimeout(longPressTimer);
+                touchDragItem = null;
+            }
+            return;
+        }
+
+        if (e.cancelable) e.preventDefault();
+
+        if (touchGhost) {
+            const w = touchGhost.offsetWidth;
+            const h = touchGhost.offsetHeight;
+            touchGhost.style.left = `${touch.clientX - w / 2}px`;
+            touchGhost.style.top = `${touch.clientY - h / 2}px`;
+        }
+
+        // Highlight columns
+        document.querySelectorAll('.kanban-column').forEach(col => col.classList.remove('bg-white/10'));
+        const target = document.elementFromPoint(touch.clientX, touch.clientY);
+        const col = target ? target.closest('.kanban-column') : null;
+        if (col) col.classList.add('bg-white/10');
+    };
+
+    const handleTouchEnd = (e) => {
+        clearTimeout(longPressTimer);
+        document.querySelectorAll('.kanban-column').forEach(col => col.classList.remove('bg-white/10'));
+        
+        if (isDragging && touchDragItem) {
+            touchDragItem.classList.remove('opacity-30');
+            if (touchGhost) touchGhost.remove();
+
+            const touch = e.changedTouches[0];
+            const target = document.elementFromPoint(touch.clientX, touch.clientY);
+            const col = target ? target.closest('.kanban-column') : null;
+            
+            if (col) {
+                const newStatus = col.id.replace('column-', '');
+                const orderId = parseInt(touchDragItem.dataset.id);
+                const order = productionOrders.find(o => o.id === orderId);
+                
+                if (order && order.status !== newStatus) {
+                    order.status = newStatus;
+                    saveOrders();
+                    renderKanban();
+                    if (navigator.vibrate) navigator.vibrate([50]);
+                }
+            }
+        }
+        touchDragItem = null;
+        touchGhost = null;
+        isDragging = false;
+    };
+
+    document.addEventListener('touchstart', handleTouchStart, { passive: false });
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd);
 
     // Duplicate checkPrefillData function removed to fix redeclaration error.
 
@@ -2221,135 +2324,6 @@ const init = () => {
             return { success: false, error: e.message };
         }
     };
-
-    // --- MOBILE DRAG & DROP (TOUCH - LONG PRESS) ---
-    let touchDragItem = null;
-    let touchGhost = null;
-    let longPressTimer = null;
-    let isDragging = false;
-    let touchStartCoords = null;
-
-    const handleTouchStart = (e) => {
-        const card = e.target.closest('.kanban-card');
-        if (!card) return;
-        // Ignore clicks on buttons inside card
-        if (e.target.closest('button') || e.target.closest('a') || e.target.closest('.btn-action')) return;
-
-        touchDragItem = card;
-        touchStartCoords = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        isDragging = false;
-
-        // Start Long Press Timer (400ms)
-        longPressTimer = setTimeout(() => {
-            isDragging = true;
-            // Haptic feedback
-            if (navigator.vibrate) navigator.vibrate(50);
-            
-            // Create ghost
-            const rect = card.getBoundingClientRect();
-            touchGhost = card.cloneNode(true);
-            touchGhost.style.position = 'fixed';
-            touchGhost.style.width = `${rect.width}px`;
-            touchGhost.style.height = `${rect.height}px`;
-            touchGhost.style.left = `${rect.left}px`;
-            touchGhost.style.top = `${rect.top}px`;
-            touchGhost.style.opacity = '0.9';
-            touchGhost.style.zIndex = '10000';
-            touchGhost.style.pointerEvents = 'none';
-            touchGhost.style.transform = 'scale(1.05) rotate(2deg)';
-            touchGhost.style.boxShadow = '0 15px 30px rgba(0,0,0,0.5)';
-            touchGhost.style.transition = 'none';
-            touchGhost.classList.add('glass-card'); 
-            document.body.appendChild(touchGhost);
-            
-            card.classList.add('opacity-30');
-        }, 400); 
-    };
-
-    const handleTouchMove = (e) => {
-        if (!touchDragItem) return;
-
-        const touch = e.touches[0];
-        
-        if (!isDragging) {
-            // Check if moved too much before long press triggers -> Cancel long press (it's a scroll)
-            const dx = Math.abs(touch.clientX - touchStartCoords.x);
-            const dy = Math.abs(touch.clientY - touchStartCoords.y);
-            if (dx > 10 || dy > 10) {
-                clearTimeout(longPressTimer);
-                touchDragItem = null;
-            }
-            return;
-        }
-
-        // If dragging, prevent scrolling
-        if (e.cancelable) e.preventDefault();
-
-        // Move ghost
-        if (touchGhost) {
-            const w = touchGhost.offsetWidth;
-            const h = touchGhost.offsetHeight;
-            touchGhost.style.left = `${touch.clientX - w / 2}px`;
-            touchGhost.style.top = `${touch.clientY - h / 2}px`;
-        }
-
-        // Highlight drop targets (Tabs)
-        const target = document.elementFromPoint(touch.clientX, touch.clientY);
-        if (target) {
-            // Reset previous highlights
-            document.querySelectorAll('.mobile-kanban-tab').forEach(t => t.style.background = '');
-            
-            const tab = target.closest('.mobile-kanban-tab');
-            if (tab) {
-                tab.style.background = 'rgba(59, 130, 246, 0.4)';
-            }
-        }
-    };
-
-    const handleTouchEnd = (e) => {
-        clearTimeout(longPressTimer);
-        
-        if (isDragging && touchDragItem) {
-            touchDragItem.classList.remove('opacity-30');
-            if (touchGhost) touchGhost.remove();
-
-            // Check drop
-            const touch = e.changedTouches[0];
-            const target = document.elementFromPoint(touch.clientX, touch.clientY);
-            if (target) {
-                const tab = target.closest('.mobile-kanban-tab');
-                if (tab) {
-                    const targetId = tab.dataset.target;
-                    const newStatus = targetId.replace('column-', '');
-                    const orderId = parseInt(touchDragItem.dataset.id);
-                    const order = productionOrders.find(o => o.id === orderId);
-                    
-                    if (order && order.status !== newStatus) {
-                        order.status = newStatus;
-                        saveOrders();
-                        renderKanban();
-                        tab.click(); // Switch to new tab
-                        
-                        // Feedback
-                        if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
-                    }
-                }
-            }
-            
-            // Reset tab styles
-            document.querySelectorAll('.mobile-kanban-tab').forEach(t => {
-                t.style.background = ''; // Reset to CSS default
-            });
-        }
-
-        touchDragItem = null;
-        touchGhost = null;
-        isDragging = false;
-    };
-
-    document.addEventListener('touchstart', handleTouchStart, { passive: false });
-    document.addEventListener('touchmove', handleTouchMove, { passive: false });
-    document.addEventListener('touchend', handleTouchEnd);
 
     // Inicializa o Chat (Sempre visível para facilitar configuração)
     createChatInterface();
