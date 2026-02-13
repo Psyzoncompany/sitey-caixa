@@ -1,0 +1,8 @@
+{
+  "name": "PSYZON Manager",
+  "short_name": "PSYZON",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f1724",
+  "theme_color": "#0f1724"
+}

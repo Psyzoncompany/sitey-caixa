@@ -28,6 +28,14 @@ const init = () => {
     const cuttingDetailsSection = document.getElementById('cutting-details-section');
     const cuttingSubtasksContainer = document.getElementById('cutting-subtasks-container');
     const addCuttingItemBtn = document.getElementById('add-cutting-item-btn');
+    // Novos elementos de corte/personalização
+    const cuttingTotalBadge = document.getElementById('cutting-total-badge');
+    const cuttingValidationMsg = document.getElementById('cutting-validation-msg');
+    const hasPersonalizationCheckbox = document.getElementById('has-personalization');
+    const personalizationContainer = document.getElementById('personalization-container');
+    const personalizationNamesInput = document.getElementById('personalization-names');
+    const namesCounter = document.getElementById('names-counter');
+    const copyNamesBtn = document.getElementById('copy-names-btn');
 
     const tasksContainer = document.getElementById('tasks-container');
     const cuttingTasksContainer = document.getElementById('cutting-tasks-container');
@@ -152,6 +160,14 @@ const init = () => {
     let activeCuttingOrderId = null;
     let activeArtOrderId = null;
 
+    // --- EXPOR API PARA CEREBRO_IA.JS ---
+    window.PsyzonApp = {
+        productionOrders,
+        clients,
+        saveOrders: () => saveOrders(),
+        renderKanban: () => renderKanban(),
+        renderTasks: () => renderTasks()
+    };
 
 
     const checklistItems = { art: "Arte/Design Aprovado", mockup: "Mockup Aprovado", fabric: "Malha/Tecido Comprado", cutting: "Corte Realizado", sewing: "Costura Realizada", printing: "Estampa/Bordado Realizado", finishing: "Acabamento e Embalagem" };
@@ -212,6 +228,11 @@ const init = () => {
         if (orderPrintQuantityInput) orderPrintQuantityInput.value = '';
         // reset Art Only temp
         activeArtOnlyImages = [];
+        // reset Personalization
+        if (hasPersonalizationCheckbox) hasPersonalizationCheckbox.checked = false;
+        if (personalizationContainer) personalizationContainer.classList.add('hidden');
+        if (personalizationNamesInput) personalizationNamesInput.value = '';
+
         if (artOnlyImagesPreview) artOnlyImagesPreview.innerHTML = '';
         if (isArtOnlyCheckbox) isArtOnlyCheckbox.checked = false;
 
@@ -228,9 +249,19 @@ const init = () => {
             renderChecklist(order.checklist);
 
             const cuttingTask = order.checklist && order.checklist.cutting;
-            if (cuttingTask && cuttingTask.subtasks) {
-                cuttingTask.subtasks.forEach(sub => renderCuttingSubtask(sub));
+            if (cuttingTask) {
+                if (cuttingTask.subtasks) cuttingTask.subtasks.forEach(sub => renderCuttingSubtask(sub));
+                // Carregar Personalização
+                if (cuttingTask.personalization) {
+                    if (hasPersonalizationCheckbox) {
+                        hasPersonalizationCheckbox.checked = cuttingTask.personalization.hasNames;
+                        if (cuttingTask.personalization.hasNames) personalizationContainer.classList.remove('hidden');
+                    }
+                    if (personalizationNamesInput) personalizationNamesInput.value = cuttingTask.personalization.names || '';
+                }
             }
+            updateCuttingTotals(); // Atualiza validação inicial
+
             orderPrintTypeSelect.value = order.printType || 'dtf';
             renderColors(order.colors || []);
             // load printing data if present
@@ -282,28 +313,101 @@ const init = () => {
         editingOrderId = null;
     };
 
+    // --- NOVA LÓGICA DE CORTES (MINI-CARDS) ---
     const renderCuttingSubtask = (subtask = {}) => {
         const subtaskId = subtask.id || Date.now() + Math.random();
         const item = document.createElement('div');
-        item.className = 'grid grid-cols-12 gap-2 items-center';
+        item.className = 'cut-item-card';
         item.dataset.subtaskId = subtaskId;
+
         const genders = ['Feminina', 'Masculina', 'Infantil'];
-        const styles = ['Normal', 'Gola Polo', 'Manga Longa'];
-        // compatibilidade: se subtask.type for um estilo antigo, ajusta
-        const currentGender = (subtask.type && genders.includes(subtask.type)) ? subtask.type : (subtask.gender || (['Gola Polo','Manga Longa'].includes(subtask.type) ? 'Feminina' : 'Feminina'));
-        const currentStyle = (subtask.style) ? subtask.style : (['Gola Polo','Manga Longa'].includes(subtask.type) ? subtask.type : 'Normal');
+        const variations = ['Normal', 'Babylook', 'Oversized', 'Regata', 'Manga Longa'];
+        
+        // Compatibilidade com dados antigos
+        const currentGender = subtask.gender || (genders.includes(subtask.type) ? subtask.type : 'Masculina');
+        const currentVariation = subtask.variation || subtask.style || 'Normal';
+        
         const isInfantil = currentGender === 'Infantil';
         const currentSizeList = isInfantil ? sizeOptions.infantil : sizeOptions.adulto;
+
         item.innerHTML = `
-            <div class="col-span-3"><select class="subtask-gender w-full p-1 rounded-md bg-white/10 border-white/20 text-xs">${genders.map(g => `<option ${currentGender === g ? 'selected' : ''}>${g}</option>`).join('')}</select></div>
-            <div class="col-span-4"><select class="subtask-size w-full p-1 rounded-md bg-white/10 border-white/20 text-xs">${currentSizeList.map(s => `<option ${subtask.size === s ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
-            <div class="col-span-3"><select class="subtask-style w-full p-1 rounded-md bg-white/10 border-white/20 text-xs">${styles.map(s => `<option ${currentStyle === s ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
-            <div class="col-span-1"><input type="number" class="subtask-total w-full p-1 rounded-md bg-white/10 border-white/20 text-xs" placeholder="Qtd" value="${subtask.total || ''}"></div>
-            <div class="col-span-1"><button type="button" class="remove-subtask-btn text-red-500 hover:text-red-400">×</button></div>
+            <div class="cut-header grid grid-cols-3 gap-2">
+                <select class="subtask-gender cut-select">${genders.map(g => `<option ${currentGender === g ? 'selected' : ''}>${g}</option>`).join('')}</select>
+                <select class="subtask-size cut-select">${currentSizeList.map(s => `<option ${subtask.size === s ? 'selected' : ''}>${s}</option>`).join('')}</select>
+                <select class="subtask-variation cut-select">${variations.map(v => `<option ${currentVariation === v ? 'selected' : ''}>${v}</option>`).join('')}</select>
+            </div>
+            <div class="flex items-center justify-between mt-2">
+                <div class="qty-control">
+                    <button type="button" class="qty-btn minus">-</button>
+                    <input type="number" class="subtask-total qty-input" value="${subtask.total || 0}" min="0">
+                    <button type="button" class="qty-btn plus">+</button>
+                </div>
+                <div class="cut-actions flex gap-3 text-xs">
+                    <button type="button" class="dup-btn text-cyan-400">Duplicar</button>
+                    <button type="button" class="del-btn text-red-400">Excluir</button>
+                </div>
+            </div>
+            <input type="text" class="subtask-notes w-full mt-2 bg-transparent border-b border-white/10 text-xs text-gray-400 focus:border-cyan-500 outline-none" placeholder="Observação (ex: Gola Polo)" value="${subtask.notes || ''}">
         `;
+
+        // Event Listeners do Card
+        const qtyInput = item.querySelector('.subtask-total');
+        item.querySelector('.plus').onclick = () => { qtyInput.value = parseInt(qtyInput.value||0) + 1; updateCuttingTotals(); };
+        item.querySelector('.minus').onclick = () => { qtyInput.value = Math.max(0, parseInt(qtyInput.value||0) - 1); updateCuttingTotals(); };
+        qtyInput.oninput = updateCuttingTotals;
+        
+        item.querySelector('.del-btn').onclick = () => {
+            if(confirm('Excluir este item de corte?')) { item.remove(); updateCuttingTotals(); }
+        };
+
+        item.querySelector('.dup-btn').onclick = () => {
+            const cloneData = {
+                gender: item.querySelector('.subtask-gender').value,
+                size: item.querySelector('.subtask-size').value,
+                variation: item.querySelector('.subtask-variation').value,
+                total: parseInt(qtyInput.value),
+                notes: item.querySelector('.subtask-notes').value
+            };
+            renderCuttingSubtask(cloneData);
+            updateCuttingTotals();
+        };
+
+        // Atualiza tamanhos ao mudar gênero
+        item.querySelector('.subtask-gender').onchange = (e) => {
+            const sel = e.target.value;
+            const sizeSel = item.querySelector('.subtask-size');
+            const list = sel === 'Infantil' ? sizeOptions.infantil : sizeOptions.adulto;
+            const currentSize = sizeSel.value;
+            sizeSel.innerHTML = list.map(s => `<option ${currentSize === s ? 'selected' : ''}>${s}</option>`).join('');
+        };
+
         cuttingSubtasksContainer.appendChild(item);
+        updateCuttingTotals();
     };
 
+    // Validação e Totais
+    const updateCuttingTotals = () => {
+        let totalCuts = 0;
+        document.querySelectorAll('.subtask-total').forEach(inp => totalCuts += parseInt(inp.value || 0));
+        
+        if (cuttingTotalBadge) cuttingTotalBadge.textContent = `Total: ${totalCuts}`;
+        
+        // Validação com Total do Pedido (se houver campo de qtd total de impressão ou se for calculado)
+        // Como o sistema original não tinha um campo "Total do Pedido" explícito além do printing.total, vamos usar esse ou criar um alerta visual apenas.
+        // O prompt pede validação. Vamos assumir que o usuário deve preencher o total em algum lugar ou que a soma É o total.
+        // Se houver nomes, validamos nomes vs totalCuts.
+        
+        if (personalizationNamesInput) {
+            const names = personalizationNamesInput.value.split('\n').filter(l => l.trim() !== '');
+            const namesCount = names.length;
+            if (namesCounter) {
+                namesCounter.textContent = `${namesCount} nomes / ${totalCuts} peças`;
+                namesCounter.className = namesCount === totalCuts ? 'text-green-400 font-bold' : 'text-red-400 font-bold';
+            }
+        }
+    };
+
+    // Listeners antigos removidos ou adaptados
     cuttingSubtasksContainer.addEventListener('change', (e) => {
         // atualiza lista de tamanhos quando trocar gênero (Feminina/Masculina/Infantil)
         if (e.target.classList.contains('subtask-gender')) {
@@ -314,13 +418,24 @@ const init = () => {
         }
     });
 
-    cuttingSubtasksContainer.addEventListener('click', (e) => {
-        if (e.target.classList.contains('remove-subtask-btn')) {
-            e.target.closest('.grid').remove();
-        }
-    });
-
     addCuttingItemBtn.addEventListener('click', () => renderCuttingSubtask());
+
+    // Personalização Listeners
+    if (hasPersonalizationCheckbox) {
+        hasPersonalizationCheckbox.addEventListener('change', () => {
+            personalizationContainer.classList.toggle('hidden', !hasPersonalizationCheckbox.checked);
+        });
+    }
+    if (personalizationNamesInput) {
+        personalizationNamesInput.addEventListener('input', updateCuttingTotals);
+    }
+    if (copyNamesBtn) {
+        copyNamesBtn.addEventListener('click', () => {
+            if (personalizationNamesInput) {
+                navigator.clipboard.writeText(personalizationNamesInput.value).then(() => alert('Lista copiada!'));
+            }
+        });
+    }
 
     // --- FIX: Listeners que estavam faltando ---
     if (addOrderBtn) addOrderBtn.addEventListener('click', () => openModal());
@@ -358,17 +473,18 @@ const init = () => {
             });
 
             const subtasks = [];
-            cuttingSubtasksContainer.querySelectorAll('.grid').forEach(row => {
+            cuttingSubtasksContainer.querySelectorAll('.cut-item-card').forEach(row => {
                 const totalInput = row.querySelector('.subtask-total');
                 if (totalInput && totalInput.value) {
                     const existingSubtask = (editingOrderId && productionOrders.find(o => o.id === editingOrderId).checklist.cutting.subtasks.find(s => s.id == row.dataset.subtaskId));
                     subtasks.push({
                         id: parseFloat(row.dataset.subtaskId) || Date.now() + Math.random(),
-                        type: row.querySelector('.subtask-gender') ? row.querySelector('.subtask-gender').value : (row.querySelector('.subtask-type') ? row.querySelector('.subtask-type').value : 'Feminina'),
-                        style: row.querySelector('.subtask-style') ? row.querySelector('.subtask-style').value : (existingSubtask ? existingSubtask.style : 'Normal'),
+                        gender: row.querySelector('.subtask-gender').value,
+                        variation: row.querySelector('.subtask-variation').value,
                         size: row.querySelector('.subtask-size').value,
                         total: parseInt(totalInput.value) || 0,
-                        cut: existingSubtask ? existingSubtask.cut : 0
+                        cut: existingSubtask ? existingSubtask.cut : 0,
+                        notes: row.querySelector('.subtask-notes').value
                     });
                 }
             });
@@ -376,6 +492,11 @@ const init = () => {
             checklist.cutting = checklist.cutting || {};
             checklist.cutting.completed = subtasks.length === 0;
             checklist.cutting.subtasks = subtasks;
+            // Salvar Personalização
+            checklist.cutting.personalization = {
+                hasNames: hasPersonalizationCheckbox ? hasPersonalizationCheckbox.checked : false,
+                names: personalizationNamesInput ? personalizationNamesInput.value : ''
+            };
 
             // coleta cores dos inputs reais (hex text inputs ou compatíveis)
             const colors = orderColorsContainer
@@ -605,7 +726,7 @@ const init = () => {
             const totalToCut = order.checklist.cutting.subtasks.reduce((acc, sub) => acc + sub.total, 0);
             const totalCut = order.checklist.cutting.subtasks.reduce((acc, sub) => acc + sub.cut, 0);
 
-            // render colors as small cards (works with names or hex; if CMYK string it will show text)
+            // render colors
             const colors = order.colors || [];
             const colorsHtml = colors.map(c => {
                 // try to use as background if looks like hex, otherwise show label
@@ -691,7 +812,7 @@ const init = () => {
         cuttingChecklistContainer.innerHTML = '';
         subtasks.forEach(subtask => {
             const isCompleted = subtask.cut >= subtask.total;
-            const label = `${subtask.type || ''}${subtask.style && subtask.style !== 'Normal' ? ' (' + subtask.style + ')' : ''} - ${subtask.size}`;
+            const label = `${subtask.gender || subtask.type || ''} ${subtask.variation || subtask.style || ''} - ${subtask.size} ${subtask.notes ? '('+subtask.notes+')' : ''}`;
             const item = document.createElement('div');
             item.className = `p-3 rounded-md flex justify-between items-center bg-white/5 ${isCompleted ? 'border-l-4 border-green-500' : ''}`;
             item.innerHTML = `<div class="font-semibold">${label}</div><div class="flex items-center gap-4"><input type="number" value="${subtask.cut}" min="0" max="${subtask.total}" class="cut-quantity-input w-20 p-2 text-center rounded-md bg-white/10" data-subtask-id="${subtask.id}"><span class="text-gray-400">/ ${subtask.total}</span></div>`;
@@ -1335,6 +1456,584 @@ const init = () => {
             target.dispatchEvent(ev);
         }, true);
     } // end if (orderColorsContainer)
+
+    // --- INTEGRAÇÃO GOOGLE GEMINI AI (ASSISTENTE PSYZON) ---
+    
+    // Configuração da API (Substitua pela sua chave real ou use um proxy)
+    // .trim() remove espaços acidentais antes ou depois da chave
+    const GEMINI_API_KEY = "AIzaSyBVog4tmzmTpLReuyhSD5OnXmobF0rLrow".trim(); 
+    
+    console.log("🔑 Chave Gemini Carregada:", GEMINI_API_KEY.substring(0, 8) + "..."); // Verifica no console se a chave nova carregou
+
+    // Estado do Chat
+    let chatHistory = [];
+    let isAiProcessing = false;
+
+    // Definição das Ferramentas (Function Calling)
+    const aiTools = [
+        {
+            name: "createOrder",
+            description: "Cria pedido e cliente (se não existir). Suporta grade de tamanhos (sizes).",
+            parameters: {
+                type: "OBJECT",
+                properties: {
+                    description: { type: "STRING", description: "Descrição curta do pedido (ex: 30 Camisas 3A)" },
+                    clientName: { type: "STRING", description: "Nome do cliente para buscar ou criar" },
+                    deadline: { type: "STRING", description: "Data de entrega no formato YYYY-MM-DD" },
+                    totalValue: { type: "NUMBER", description: "Valor total do pedido" },
+                    notes: { type: "STRING", description: "Observações gerais" },
+                    printType: { type: "STRING", description: "Técnica: 'silk', 'dtf', 'sublimacao' ou 'art'" },
+                    sizes: {
+                        type: "ARRAY",
+                        description: "Lista de tamanhos e quantidades (Grade)",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                size: { type: "STRING" },
+                                qty: { type: "NUMBER" },
+                                gender: { type: "STRING", description: "Masculina, Feminina ou Infantil" }
+                            }
+                        }
+                    }
+                },
+                required: ["description", "clientName"]
+            }
+        },
+        {
+            name: "updateOrder",
+            description: "Atualiza um pedido existente.",
+            parameters: {
+                type: "OBJECT",
+                properties: {
+                    orderId: { type: "NUMBER", description: "ID do pedido" },
+                    updates: { type: "OBJECT", description: "Objeto com campos a atualizar (status, totalValue, notes, etc)" }
+                },
+                required: ["orderId", "updates"]
+            }
+        },
+        {
+            name: "listOrders",
+            description: "Lista pedidos filtrando por status ou busca textual.",
+            parameters: {
+                type: "OBJECT",
+                properties: {
+                    status: { type: "STRING", description: "todo, doing, done" },
+                    search: { type: "STRING", description: "Termo de busca (nome cliente ou descrição)" }
+                }
+            }
+        },
+        {
+            name: "calculateOrder",
+            description: "Calcula o total do pedido baseado em quantidade e preço unitário.",
+            parameters: {
+                type: "OBJECT",
+                properties: {
+                    quantity: { type: "NUMBER" },
+                    unitPrice: { type: "NUMBER" },
+                    extras: { type: "NUMBER", description: "Valor extra (frete, arte)" },
+                    discount: { type: "NUMBER" }
+                },
+                required: ["quantity", "unitPrice"]
+            }
+        },
+        {
+            name: "calculateDeadline",
+            description: "Calcula data de entrega considerando dias úteis e feriados.",
+            parameters: {
+                type: "OBJECT",
+                properties: {
+                    days: { type: "NUMBER", description: "Quantidade de dias" },
+                    isBusinessDays: { type: "BOOLEAN", description: "Se true, conta apenas dias úteis (seg-sex e exclui feriados)" },
+                    startDate: { type: "STRING", description: "Data inicial YYYY-MM-DD (opcional, default hoje)" }
+                },
+                required: ["days"]
+            }
+        },
+        {
+            name: "emplacarPedido",
+            description: "Gera o resumo operacional (emplacamento), valida dados e move para produção.",
+            parameters: {
+                type: "OBJECT",
+                properties: {
+                    orderId: { type: "NUMBER" },
+                    checklistData: { type: "OBJECT", description: "Dados técnicos: cores, tamanhos, estampa" }
+                },
+                required: ["orderId"]
+            }
+        }
+    ];
+
+    // Prompt do Sistema
+    const systemInstruction = `
+    VOCÊ É O SISTEMA OPERACIONAL DA CONFECÇÃO (PSYZON).
+    SUA FUNÇÃO É AGIR, NÃO CONVERSAR.
+
+    ✅ REGRAS DE TAMANHOS (GRADE):
+    - Identifique grades no texto (ex: "6P, 10M, 10G").
+    - Converta para o array 'sizes' na ferramenta createOrder: [{size: "P", qty: 6}, ...].
+    - NUNCA crie pedido sem grade se ela foi informada no texto.
+    - Distribua as quantidades corretamente.
+    - Se o gênero não for informado, assuma "Masculina" ou infira pelo contexto.
+
+    ✅ REGRAS DE PRAZO (DIAS ÚTEIS):
+    - Se o usuário disser "dias úteis", OBRIGATORIAMENTE use a ferramenta calculateDeadline com isBusinessDays=true.
+    - Se disser apenas "dias", assuma corridos (isBusinessDays=false).
+    - Use a data retornada pela ferramenta como 'deadline' ao criar o pedido.
+    - Mostre no chat: Data Inicial, Data Final Calculada e Dias Considerados.
+
+    ⚠️ REGRAS GERAIS:
+    1. Cliente não encontrado? CRIE AUTOMATICAMENTE.
+    2. Preço não informado? CRIE COM VALOR 0.
+    3. Dados incompletos? CRIE O PEDIDO COM O QUE TEM.
+
+    PADRÃO DE RESPOSTA (HTML):
+    <b>🧾 Pedido Criado</b>
+    <ul class="chat-list">
+      <li><b>Cliente:</b> [Nome]</li>
+      <li><b>Item:</b> [Descrição]</li>
+      <li><b>Grade:</b> [Resumo ex: 10P, 10M]</li>
+      <li><b>Prazo:</b> [Data] ([X] dias úteis/corridos)</li>
+      <li><b>Status:</b> A Fazer</li>
+    </ul>
+    `;
+
+    // --- UI DO CHAT ---
+    const createChatInterface = () => {
+        if (document.getElementById('ai-chat-widget')) return; // Previne duplicação se chamado múltiplas vezes
+
+        const chatHTML = `
+            <button id="ai-toggle-btn" title="Assistente PSYZON">✨</button>
+            <div id="ai-chat-widget" class="hidden">
+                <div id="ai-chat-header">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xl">🤖</span>
+                        <h3 class="font-bold text-white">Assistente PSYZON</h3>
+                    </div>
+                    <button id="ai-close-btn" class="text-gray-400 hover:text-white">&times;</button>
+                </div>
+                <div id="ai-chat-messages">
+                    <div class="chat-msg ai">Olá! Sou seu assistente de produção. Posso criar pedidos, calcular orçamentos ou fazer o emplacamento. Como posso ajudar hoje? 👕</div>
+                </div>
+                <div id="ai-chat-input-area">
+                    <input type="text" id="ai-input" class="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-500" placeholder="Ex: Novo pedido João, 30 camisas...">
+                    <button id="ai-send-btn" class="bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg px-3 py-2">➤</button>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', chatHTML);
+
+        // Event Listeners
+        const widget = document.getElementById('ai-chat-widget');
+        const toggleBtn = document.getElementById('ai-toggle-btn');
+        const closeBtn = document.getElementById('ai-close-btn');
+        const sendBtn = document.getElementById('ai-send-btn');
+        const input = document.getElementById('ai-input');
+        const msgsArea = document.getElementById('ai-chat-messages');
+
+        const toggleChat = () => {
+            widget.classList.toggle('hidden');
+            if (!widget.classList.contains('hidden')) input.focus();
+        };
+
+        toggleBtn.onclick = toggleChat;
+        closeBtn.onclick = toggleChat;
+
+        const addMessage = (text, sender, isHtml = false) => {
+            const div = document.createElement('div');
+            div.className = `chat-msg ${sender}`;
+            if (isHtml) div.innerHTML = text;
+            else div.textContent = text;
+            msgsArea.appendChild(div);
+            msgsArea.scrollTop = msgsArea.scrollHeight;
+            return div;
+        };
+
+        const addActionCard = (toolName, args, confirmCallback) => {
+            const div = document.createElement('div');
+            div.className = 'chat-action-card';
+            
+            let summary = '';
+            if (toolName === 'createOrder') summary = `Criando: <b>${args.description}</b><br>Cliente: ${args.clientName}`;
+            else if (toolName === 'updateOrder') summary = `Atualizar Pedido #${args.orderId}`;
+            else if (toolName === 'emplacarPedido') summary = `Emplacar Pedido #${args.orderId}`;
+            else summary = `Executar: ${toolName}`;
+
+            div.innerHTML = `
+                <h4>⚡ Ação Pendente</h4>
+                <p class="mb-2">${summary}</p>
+                <div class="flex gap-2 justify-end">
+                    <button class="cancel-action-btn text-xs px-2 py-1 rounded border border-red-500/50 text-red-400 hover:bg-red-500/10">Cancelar</button>
+                    <button class="confirm-action-btn text-xs px-3 py-1 rounded bg-green-600 text-white hover:bg-green-500 font-bold">Confirmar</button>
+                </div>
+            `;
+            
+            div.querySelector('.confirm-action-btn').onclick = () => {
+                div.remove();
+                confirmCallback();
+            };
+            div.querySelector('.cancel-action-btn').onclick = () => {
+                div.remove();
+                addMessage("❌ Ação cancelada pelo usuário.", 'user');
+            };
+            
+            msgsArea.appendChild(div);
+            msgsArea.scrollTop = msgsArea.scrollHeight;
+        };
+
+        const handleSend = async () => {
+            const text = input.value.trim();
+            if (!text || isAiProcessing) return;
+            
+            input.value = '';
+            addMessage(text, 'user');
+            isAiProcessing = true;
+            
+            // Loading indicator
+            const loadingDiv = addMessage("Thinking...", 'ai');
+            loadingDiv.innerHTML = `<svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+
+            try {
+                // 1. Enviar para Gemini
+                const response = await callGemini(text);
+                loadingDiv.remove();
+
+                // 2. Processar Resposta
+                if (response.text) {
+                    addMessage(response.text, 'ai');
+                }
+
+                // 3. Processar Tool Calls (Ações)
+                if (response.toolCalls) {
+                    for (const tool of response.toolCalls) {
+                        addActionCard(tool.name, tool.args, async () => {
+                            // Executa a ação real
+                            const result = await executeLocalAction(tool.name, tool.args);
+                            // Envia resultado de volta para a IA
+                            const followUp = await callGemini(null, {
+                                functionResponse: {
+                                    name: tool.name,
+                                    response: { result: result }
+                                }
+                            });
+                            if (followUp.text) addMessage(followUp.text, 'ai');
+                        });
+                    }
+                }
+
+            } catch (err) {
+                loadingDiv.remove();
+                // Mostra o erro real na tela para ajudar a descobrir o problema
+                addMessage(`⚠️ <b>Erro na conexão:</b><br>${err.message}`, 'ai', true);
+                console.error("Erro detalhado do Assistente:", err);
+            } finally {
+                isAiProcessing = false;
+            }
+        };
+
+        sendBtn.onclick = handleSend;
+        input.onkeydown = (e) => { if (e.key === 'Enter') handleSend(); };
+    };
+
+    // --- LÓGICA DE COMUNICAÇÃO COM GEMINI ---
+    const callGemini = async (userText, context = null) => {
+        // Constrói o histórico para a API
+        let contents = chatHistory.map(msg => ({
+            role: msg.role,
+            parts: msg.parts
+        }));
+
+        if (userText) {
+            const userMsg = { role: "user", parts: [{ text: userText }] };
+            contents.push(userMsg);
+            chatHistory.push(userMsg);
+        }
+
+        if (context && context.functionResponse) {
+            const fnMsg = {
+                role: "function",
+                parts: [{
+                    functionResponse: {
+                        name: context.functionResponse.name,
+                        response: { name: context.functionResponse.name, content: context.functionResponse.response }
+                    }
+                }]
+            };
+            contents.push(fnMsg);
+            chatHistory.push(fnMsg);
+        }
+
+        const payload = {
+            contents: contents,
+            tools: [{ functionDeclarations: aiTools }],
+            systemInstruction: { parts: [{ text: systemInstruction }] }
+        };
+
+        // Lista de modelos para tentar (Fallback automático)
+        // Se o 1.5 Flash falhar, tenta o Pro (mais estável)
+        const modelsToTry = [
+            'gemini-2.0-flash-exp',     // Experimental mais recente (Rápido e Inteligente)
+            'gemini-1.5-flash',         // Padrão atual (Estável)
+            'gemini-1.5-pro',           // Alta inteligência
+            'gemini-1.5-flash-8b',      // Versão leve e rápida
+            'gemini-1.5-flash-001',     // Versão específica (compatibilidade)
+            'gemini-pro',               // Fallback (v1.0 - funciona em quase todas as contas)
+            'gemini-3-flash-preview'    // Futuro (conforme sua nota de 2026)
+        ];
+
+        let successData = null;
+        let lastError = null;
+
+        for (const model of modelsToTry) {
+            try {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+
+                if (res.ok && data.candidates) {
+                    successData = data;
+                    break; // Sucesso!
+                }
+                // Se falhar, registra erro e tenta o próximo
+                let msg = data.error?.message || res.statusText;
+                if (res.status === 404) msg = "Modelo não encontrado (404). A API 'Generative Language' pode não estar ativa nesta chave.";
+                lastError = new Error(msg);
+            } catch (e) {
+                lastError = e;
+            }
+        }
+
+        if (!successData) {
+            // Se o erro for 404, dá a dica exata
+            if (lastError && lastError.message.includes('404')) throw new Error("⚠️ <b>Erro de Permissão (404)</b><br>Sua chave de API é válida, mas não tem acesso à IA.<br><br>👉 Crie uma nova chave em <b>aistudio.google.com</b> e substitua no código.");
+            throw lastError || new Error("Não foi possível conectar com nenhum modelo da IA.");
+        }
+
+        const content = successData.candidates[0].content;
+        const parts = content.parts || [];
+        
+        // Salva resposta no histórico
+        chatHistory.push({ role: "model", parts: parts });
+
+        // Extrai texto e chamadas de função
+        let textResponse = "";
+        let toolCalls = [];
+
+        parts.forEach(part => {
+            if (part.text) textResponse += part.text;
+            if (part.functionCall) {
+                toolCalls.push({
+                    name: part.functionCall.name,
+                    args: part.functionCall.args
+                });
+            }
+        });
+
+        return { text: textResponse, toolCalls: toolCalls };
+    };
+
+    // --- EXECUTOR DE AÇÕES LOCAIS (A "Mão" da IA) ---
+    const executeLocalAction = async (name, args) => {
+        console.log(`🤖 Executando ação: ${name}`, args);
+        
+        try {
+            if (name === 'calculateDeadline') {
+                const start = args.startDate ? new Date(args.startDate + "T00:00:00") : new Date();
+                const days = args.days;
+                const isBusiness = args.isBusinessDays;
+                
+                // Lista de Feriados Nacionais (Fixos e Móveis aproximados para 2025/2026)
+                const holidays = [
+                    "01-01", "04-21", "05-01", "09-07", "10-12", "11-02", "11-15", "12-25",
+                    // 2025
+                    "2025-03-04", "2025-04-18", "2025-06-19",
+                    // 2026
+                    "2026-02-17", "2026-04-03", "2026-06-04"
+                ];
+
+                let current = new Date(start);
+                let added = 0;
+                
+                while (added < days) {
+                    current.setDate(current.getDate() + 1);
+                    if (isBusiness) {
+                        const day = current.getDay(); // 0=Dom, 6=Sab
+                        const dateStr = current.toISOString().split('T')[0];
+                        const mmdd = dateStr.substring(5);
+                        
+                        // Pula Fim de Semana e Feriados
+                        if (day === 0 || day === 6) continue;
+                        if (holidays.includes(mmdd) || holidays.includes(dateStr)) continue;
+                    }
+                    added++;
+                }
+                return { finalDate: current.toISOString().split('T')[0], startDate: start.toISOString().split('T')[0], daysCounted: days, type: isBusiness ? "dias úteis" : "dias corridos" };
+            }
+
+            if (name === 'createOrder') {
+                // Busca ou cria cliente
+                let client = clients.find(c => c.name.toLowerCase().includes(args.clientName.toLowerCase()));
+                let clientId;
+                if (client) {
+                    clientId = client.id;
+                } else {
+                    clientId = Date.now();
+                    const newClient = { id: clientId, name: args.clientName, gender: 'not_informed' };
+                    clients.push(newClient);
+                    localStorage.setItem('clients', JSON.stringify(clients));
+                }
+
+                // Processa Grade de Tamanhos (Sizes)
+                let subtasks = [];
+                if (args.sizes && Array.isArray(args.sizes)) {
+                    subtasks = args.sizes.map(s => ({
+                        id: Date.now() + Math.random(),
+                        type: s.gender || 'Masculina', // Default se não informado
+                        style: 'Normal',
+                        size: s.size,
+                        total: s.qty,
+                        cut: 0
+                    }));
+                }
+
+                const newOrder = {
+                    id: Date.now(),
+                    status: 'todo',
+                    description: args.description,
+                    clientId: clientId,
+                    deadline: args.deadline || new Date().toISOString().split('T')[0],
+                    totalValue: args.totalValue || 0,
+                    amountPaid: 0,
+                    isPaid: false,
+                    notes: args.notes || '',
+                    printType: args.printType || 'dtf',
+                    checklist: {
+                        art: { completed: false, deadline: '' },
+                        mockup: { completed: false, deadline: '' },
+                        fabric: { completed: false, deadline: '' },
+                        cutting: { completed: false, deadline: '', subtasks: subtasks },
+                        sewing: { completed: false, deadline: '' },
+                        printing: { completed: false, deadline: '' },
+                        finishing: { completed: false, deadline: '' }
+                    },
+                    colors: []
+                };
+
+                productionOrders.push(newOrder);
+                saveOrders();
+                renderKanban();
+                return { success: true, orderId: newOrder.id, clientName: args.clientName, description: args.description, status: 'todo' };
+            }
+
+            if (name === 'updateOrder') {
+                const idx = productionOrders.findIndex(o => o.id === args.orderId);
+                if (idx === -1) return { success: false, message: "Pedido não encontrado." };
+                
+                productionOrders[idx] = { ...productionOrders[idx], ...args.updates };
+                saveOrders();
+                renderKanban();
+                return { success: true, message: "Pedido atualizado." };
+            }
+
+            if (name === 'listOrders') {
+                let found = productionOrders;
+                if (args.status) found = found.filter(o => o.status === args.status);
+                if (args.search) {
+                    const term = args.search.toLowerCase();
+                    found = found.filter(o => {
+                        const c = clients.find(cl => cl.id === o.clientId);
+                        return o.description.toLowerCase().includes(term) || (c && c.name.toLowerCase().includes(term));
+                    });
+                }
+                // Retorna resumo para economizar tokens
+                return found.map(o => ({
+                    id: o.id,
+                    desc: o.description,
+                    status: o.status,
+                    total: o.totalValue
+                }));
+            }
+
+            if (name === 'calculateOrder') {
+                const total = (args.quantity * args.unitPrice) + (args.extras || 0) - (args.discount || 0);
+                return {
+                    total: total,
+                    breakdown: `${args.quantity}x ${formatCurrency(args.unitPrice)} + Extras ${formatCurrency(args.extras||0)}`
+                };
+            }
+
+            if (name === 'emplacarPedido') {
+                const idx = productionOrders.findIndex(o => o.id === args.orderId);
+                if (idx === -1) return { success: false, message: "Pedido não encontrado." };
+                
+                const order = productionOrders[idx];
+                
+                // Validação básica de emplacamento
+                const missing = [];
+                if (!order.totalValue) missing.push("Valor Total");
+                if (!order.deadline) missing.push("Prazo");
+                
+                // Se a IA passou dados de checklist, atualiza
+                if (args.checklistData) {
+                    if (args.checklistData.colors) order.colors = args.checklistData.colors;
+                    // Lógica para adicionar subtasks de corte se fornecidas
+                    if (args.checklistData.sizes) {
+                        // Exemplo simplificado: sizes = [{"size": "P", "qty": 10}]
+                        order.checklist.cutting.subtasks = args.checklistData.sizes.map(s => ({
+                            id: Date.now() + Math.random(),
+                            type: 'Feminina', // Default
+                            style: 'Normal',
+                            size: s.size,
+                            total: s.qty,
+                            cut: 0
+                        }));
+                    }
+                }
+
+                if (missing.length > 0) {
+                    return { success: false, message: `Faltam dados para emplacar: ${missing.join(', ')}` };
+                }
+
+                // Move para Doing (Em Produção)
+                order.status = 'doing';
+                saveOrders();
+                renderKanban();
+                
+                return { 
+                    success: true, 
+                    message: "Pedido emplacado e movido para produção!",
+                    summary: {
+                        client: clients.find(c => c.id === order.clientId)?.name,
+                        desc: order.description,
+                        total: order.totalValue
+                    }
+                };
+            }
+
+            return { success: false, message: "Ferramenta desconhecida." };
+
+        } catch (e) {
+            console.error(e);
+            return { success: false, error: e.message };
+        }
+    };
+
+    // Inicializa o Chat (Sempre visível para facilitar configuração)
+    createChatInterface();
+
+    if (!GEMINI_API_KEY || GEMINI_API_KEY === "YOUR_GEMINI_API_KEY_HERE") {
+        const msgsArea = document.getElementById('ai-chat-messages');
+        if (msgsArea) {
+            const warning = document.createElement('div');
+            warning.className = 'chat-msg ai';
+            warning.style.cssText = 'border: 1px solid rgba(239, 68, 68, 0.5); background: rgba(239, 68, 68, 0.1); color: #fca5a5;';
+            warning.innerHTML = "⚠️ <b>Configuração Necessária</b><br>Edite o arquivo <code>processos.js</code> e adicione sua API Key do Google Gemini para ativar a inteligência.";
+            msgsArea.appendChild(warning);
+        }
+    }
 }; // end init
 
 if (document.readyState === 'loading') {
