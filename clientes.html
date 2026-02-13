@@ -6,8 +6,12 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="img/logo.png">
     <link rel="icon" type="image/png" href="img/logo.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png">
+    <meta name="apple-mobile-web-app-title" content="PSYZON Caixa">
+    <meta name="application-name" content="PSYZON Caixa">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="manifest" href="/manifest.webmanifest">
     <title>PSYZON - Meus Clientes</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -122,9 +126,9 @@
       </div>
     </main>
 
-    <div id="client-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 overflow-y-auto">
-      <div class="glass-card w-full max-w-lg my-8">
-          <form id="client-form" class="p-6">
+    <div id="client-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-0 md:p-4">
+      <div class="glass-card w-full max-w-lg h-[95vh] md:h-auto md:max-h-[90vh] rounded-t-2xl md:rounded-xl flex flex-col">
+          <form id="client-form" class="p-6 flex-1 overflow-y-auto">
               <h2 id="client-modal-title" class="text-2xl font-bold mb-6">Novo Cliente</h2>
               
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -190,9 +194,9 @@
                 </div>
               </div>
 
-              <div class="flex justify-end gap-4 mt-8">
-                  <button type="button" id="cancel-client-btn" class="py-2 px-6 rounded-lg bg-white/10 hover:bg-white/20 transition">Cancelar</button>
-                  <button type="submit" class="btn-shine py-2 px-6 font-bold rounded-lg">Salvar</button>
+              <div class="flex flex-col-reverse md:flex-row justify-end gap-4 mt-8 pb-4">
+                  <button type="button" id="cancel-client-btn" class="py-3 px-6 rounded-lg bg-white/10 hover:bg-white/20 transition w-full md:w-auto">Cancelar</button>
+                  <button type="submit" class="btn-shine py-3 px-6 font-bold rounded-lg w-full md:w-auto justify-center">Salvar</button>
               </div>
           </form>
       </div>
