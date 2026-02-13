@@ -48,6 +48,10 @@ const init = () => {
     const fabricDetailsContainer = document.getElementById('fabric-details-container');
     const fabricColorInput = document.getElementById('fabric-color');
     const fabricWeightInput = document.getElementById('fabric-weight');
+    
+    // Wizard Elements
+    const prevStepBtn = document.getElementById('prev-step-btn');
+    const nextStepBtn = document.getElementById('next-step-btn');
 
     let incomeExpenseChart, categoryChart, incomeSourceChart, fabricChart;
     let incomeCategories = JSON.parse(localStorage.getItem('incomeCategories')) || ['Venda de Produto', 'Adiantamento', 'Serviços', 'Outros'];
@@ -57,6 +61,7 @@ const init = () => {
     let productionOrders = JSON.parse(localStorage.getItem('production_orders')) || [];
     let editingId = null; 
     let selectedScope = 'business';
+    let currentStep = 1;
 
     const saveTransactions = () => localStorage.setItem('transactions', JSON.stringify(transactions));
     const formatCurrency = (amount) => amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -213,6 +218,72 @@ const init = () => {
         }
     };
 
+    // --- WIZARD LOGIC (Mobile) ---
+    const updateWizardUI = () => {
+        const isMobile = window.innerWidth < 768;
+        const stepGroups = document.querySelectorAll('.step-group');
+        const stepIndicators = document.querySelectorAll('.step-indicator');
+        const wizardContainer = document.querySelector('#form > .grid');
+
+        // Show/Hide Steps
+        stepGroups.forEach(el => {
+            const step = parseInt(el.dataset.step);
+            if (isMobile) {
+                el.classList.remove('hidden'); // Garante que a transição funcione
+                if (step === currentStep) {
+                    el.style.transform = 'translateX(0)';
+                    el.style.opacity = '1';
+                    el.style.pointerEvents = 'auto';
+                } else if (step < currentStep) {
+                    el.style.transform = 'translateX(-100%)';
+                    el.style.opacity = '0';
+                    el.style.pointerEvents = 'none';
+                } else { // step > currentStep
+                    el.style.transform = 'translateX(100%)';
+                    el.style.opacity = '0';
+                    el.style.pointerEvents = 'none';
+                }
+            } else { // Desktop logic
+                el.style.transform = 'none';
+                el.style.opacity = '1';
+                el.style.pointerEvents = 'auto';
+                if (el.dataset.step != 1) el.classList.remove('hidden'); // Garante que todos os steps sejam visíveis no desktop
+            }
+        });
+        
+        // Update Indicators
+        stepIndicators.forEach(el => {
+            if (parseInt(el.dataset.step) <= currentStep) el.classList.add('active');
+            else el.classList.remove('active');
+        });
+
+        // Update Buttons
+        prevStepBtn.classList.toggle('hidden', currentStep === 1);
+        nextStepBtn.classList.toggle('hidden', currentStep === 3);
+        submitBtn.classList.toggle('hidden', isMobile ? currentStep !== 3 : false);
+        cancelBtn.classList.toggle('hidden', isMobile ? currentStep !== 1 : false);
+        
+        // On Desktop, ensure Submit is always visible and Next/Prev hidden (handled by CSS media queries mostly, but logic helps)
+        if (window.innerWidth >= 768) {
+            submitBtn.classList.remove('hidden');
+        }
+    };
+
+    const validateStep = (step) => {
+        if (step === 1) {
+            if (!descriptionInput.value.trim()) { alert('Informe a descrição.'); return false; }
+            if (!amountInput.value) { alert('Informe o valor.'); return false; }
+            if (!dateInput.value) { alert('Informe a data.'); return false; }
+        }
+        return true;
+    };
+
+    if (nextStepBtn) nextStepBtn.addEventListener('click', () => {
+        if (validateStep(currentStep)) { currentStep++; updateWizardUI(); }
+    });
+    
+    if (prevStepBtn) prevStepBtn.addEventListener('click', () => { currentStep--; updateWizardUI(); });
+
     const openAddModal = () => {
         editingId = null;
         form.reset();
@@ -230,6 +301,8 @@ const init = () => {
         }
         modalTitle.textContent = 'Novo Lançamento';
         submitBtn.textContent = 'Adicionar';
+        currentStep = 1;
+        updateWizardUI();
         modal.classList.remove('hidden');
     };
 
@@ -280,6 +353,8 @@ const init = () => {
 
         modalTitle.textContent = 'Editar Lançamento';
         submitBtn.textContent = 'Salvar Alterações';
+        currentStep = 1;
+        updateWizardUI();
         modal.classList.remove('hidden');
     };
 
@@ -313,23 +388,59 @@ const init = () => {
     
     const addTransactionToDOM = (transaction) => {
         const { id, name, description, amount, date, category, type, scope } = transaction;
-        const item = document.createElement('tr');
+        const item = document.createElement('div');
+        item.className = 'transaction-card'; // Classe para estilização via CSS
+
         const colorClass = type === 'income' ? 'text-green-400' : 'text-red-400';
         let scopeText = '--';
         if (type === 'expense') {
             scopeText = scope === 'personal' ? '👤 Pessoal' : '🏢 Empresarial';
         }
+
         item.innerHTML = `
-            <td class="p-3 align-top font-bold">${name || '--'}</td>
-            <td class="p-3 align-top text-gray-400">${description}</td>
-            <td class="p-3 align-top font-semibold ${colorClass}">${formatCurrency(Math.abs(amount))}</td>
-            <td class="p-3 align-top">${scopeText}</td>
-            <td class="p-3 align-top text-gray-400">${category}</td>
-            <td class="p-3 align-top text-gray-400">${formatDate(date)}</td>
-            <td class="p-3 align-top"><div class="flex items-center gap-2"><button onclick="openEditModal(${id})" class="text-gray-500 hover:text-cyan-400" title="Editar"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg></button><button onclick="removeTransaction(${id})" class="text-gray-500 hover:text-red-400" title="Excluir"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg></button></div></td>
+            <div class="data-name">${name || '--'}</div>
+            <div class="data-description">${description}</div>
+            <div class="data-amount ${colorClass}">${formatCurrency(Math.abs(amount))}</div>
+            <div class="data-scope">${scopeText}</div>
+            <div class="data-category">${category}</div>
+            <div class="data-date">${formatDate(date)}</div>
+            <div class="data-action">
+                <div class="relative">
+                    <button class="action-toggle-btn text-gray-500 hover:text-white p-1 rounded-full">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path></svg>
+                    </button>
+                    <div class="action-menu hidden absolute right-0 mt-2 w-32 bg-gray-800 border border-white/10 rounded-md shadow-lg z-10">
+                        <a href="#" onclick="event.preventDefault(); openEditModal(${id}); this.closest('.action-menu').classList.add('hidden');" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">Editar</a>
+                        <a href="#" onclick="event.preventDefault(); removeTransaction(${id}); this.closest('.action-menu').classList.add('hidden');" class="block px-4 py-2 text-sm text-red-400 hover:bg-gray-700">Excluir</a>
+                    </div>
+                </div>
+            </div>
         `;
         transactionListEl.appendChild(item);
     };
+
+    // Close action menus when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.action-toggle-btn')) {
+            document.querySelectorAll('.action-menu').forEach(m => m.classList.add('hidden'));
+        }
+    });
+
+    // Delegate click for action menu toggles
+    transactionListEl.addEventListener('click', (e) => {
+        const toggleBtn = e.target.closest('.action-toggle-btn');
+        if (toggleBtn) {
+            e.stopPropagation();
+            const menu = toggleBtn.nextElementSibling;
+            const isHidden = menu.classList.contains('hidden');
+            // Close all other menus
+            document.querySelectorAll('.action-menu').forEach(m => m.classList.add('hidden'));
+            // Toggle the current one if it was hidden
+            if (isHidden) {
+                menu.classList.remove('hidden');
+            }
+        }
+    });
 
     const updateDeadlinesCard = () => {
         productionOrders = JSON.parse(localStorage.getItem('production_orders')) || [];
