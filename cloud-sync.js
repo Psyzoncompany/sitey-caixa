@@ -1,121 +1,152 @@
-// cloud-sync.js (HTML/JS puro - Vercel) ✅
-// Sincroniza localStorage <-> Firestore para PC e celular verem os mesmos dados.
+// cloud-sync.js (Firebase compat v9)
+// Sincroniza um "snapshot" do localStorage no Firestore por usuário logado.
 
-window.cloudSync = (() => {
-  let config = null;
+window.cloudSync = (function () {
+  let app, auth, db;
   let email = null;
-  let pass = null;
+  let password = null;
 
-  // Onde salvar no Firestore
-  const COL = "psyzon";
-  const DOC = "dashboard";
+  // Onde vamos guardar o snapshot do localStorage no Firestore:
+  // users/{uid}/state/localStorage
+  const docPath = (uid) => `users/${uid}/state/localStorage`;
 
-  // Chaves que você já usa no localStorage (pelo seu script.js)
-  const SYNC_KEYS = [
-    "transactions",
-    "clients",
-    "production_orders",
-    "monthlyProduction",
-    "incomeCategories",
-    "expenseCategories",
-    "businessSpendingLimit",
-    "personalSpendingLimit",
-  ];
+  // Debounce para evitar spam de escrita
+  let pushTimer = null;
 
-  let dirty = false;
-  let timer = null;
+  function init(firebaseConfig, _email, _password) {
+    if (!window.firebase) throw new Error("Firebase SDK não carregou.");
 
-  function markDirty() {
-    dirty = true;
-    if (timer) return;
-    timer = setTimeout(async () => {
-      timer = null;
-      if (!dirty) return;
-      dirty = false;
-      await push();
-    }, 1200);
-  }
+    // Evita inicializar duas vezes
+    if (!firebase.apps || firebase.apps.length === 0) {
+      app = firebase.initializeApp(firebaseConfig);
+    } else {
+      app = firebase.app();
+    }
 
-  async function ensureFirebaseLoaded() {
-    if (!window.firebase) throw new Error("Firebase CDN não carregou.");
-    if (!firebase.apps.length) firebase.initializeApp(config);
+    auth = firebase.auth();
+    db = firebase.firestore();
+
+    email = _email;
+    password = _password;
+
+    // Mantém sessão no dispositivo
+    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(() => {});
   }
 
   async function ensureAuth() {
-    await ensureFirebaseLoaded();
-    const auth = firebase.auth();
-    if (auth.currentUser) return;
+    if (!auth) throw new Error("cloudSync.init() não foi chamado.");
 
-    // Login silencioso (pra sincronizar)
-    await auth.signInWithEmailAndPassword(email, pass);
+    const user = auth.currentUser;
+    if (user) return user;
+
+    if (!email || !password) {
+      throw new Error("Credenciais não definidas (email/senha).");
+    }
+
+    const cred = await auth.signInWithEmailAndPassword(email, password);
+    return cred.user;
   }
 
-  function getLocalPayload() {
-    const data = {};
-    SYNC_KEYS.forEach((k) => {
-      const v = localStorage.getItem(k);
-      if (v !== null) data[k] = v; // guarda como string (já vem JSON string)
+  function _readLocalStorageSnapshot() {
+    const snapshot = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      snapshot[k] = localStorage.getItem(k);
+    }
+    return snapshot;
+  }
+
+  function _applyLocalStorageSnapshot(snapshot) {
+    if (!snapshot || typeof snapshot !== "object") return;
+
+    // Limpa e aplica (mantém simples: reproduz o mesmo estado em todos dispositivos)
+    localStorage.clear();
+    Object.keys(snapshot).forEach((k) => {
+      if (snapshot[k] !== null && snapshot[k] !== undefined) {
+        localStorage.setItem(k, String(snapshot[k]));
+      }
     });
-    data.updatedAt = Date.now();
-    return data;
   }
 
   async function pull() {
-    try {
-      await ensureAuth();
-      const db = firebase.firestore();
-      const ref = db.collection(COL).doc(DOC);
-      const snap = await ref.get();
-      if (!snap.exists) return;
+    const user = await ensureAuth();
+    const ref = db.doc(docPath(user.uid));
+    const snap = await ref.get();
 
-      const cloud = snap.data() || {};
-      const cloudUpdated = cloud.updatedAt || 0;
-      const localUpdated = Number(localStorage.getItem("cloud_last_updated") || "0");
-
-      // Se a nuvem está mais nova, baixa pro dispositivo
-      if (cloudUpdated > localUpdated) {
-        SYNC_KEYS.forEach((k) => {
-          if (typeof cloud[k] === "string") localStorage.setItem(k, cloud[k]);
-        });
-        localStorage.setItem("cloud_last_updated", String(cloudUpdated));
-      }
-    } catch (error) {
-      console.warn("Aviso: Falha ao sincronizar com Firebase (prosseguindo sem sincronização):", error.message);
-      // Mesmo se falhar, deixa o site carregar normalmente
+    if (!snap.exists) {
+      // Se ainda não existe nada na nuvem, cria o primeiro snapshot com o estado atual
+      await ref.set(
+        {
+          localStorage: _readLocalStorageSnapshot(),
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+      return;
     }
+
+    const data = snap.data() || {};
+    _applyLocalStorageSnapshot(data.localStorage);
   }
 
   async function push() {
-    try {
-      await ensureAuth();
-      const db = firebase.firestore();
-      const ref = db.collection(COL).doc(DOC);
+    const user = await ensureAuth();
+    const ref = db.doc(docPath(user.uid));
 
-      const payload = getLocalPayload();
-      await ref.set(payload, { merge: true });
-
-      localStorage.setItem("cloud_last_updated", String(payload.updatedAt));
-    } catch (error) {
-      console.warn("Aviso: Falha ao fazer push para Firebase:", error.message);
-      // Continua funcionando mesmo se falhar o push
-    }
+    await ref.set(
+      {
+        localStorage: _readLocalStorageSnapshot(),
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
   }
 
-  function patchLocalStorage() {
-    const original = localStorage.setItem.bind(localStorage);
-    localStorage.setItem = function (key, value) {
-      original(key, value);
-      if (SYNC_KEYS.includes(key)) markDirty();
+  function schedulePush(delayMs = 800) {
+    clearTimeout(pushTimer);
+    pushTimer = setTimeout(() => {
+      push().catch((e) => console.warn("cloudSync.push falhou:", e));
+    }, delayMs);
+  }
+
+  // Hook: toda vez que seu script mexer no localStorage, a nuvem atualiza (com debounce)
+  function hookLocalStorage() {
+    const _setItem = localStorage.setItem.bind(localStorage);
+    const _removeItem = localStorage.removeItem.bind(localStorage);
+    const _clear = localStorage.clear.bind(localStorage);
+
+    localStorage.setItem = function (k, v) {
+      _setItem(k, v);
+      schedulePush();
     };
+
+    localStorage.removeItem = function (k) {
+      _removeItem(k);
+      schedulePush();
+    };
+
+    localStorage.clear = function () {
+      _clear();
+      schedulePush();
+    };
+
+    // Se fechar a aba, tenta salvar rápido
+    window.addEventListener("beforeunload", () => {
+      // dispara sem debounce
+      push().catch(() => {});
+    });
   }
 
-  function init(firebaseConfig, authEmail, authPass) {
-    config = firebaseConfig;
-    email = authEmail;
-    pass = authPass;
-    patchLocalStorage();
+  async function signOut() {
+    if (!auth) return;
+    await auth.signOut();
   }
 
-  return { init, pull, push };
+  return {
+    init,
+    pull,
+    push,
+    hookLocalStorage,
+    signOut,
+  };
 })();
-
