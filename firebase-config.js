@@ -114,7 +114,7 @@ window.cloudSync = {
     // Debounce para evitar muitos envios seguidos
     schedulePush: function() {
         if (this.timeout) clearTimeout(this.timeout);
-        this.timeout = setTimeout(() => this.push(), 1000); // Espera 1s após a última alteração
+        this.timeout = setTimeout(() => this.push(), 500); // Espera 0.5s (mais rápido no mobile)
     }
 };
 
@@ -179,8 +179,24 @@ localStorage.setItem = function(key, value) {
     }
 };
 
+// Intercepta remoções no localStorage (ex: limpar dados)
+const originalRemoveItem = localStorage.removeItem;
+localStorage.removeItem = function(key) {
+    originalRemoveItem.apply(this, arguments);
+    if (SYNC_KEYS.includes(key)) {
+        window.cloudSync.schedulePush();
+    }
+};
+
 // Expõe funções de auth globalmente para uso nos botões
 window.firebaseAuth = {
     login: (email, password) => signInWithEmailAndPassword(auth, email, password),
     logout: () => signOut(auth)
 };
+
+// Força o salvamento imediato se o usuário minimizar o app ou trocar de aba no mobile
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+        window.cloudSync.push();
+    }
+});
