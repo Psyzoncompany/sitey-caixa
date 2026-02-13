@@ -41,6 +41,8 @@ const init = () => {
     const modalTitle = modal.querySelector('h2');
     const addTransactionBtn = document.getElementById('add-transaction-btn');
     const cancelBtn = document.getElementById('cancel-btn');
+    const toggleMetricsBtn = document.getElementById('toggle-metrics-btn');
+    const secondaryMetrics = document.getElementById('secondary-metrics');
     const submitBtn = form.querySelector('button[type="submit"]');
     const linkClientCheckbox = document.getElementById('link-client-checkbox');
     const clientSelectionContainer = document.getElementById('client-selection-container');
@@ -412,8 +414,8 @@ const init = () => {
                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path></svg>
                     </button>
                     <div class="action-menu hidden absolute right-0 mt-2 w-32 bg-gray-800 border border-white/10 rounded-md shadow-lg z-10">
-                        <a href="#" onclick="event.preventDefault(); openEditModal(${id}); this.closest('.action-menu').classList.add('hidden');" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">Editar</a>
-                        <a href="#" onclick="event.preventDefault(); removeTransaction(${id}); this.closest('.action-menu').classList.add('hidden');" class="block px-4 py-2 text-sm text-red-400 hover:bg-gray-700">Excluir</a>
+                        <a href="#" data-action="edit" data-id="${id}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">Editar</a>
+                        <a href="#" data-action="delete" data-id="${id}" class="block px-4 py-2 text-sm text-red-400 hover:bg-gray-700">Excluir</a>
                     </div>
                 </div>
             </div>
@@ -428,19 +430,40 @@ const init = () => {
         }
     });
 
-    // Delegate click for action menu toggles
+    // Event Delegation for Transaction List (Menu Toggle, Edit, Delete)
     transactionListEl.addEventListener('click', (e) => {
         const toggleBtn = e.target.closest('.action-toggle-btn');
+        const actionLink = e.target.closest('.action-menu a[data-action]');
+
+        // Handle menu toggle
         if (toggleBtn) {
             e.stopPropagation();
             const menu = toggleBtn.nextElementSibling;
             const isHidden = menu.classList.contains('hidden');
-            // Close all other menus
+            // Close all other menus first
             document.querySelectorAll('.action-menu').forEach(m => m.classList.add('hidden'));
-            // Toggle the current one if it was hidden
+            // Then toggle the current one if it was closed
             if (isHidden) {
                 menu.classList.remove('hidden');
             }
+            return; // Stop further processing
+        }
+
+        // Handle menu actions (edit/delete)
+        if (actionLink) {
+            e.preventDefault();
+            const action = actionLink.dataset.action;
+            const id = parseInt(actionLink.dataset.id, 10);
+
+            if (action === 'edit') {
+                openEditModal(id);
+            } else if (action === 'delete') {
+                removeTransaction(id);
+            }
+
+            // Close the parent menu
+            const menu = actionLink.closest('.action-menu');
+            if (menu) menu.classList.add('hidden');
         }
     });
 
@@ -620,6 +643,16 @@ const init = () => {
     if(isFabricCheckbox) isFabricCheckbox.addEventListener('change', () => {
         fabricDetailsContainer.classList.toggle('hidden', !isFabricCheckbox.checked);
     });
+
+    // Accordion Logic for "Ver mais métricas"
+    if (toggleMetricsBtn && secondaryMetrics) {
+        toggleMetricsBtn.addEventListener('click', () => {
+            secondaryMetrics.classList.toggle('open');
+            const isOpen = secondaryMetrics.classList.contains('open');
+            toggleMetricsBtn.querySelector('span').textContent = isOpen ? 'Ocultar métricas' : 'Ver mais métricas';
+            toggleMetricsBtn.querySelector('svg').style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+        });
+    }
     
     // --- INICIALIZAÇÃO ---
     updateUI();

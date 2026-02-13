@@ -1584,3 +1584,30 @@ html[data-theme="light"] .white-text, html[data-theme="light"] .text-white {
     .data-amount { text-align: left; }
     .data-action { justify-self: end; }
 }
+
+/* --- ACCORDION FOR "VER MAIS MÉTRICAS" --- */
+@media (max-width: 768px) {
+    #secondary-metrics {
+        /* This container is a direct child of a grid, so it needs to behave like a grid item */
+        display: grid;
+        grid-template-columns: repeat(1, minmax(0, 1fr));
+        gap: 10px; /* Match the parent grid gap */
+        grid-column: 1 / -1; /* Span full width of the parent grid */
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.5s ease-in-out, margin-top 0.5s ease-in-out, opacity 0.5s ease-in-out;
+        opacity: 0;
+        margin-top: 0;
+    }
+    #secondary-metrics.open {
+        max-height: 500px; /* A value large enough for the content */
+        margin-top: 10px; /* Add some space when open */
+        opacity: 1;
+    }
+    #toggle-metrics-btn svg {
+        transition: transform 0.3s ease;
+    }
+    #toggle-metrics-btn {
+        transition: background-color 0.2s;
+    }
+}

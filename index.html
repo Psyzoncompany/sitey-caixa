@@ -84,7 +84,7 @@
         <div class="glass-card p-4 md:p-6"><div class="icon-label-container"><span class="text-2xl">📉</span><span class="info-tooltip" data-tooltip="Despesas (Mês)">?</span></div><p id="total-expense" class="text-2xl md:text-4xl font-bold mt-2 text-red-400">R$ 0,00</p></div>
         
         <!-- Secondary Metrics (Hidden on Mobile by default) -->
-        <div id="secondary-metrics" class="hidden md:contents">
+        <div id="secondary-metrics" class="md:contents">
             <div class="glass-card p-4 md:p-6"><div class="icon-label-container"><span class="text-2xl">💎</span><span class="info-tooltip" data-tooltip="Lucro (Mês)">?</span></div><p id="profit" class="text-2xl md:text-4xl font-bold mt-2">R$ 0,00</p></div>
             <div class="glass-card p-4 md:p-6 lg:col-span-2"><h3 class="text-gray-400 text-base md:text-lg">Custo por Peça (Mês Atual) 🏭</h3><p id="cost-per-piece-dashboard" class="text-2xl md:text-4xl font-bold mt-2 text-yellow-400">R$ 0,00</p></div>
         </div>
@@ -265,18 +265,6 @@
             clearInterval(checkSync);
             clearTimeout(timeoutId);
             loadScript("script.js");
-            
-            // Mobile Dashboard Toggle Logic
-            const toggleBtn = document.getElementById('toggle-metrics-btn');
-            const secondaryMetrics = document.getElementById('secondary-metrics');
-            if(toggleBtn && secondaryMetrics) {
-                toggleBtn.addEventListener('click', () => {
-                    secondaryMetrics.classList.toggle('hidden');
-                    secondaryMetrics.classList.toggle('contents'); // Use contents to respect grid layout
-                    toggleBtn.querySelector('span').textContent = secondaryMetrics.classList.contains('hidden') ? 'Ver mais métricas' : 'Ocultar métricas';
-                    toggleBtn.querySelector('svg').style.transform = secondaryMetrics.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
-                });
-            }
         }
       }, 100);
     })();
