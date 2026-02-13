@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
+const init = () => {
     const addOrderBtn = document.getElementById('add-order-btn');
     const tabQuadro = document.getElementById('tab-quadro');
     const tabAfazeres = document.getElementById('tab-afazeres');
@@ -1182,5 +1182,11 @@ document.addEventListener('DOMContentLoaded', () => {
             target.dispatchEvent(ev);
         }, true);
     } // end if (orderColorsContainer)
-}); // end DOMContentLoaded
+}; // end init
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
 //

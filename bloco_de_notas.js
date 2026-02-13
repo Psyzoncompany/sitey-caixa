@@ -531,4 +531,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // expose small API for console debugging
   window.__psyzon_notes = { notes, createNote, saveActiveNote, exportTxt, exportHtml };
-});
+
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
+};

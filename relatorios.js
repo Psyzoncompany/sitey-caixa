@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
+const init = () => {
     const startDateInput = document.getElementById('start-date');
     const endDateInput = document.getElementById('end-date');
     const typeFilter = document.getElementById('type-filter');
@@ -187,4 +187,10 @@ document.addEventListener('DOMContentLoaded', () => {
     updateCategoryFilter();
     generateReport();
     renderProductionList();
-});
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}

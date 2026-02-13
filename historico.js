@@ -1,5 +1,5 @@
 // Este script é uma cópia adaptada do script.js, mas com a lógica de filtragem por mês.
-document.addEventListener('DOMContentLoaded', () => {
+const init = () => {
   'use strict';
 
   // DOM refs
@@ -397,7 +397,13 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   initialize();
-});
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
 // Nota: O código acima é uma representação da lógica. O código completo é muito extenso.
 // Por favor, use o código completo do script.js, pois ele já contém toda a lógica necessária
 // para esta página funcionar, precisando apenas da adaptação inicial do seletor de mês.

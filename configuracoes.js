@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
+const init = () => {
     const incomeList = document.getElementById('income-categories-list');
     const expenseList = document.getElementById('expense-categories-list');
     const newIncomeCategoryInput = document.getElementById('new-income-category');
@@ -112,4 +112,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     loadLimits();
     renderCategories();
-});
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}

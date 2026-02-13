@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
+const init = () => {
     const addClientBtn = document.getElementById('add-client-btn');
     const clientModal = document.getElementById('client-modal');
     const clientForm = document.getElementById('client-form');
@@ -239,4 +239,10 @@ document.addEventListener('DOMContentLoaded', () => {
     filterGenderSelect.addEventListener('change', renderClientList);
 
     renderClientList();
-});
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
