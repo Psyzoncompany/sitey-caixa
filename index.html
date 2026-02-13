@@ -8,6 +8,27 @@
     }
   </script>
 
+  <!-- Firebase (CDN compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+  <script src="cloud-sync.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyANqzrj3lzHUqMbClwcVHAVQjswjp1nUiY",
+      authDomain: "sitey-caixa-16e06.firebaseapp.com",
+      projectId: "sitey-caixa-16e06",
+      storageBucket: "sitey-caixa-16e06.firebasestorage.app",
+      messagingSenderId: "1077514189419",
+      appId: "1:1077514189419:web:034755d7bf1ab27729cf2e",
+      measurementId: "G-MT69LT56JH"
+    };
+
+    // ⚠️ Coloque aqui o EMAIL e SENHA que você criou no Authentication:
+    cloudSync.init(firebaseConfig, "admin@sitey.com", "451021");
+  </script>
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PSYZON - Dashboard Financeiro</title>
@@ -202,7 +223,21 @@
     </div>
     <div id="notification-container" class="fixed bottom-5 right-5 z-[100] w-full max-w-xs space-y-3"></div>
   </div>
-  <script src="script.js"></script>
+  <script>
+    cloudSync.pull()
+      .then(() => {
+        const s = document.createElement("script");
+        s.src = "script.js";
+        document.body.appendChild(s);
+      })
+      .catch((e) => {
+        console.error("Falha ao sincronizar Firebase:", e);
+        // Mesmo se falhar, carrega o site normal:
+        const s = document.createElement("script");
+        s.src = "script.js";
+        document.body.appendChild(s);
+      });
+  </script>
   <script src="theme-toggle.js"></script>
 </body>
 </html>

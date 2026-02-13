@@ -1,6 +1,33 @@
 <!DOCTYPE html>
 <html lang="pt-br" class="scroll-smooth">
 <head>
+    <!-- Script de Proteção de Login -->
+    <script>
+      if (localStorage.getItem("logado") !== "sim") {
+        window.location.href = "login.html";
+      }
+    </script>
+
+    <!-- Firebase (CDN compat) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+
+    <script src="cloud-sync.js"></script>
+    <script>
+      const firebaseConfig = {
+        apiKey: "AIzaSyANqzrj3lzHUqMbClwcVHAVQjswjp1nUiY",
+        authDomain: "sitey-caixa-16e06.firebaseapp.com",
+        projectId: "sitey-caixa-16e06",
+        storageBucket: "sitey-caixa-16e06.firebasestorage.app",
+        messagingSenderId: "1077514189419",
+        appId: "1:1077514189419:web:034755d7bf1ab27729cf2e",
+        measurementId: "G-MT69LT56JH"
+      };
+
+      cloudSync.init(firebaseConfig, "admin@sitey.com", "451021");
+    </script>
+
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PSYZON - Meus Clientes</title>
@@ -171,6 +198,19 @@
     </div>
 
   </div>
-  <script src="clientes.js"></script>
+  <script>
+    cloudSync.pull()
+      .then(() => {
+        const s = document.createElement("script");
+        s.src = "clientes.js";
+        document.body.appendChild(s);
+      })
+      .catch((e) => {
+        console.error("Falha ao sincronizar Firebase:", e);
+        const s = document.createElement("script");
+        s.src = "clientes.js";
+        document.body.appendChild(s);
+      });
+  </script>
 </body>
 </html>
