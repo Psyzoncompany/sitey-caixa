@@ -43,6 +43,9 @@ const SYNC_KEYS = [
 let resolveAuth;
 const authReady = new Promise(resolve => resolveAuth = resolve);
 
+// Flag para enfileirar um push se uma alteração do usuário ocorrer durante a sincronização
+let pushNeededAfterSync = false;
+
 // Objeto global de sincronização
 window.cloudSync = {
     user: null,
@@ -73,6 +76,10 @@ window.cloudSync = {
                     console.log("✅ Dados sincronizados com sucesso!");
                 } finally {
                     this.isSyncing = false; // Libera o push (garantido mesmo se der erro)
+                    if (pushNeededAfterSync) {
+                        pushNeededAfterSync = false;
+                        this.schedulePush();
+                    }
                 }
             } else {
                 console.log("ℹ️ Nenhum dado encontrado na nuvem (primeiro uso?).");
@@ -80,6 +87,10 @@ window.cloudSync = {
         } catch (error) {
             console.error("❌ Erro ao baixar dados:", error);
             this.isSyncing = false; // Garante desbloqueio em caso de erro de rede
+            if (pushNeededAfterSync) {
+                pushNeededAfterSync = false;
+                this.schedulePush();
+            }
         }
     },
 
@@ -153,6 +164,10 @@ onAuthStateChanged(auth, (user) => {
                     });
                 } finally {
                     window.cloudSync.isSyncing = false;
+                    if (pushNeededAfterSync) {
+                        pushNeededAfterSync = false;
+                        window.cloudSync.schedulePush();
+                    }
                 }
                 // console.log("🔄 Atualização em tempo real recebida!");
             }
@@ -181,8 +196,12 @@ onAuthStateChanged(auth, (user) => {
 const originalSetItem = localStorage.setItem;
 localStorage.setItem = function(key, value) {
     originalSetItem.apply(this, arguments);
-    if (SYNC_KEYS.includes(key) && !window.cloudSync.isSyncing) { // FIX: Só salva se NÃO estiver sincronizando
-        window.cloudSync.schedulePush();
+    if (SYNC_KEYS.includes(key)) {
+        if (window.cloudSync.isSyncing) {
+            pushNeededAfterSync = true; // Marca que uma alteração precisa ser salva
+        } else {
+            window.cloudSync.schedulePush();
+        }
     }
 };
 
@@ -190,8 +209,12 @@ localStorage.setItem = function(key, value) {
 const originalRemoveItem = localStorage.removeItem;
 localStorage.removeItem = function(key) {
     originalRemoveItem.apply(this, arguments);
-    if (SYNC_KEYS.includes(key) && !window.cloudSync.isSyncing) { // FIX: Só salva se NÃO estiver sincronizando
-        window.cloudSync.schedulePush();
+    if (SYNC_KEYS.includes(key)) {
+        if (window.cloudSync.isSyncing) {
+            pushNeededAfterSync = true; // Marca que uma alteração precisa ser salva
+        } else {
+            window.cloudSync.schedulePush();
+        }
     }
 };
 
