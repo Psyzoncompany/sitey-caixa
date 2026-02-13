@@ -2222,6 +2222,135 @@ const init = () => {
         }
     };
 
+    // --- MOBILE DRAG & DROP (TOUCH - LONG PRESS) ---
+    let touchDragItem = null;
+    let touchGhost = null;
+    let longPressTimer = null;
+    let isDragging = false;
+    let touchStartCoords = null;
+
+    const handleTouchStart = (e) => {
+        const card = e.target.closest('.kanban-card');
+        if (!card) return;
+        // Ignore clicks on buttons inside card
+        if (e.target.closest('button') || e.target.closest('a') || e.target.closest('.btn-action')) return;
+
+        touchDragItem = card;
+        touchStartCoords = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        isDragging = false;
+
+        // Start Long Press Timer (400ms)
+        longPressTimer = setTimeout(() => {
+            isDragging = true;
+            // Haptic feedback
+            if (navigator.vibrate) navigator.vibrate(50);
+            
+            // Create ghost
+            const rect = card.getBoundingClientRect();
+            touchGhost = card.cloneNode(true);
+            touchGhost.style.position = 'fixed';
+            touchGhost.style.width = `${rect.width}px`;
+            touchGhost.style.height = `${rect.height}px`;
+            touchGhost.style.left = `${rect.left}px`;
+            touchGhost.style.top = `${rect.top}px`;
+            touchGhost.style.opacity = '0.9';
+            touchGhost.style.zIndex = '10000';
+            touchGhost.style.pointerEvents = 'none';
+            touchGhost.style.transform = 'scale(1.05) rotate(2deg)';
+            touchGhost.style.boxShadow = '0 15px 30px rgba(0,0,0,0.5)';
+            touchGhost.style.transition = 'none';
+            touchGhost.classList.add('glass-card'); 
+            document.body.appendChild(touchGhost);
+            
+            card.classList.add('opacity-30');
+        }, 400); 
+    };
+
+    const handleTouchMove = (e) => {
+        if (!touchDragItem) return;
+
+        const touch = e.touches[0];
+        
+        if (!isDragging) {
+            // Check if moved too much before long press triggers -> Cancel long press (it's a scroll)
+            const dx = Math.abs(touch.clientX - touchStartCoords.x);
+            const dy = Math.abs(touch.clientY - touchStartCoords.y);
+            if (dx > 10 || dy > 10) {
+                clearTimeout(longPressTimer);
+                touchDragItem = null;
+            }
+            return;
+        }
+
+        // If dragging, prevent scrolling
+        if (e.cancelable) e.preventDefault();
+
+        // Move ghost
+        if (touchGhost) {
+            const w = touchGhost.offsetWidth;
+            const h = touchGhost.offsetHeight;
+            touchGhost.style.left = `${touch.clientX - w / 2}px`;
+            touchGhost.style.top = `${touch.clientY - h / 2}px`;
+        }
+
+        // Highlight drop targets (Tabs)
+        const target = document.elementFromPoint(touch.clientX, touch.clientY);
+        if (target) {
+            // Reset previous highlights
+            document.querySelectorAll('.mobile-kanban-tab').forEach(t => t.style.background = '');
+            
+            const tab = target.closest('.mobile-kanban-tab');
+            if (tab) {
+                tab.style.background = 'rgba(59, 130, 246, 0.4)';
+            }
+        }
+    };
+
+    const handleTouchEnd = (e) => {
+        clearTimeout(longPressTimer);
+        
+        if (isDragging && touchDragItem) {
+            touchDragItem.classList.remove('opacity-30');
+            if (touchGhost) touchGhost.remove();
+
+            // Check drop
+            const touch = e.changedTouches[0];
+            const target = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (target) {
+                const tab = target.closest('.mobile-kanban-tab');
+                if (tab) {
+                    const targetId = tab.dataset.target;
+                    const newStatus = targetId.replace('column-', '');
+                    const orderId = parseInt(touchDragItem.dataset.id);
+                    const order = productionOrders.find(o => o.id === orderId);
+                    
+                    if (order && order.status !== newStatus) {
+                        order.status = newStatus;
+                        saveOrders();
+                        renderKanban();
+                        tab.click(); // Switch to new tab
+                        
+                        // Feedback
+                        if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+                    }
+                }
+            }
+            
+            // Reset tab styles
+            document.querySelectorAll('.mobile-kanban-tab').forEach(t => {
+                t.style.background = ''; // Reset to CSS default
+            });
+        }
+
+        touchDragItem = null;
+        touchGhost = null;
+        isDragging = false;
+    };
+
+    document.addEventListener('touchstart', handleTouchStart, { passive: false });
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd);
+
     // Inicializa o Chat (Sempre visível para facilitar configuração)
     createChatInterface();
 
