@@ -87,6 +87,9 @@ const createFloatingSaveButton = () => {
     };
 
     document.body.appendChild(btn);
+    
+    // Garante que o botão nasça com o estado correto (Vermelho se já houver alterações)
+    updateSaveButtonState();
 };
 
 const updateSaveButtonState = () => {
@@ -116,23 +119,60 @@ window.addEventListener('beforeunload', (e) => {
     }
 });
 
+// Modal Personalizado para Alterações Não Salvas
+const showUnsavedModal = (onSave, onDiscard) => {
+    if (document.getElementById('unsaved-changes-modal')) return;
+
+    const modal = document.createElement('div');
+    modal.id = 'unsaved-changes-modal';
+    modal.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(4px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1rem;";
+    
+    modal.innerHTML = `
+        <div style="background:#1f2937;border:1px solid rgba(255,255,255,0.1);padding:1.5rem;border-radius:0.75rem;width:100%;max-width:24rem;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);color:white;font-family:sans-serif;">
+            <h3 style="font-size:1.25rem;font-weight:700;margin-bottom:0.5rem;">Alterações não salvas</h3>
+            <p style="color:#d1d5db;margin-bottom:1.5rem;">Você tem alterações pendentes. O que deseja fazer?</p>
+            <div style="display:flex;justify-content:flex-end;gap:0.75rem;">
+                <button id="unsaved-discard-btn" style="padding:0.5rem 1rem;border-radius:0.5rem;background:rgba(239,68,68,0.2);color:#fca5a5;border:none;cursor:pointer;font-weight:600;transition:background 0.2s;">NÃO SALVAR</button>
+                <button id="unsaved-save-btn" style="padding:0.5rem 1rem;border-radius:0.5rem;background:#0891b2;color:white;border:none;cursor:pointer;font-weight:600;transition:background 0.2s;">SALVAR</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    document.getElementById('unsaved-save-btn').onclick = () => {
+        modal.remove();
+        onSave();
+    };
+    document.getElementById('unsaved-discard-btn').onclick = () => {
+        modal.remove();
+        onDiscard();
+    };
+};
+
 // Intercepta cliques em links para avisar sobre alterações não salvas
 document.addEventListener('click', async (e) => {
     const link = e.target.closest('a');
+    
+    // Trava de segurança: Só avisa se o botão estiver visualmente marcado como "não salvo" (vermelho)
+    const saveBtn = document.getElementById('floating-save-btn');
+    const isVisuallyUnsaved = saveBtn && saveBtn.classList.contains('unsaved');
+
     // Verifica se é um link de navegação interna válido
-    if (link && hasUnsavedChanges && link.href && !link.target && !link.href.includes('#') && !link.getAttribute('download')) {
+    if (link && hasUnsavedChanges && isVisuallyUnsaved && link.href && !link.target && !link.href.includes('#') && !link.getAttribute('download')) {
         if (link.hostname === window.location.hostname) {
             e.preventDefault();
-            // Pergunta personalizada
-            if (confirm('⚠️ Existem alterações não salvas.\n\n[OK] para SALVAR e ir para a página.\n[Cancelar] para DESCARTAR as alterações e ir.')) {
-                await saveToCloud();
-                window.location.href = link.href;
-            } else {
-                // Usuário escolheu descartar (ou não salvar)
-                hasUnsavedChanges = false; // Evita que o beforeunload dispare
-                updateSaveButtonState();
-                window.location.href = link.href;
-            }
+            
+            showUnsavedModal(
+                async () => { // Ação SALVAR
+                    await saveToCloud();
+                    window.location.href = link.href;
+                },
+                () => { // Ação NÃO SALVAR
+                    hasUnsavedChanges = false; // Evita que o beforeunload dispare
+                    updateSaveButtonState();
+                    window.location.href = link.href;
+                }
+            );
         }
     }
 });
@@ -175,9 +215,10 @@ Object.defineProperty(window, 'localStorage', {
         setItem: (key, value) => {
             // Verifica se o valor realmente mudou para evitar "falsos positivos" de alterações não salvas
             const currentValue = memoryStore[key];
-            const currentString = typeof currentValue === 'object' ? JSON.stringify(currentValue) : String(currentValue || '');
+            const currentString = typeof currentValue === 'object' ? JSON.stringify(currentValue) : (currentValue === undefined ? null : String(currentValue));
             
             // Se o valor for idêntico, não faz nada (não marca como não salvo)
+            // Nota: localStorage sempre armazena strings. Se currentString for null (undefined), é mudança.
             if (currentString === value) return;
 
             try {
@@ -190,6 +231,7 @@ Object.defineProperty(window, 'localStorage', {
             markUnsaved();
         },
         removeItem: (key) => {
+            if (!(key in memoryStore)) return; // Se a chave não existe, não faz nada (evita ficar vermelho à toa)
             delete memoryStore[key];
             if (auth.currentUser) {
                 // Remove o campo específico no Firestore
