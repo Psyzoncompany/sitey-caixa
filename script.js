@@ -46,6 +46,7 @@ const init = () => {
     const submitBtn = form.querySelector('button[type="submit"]');
     const linkClientCheckbox = document.getElementById('link-client-checkbox');
     const clientSelectionContainer = document.getElementById('client-selection-container');
+    const clientSearchInput = document.getElementById('client-search');
     const clientSelect = document.getElementById('client-select');
     const notificationContainer = document.getElementById('notification-container');
     const isFabricContainer = document.getElementById('is-fabric-container');
@@ -141,12 +142,13 @@ const init = () => {
     
     const populateClientSelect = () => {
         clients = JSON.parse(localStorage.getItem('clients')) || [];
-        clientSelect.innerHTML = '<option value="" class="bg-gray-800">Selecione...</option>';
+        // O placeholder é ocultado pois o campo de busca cumpre essa função.
+        clientSelect.innerHTML = '<option value="" class="bg-gray-800 p-2 hidden">Selecione...</option>';
         clients.forEach(client => {
             const option = document.createElement('option');
             option.value = client.id;
             option.textContent = client.name;
-            option.className = 'bg-gray-800';
+            option.className = 'bg-gray-800 p-2';
             clientSelect.appendChild(option);
         });
     };
@@ -297,6 +299,8 @@ const init = () => {
         toggleFabricDetailsField();
         toggleScopeField();
         populateClientSelect();
+        if (clientSearchInput) clientSearchInput.value = ''; // Reset search
+        Array.from(clientSelect.options).forEach(opt => opt.style.display = ''); // Reset visibility
         clientSelectionContainer.classList.add('hidden');
         selectedScope = 'business';
         scopeButtons.forEach(btn => btn.classList.replace('border-cyan-400', 'border-transparent'));
@@ -346,6 +350,8 @@ const init = () => {
         }
 
         populateClientSelect();
+        if (clientSearchInput) clientSearchInput.value = ''; // Reset search
+        Array.from(clientSelect.options).forEach(opt => opt.style.display = ''); // Reset visibility
         if (transaction.clientId) {
             linkClientCheckbox.checked = true;
             clientSelectionContainer.classList.remove('hidden');
@@ -643,6 +649,25 @@ const init = () => {
     if(isFabricCheckbox) isFabricCheckbox.addEventListener('change', () => {
         fabricDetailsContainer.classList.toggle('hidden', !isFabricCheckbox.checked);
     });
+
+    // Client Search in Modal
+    if (clientSearchInput) {
+        clientSearchInput.addEventListener('input', () => {
+            const searchTerm = clientSearchInput.value.toLowerCase();
+            const options = clientSelect.options;
+            for (let i = 0; i < options.length; i++) {
+                const option = options[i];
+                if (option.value === "") continue; // Skip placeholder
+                
+                const optionText = option.textContent.toLowerCase();
+                if (optionText.includes(searchTerm)) {
+                    option.style.display = '';
+                } else {
+                    option.style.display = 'none';
+                }
+            }
+        });
+    }
 
     // Accordion Logic for "Ver mais métricas"
     if (toggleMetricsBtn && secondaryMetrics) {

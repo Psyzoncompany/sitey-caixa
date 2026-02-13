@@ -1411,20 +1411,43 @@ html[data-theme="light"] .white-text, html[data-theme="light"] .text-white {
         opacity: 0.7;
     }
 
-    /* 5. Deadlines Section (Prazos Compactos) */
-    #deadlines-list .border-b {
-        padding-bottom: 8px !important;
-        margin-bottom: 8px !important;
-        border-color: rgba(255,255,255,0.05) !important;
+    /* 5. Deadlines Section (Carousel on Mobile) */
+    #deadlines-list {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        /* Efeito de sangria para ir de borda a borda do card pai */
+        margin: 0 -12px; 
+        padding: 4px 12px 12px 12px;
+        /* Oculta a barra de rolagem */
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
+    }
+    #deadlines-list::-webkit-scrollbar {
+        display: none;
     }
     
-    #deadlines-list p.font-semibold {
+    /* Estilo do card individual no carrossel */
+    #deadlines-list > div {
+        flex: 0 0 250px; /* Não encolhe, não cresce, base de 250px */
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 14px !important; /* Sobrescreve classes do JS */
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.07) !important; /* Sobrescreve a borda inferior */
+        white-space: normal; /* Permite quebra de linha */
+        min-height: 90px;
+        margin-bottom: 0 !important; /* Anula o space-y do desktop */
+    }
+    #deadlines-list > div p.font-semibold {
         font-size: 0.85rem !important;
-        margin-bottom: 2px !important;
-        line-height: 1.2;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        line-height: 1.3;
+        white-space: normal; /* Permite quebra de linha */
+        overflow: visible;
+        text-overflow: initial;
+        margin-bottom: 8px !important; /* Espaço entre título e rodapé do card */
     }
 
     /* 6. Budget & Progress Bars (Barras Finas) */
