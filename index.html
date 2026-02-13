@@ -1,6 +1,13 @@
 <!DOCTYPE html>
 <html lang="pt-br" class="scroll-smooth">
 <head>
+  <!-- Script de Proteção de Login -->
+  <script>
+    if (localStorage.getItem("logado") !== "sim") {
+      window.location.href = "login.html";
+    }
+  </script>
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PSYZON - Dashboard Financeiro</title>
@@ -31,6 +38,7 @@
               <a href="historico.html" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium">Histórico</a>
               <a href="relatorios.html" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium">Relatórios</a>
               <a href="configuracoes.html" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium">Configurações</a>
+              <button onclick="localStorage.removeItem('logado'); location.href='login.html';" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium hover:text-red-400">Sair</button>
             </nav>
           </div>
           <div class="-mr-2 flex md:hidden">
@@ -52,6 +60,7 @@
           <a href="historico.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Histórico</a>
           <a href="relatorios.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Relatórios</a>
           <a href="configuracoes.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Configurações</a>
+          <button onclick="localStorage.removeItem('logado'); location.href='login.html';" class="w-full text-left text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium hover:text-red-400">Sair</button>
         </div>
       </div>
     </header>
