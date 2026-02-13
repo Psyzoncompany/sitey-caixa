@@ -1,8 +1,21 @@
 /* --- Estilo Base (Material Design Dark Theme) --- */
+/* Configuração para sensação de App Nativo (Tela Fixa) */
+html {
+    height: 100%;
+    overflow: hidden; /* Impede rolagem no elemento raiz */
+}
+
+body {
+    height: 100%;
+    overflow-y: auto; /* A rolagem acontece aqui */
+    overflow-x: hidden;
+    overscroll-behavior-y: none; /* Remove o efeito de elástico (bounce) */
+    -webkit-overflow-scrolling: touch; /* Rolagem suave no iOS */
+}
+
 body {
     color: #e0e0e0; 
     font-family: 'Inter', 'Roboto', 'Segoe UI', sans-serif;
-    min-height: 100vh;
     margin: 0;
     line-height: 1.6;
     background-color: #121212; /* Cor de fundo padrão para Material Dark Theme */
