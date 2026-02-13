@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="pt-br" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="icon" type="image/png" href="img/logo.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png">
+    <meta name="apple-mobile-web-app-title" content="PSYZON Caixa">
+    <meta name="application-name" content="PSYZON Caixa">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="manifest" href="/manifest.webmanifest">
+    <title>PSYZON - Contas Mensais</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
+    <!-- Firebase Config -->
+    <script type="module" src="firebase-config.js"></script>
+    <style>
+        @keyframes pulse-logo { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.8; } 100% { transform: scale(1); opacity: 1; } }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200">
+  <!-- Loader Inicial Imediato -->
+  <div id="initial-loader" style="position:fixed;inset:0;z-index:99999;background:#111827;display:flex;justify-content:center;align-items:center;flex-direction:column;gap:1rem;transition:opacity 0.5s ease;">
+    <img src="img/logo.png" alt="Logo" style="width: 100px; height: auto; animation: pulse-logo 2s infinite ease-in-out;">
+    <div style="color:#d1d5db;font-family:sans-serif;font-weight:500;">Carregando...</div>
+  </div>
+
+  <div class="flex flex-col min-h-screen">
+    
+    <header class="hidden md:block bg-gray-900/80 backdrop-blur-lg sticky top-0 z-40 border-b border-white/10">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          <div class="flex items-center">
+            <a href="index.html" class="flex-shrink-0">
+              <img src="img/logo.png" alt="Logo Psyzon" class="h-10 md:h-12">
+            </a>
+          </div>
+          <div class="hidden md:block">
+            <nav class="ml-10 flex items-baseline space-x-4 lg:space-x-8">
+              <a href="index.html" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
+              <a href="clientes.html" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium">Clientes</a>
+              <a href="processos.html" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium">Processos</a>
+              <a href="contas.html" class="bg-cyan-500/20 text-cyan-300 px-3 py-2 rounded-md text-sm font-bold">Contas Mensais</a>
+              <a href="bloco_de_notas.html" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-bold">Bloco de Notas</a>
+              <a href="historico.html" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium">Histórico</a>
+              <a href="relatorios.html" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium">Relatórios</a>
+              <a href="configuracoes.html" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium">Configurações</a>
+              <button onclick="window.firebaseAuth.logout()" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium hover:text-red-400">Sair</button>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </header>
+    <div id="mobile-menu" class="md:hidden bg-gray-900 border-b border-white/10">
+        <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-gray-900 border-b border-white/10">
+          <a href="index.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Dashboard</a>
+          <a href="clientes.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Clientes</a>
+          <a href="processos.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Processos</a>
+          <a href="contas.html" class="bg-cyan-500/20 text-cyan-300 block px-3 py-2 rounded-md text-base font-bold">Contas Mensais</a>
+          <a href="bloco_de_notas.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Bloco de Notas</a>
+          <a href="historico.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Histórico</a>
+          <a href="relatorios.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Relatórios</a>
+          <a href="configuracoes.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Configurações</a>
+          <button onclick="window.firebaseAuth.logout()" class="w-full text-left text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium hover:text-red-400">Sair</button>
+        </div>
+    </div>
+
+    <main class="flex-1 p-4 md:p-6 lg:p-8">
+      <div class="flex justify-between items-center mb-6">
+          <h1 class="text-2xl md:text-3xl font-bold">Contas Mensais</h1>
+          <button id="add-bill-btn" class="btn-shine py-2 px-4 font-bold rounded-lg">+ Nova Conta</button>
+      </div>
+
+      <!-- Month Selector -->
+      <div class="flex justify-center items-center gap-4 mb-6 p-2 glass-card">
+        <button id="prev-month-btn" class="p-2 rounded-full hover:bg-white/10">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+        </button>
+        <input type="month" id="month-selector" class="bg-transparent text-white text-center font-bold text-lg border-none focus:ring-0">
+        <button id="next-month-btn" class="p-2 rounded-full hover:bg-white/10">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+        </button>
+      </div>
+
+      <!-- Summary Cards -->
+      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4 mb-8">
+        <div class="glass-card p-4"><h3 class="text-sm text-gray-400">Total do Mês</h3><p id="summary-total" class="text-2xl font-bold">R$ 0,00</p></div>
+        <div class="glass-card p-4"><h3 class="text-sm text-gray-400">Pendentes</h3><p id="summary-pending" class="text-2xl font-bold text-yellow-400">R$ 0,00</p></div>
+        <div class="glass-card p-4"><h3 class="text-sm text-gray-400">Pagas</h3><p id="summary-paid" class="text-2xl font-bold text-green-400">R$ 0,00</p></div>
+        <div class="glass-card p-4"><h3 class="text-sm text-gray-400">Atrasadas</h3><p id="summary-overdue" class="text-2xl font-bold text-red-400">R$ 0,00</p></div>
+      </div>
+
+      <!-- Main Content Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+        <!-- Bills List -->
+        <div class="lg:col-span-3 glass-card p-4 md:p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Contas de <span id="current-month-label"></span></h2>
+                <div class="flex gap-2">
+                    <button id="export-btn" class="btn-ghost text-xs">Exportar</button>
+                    <button id="import-btn" class="btn-ghost text-xs">Importar</button>
+                    <input type="file" id="import-file-input" class="hidden" accept=".json">
+                </div>
+            </div>
+            
+            <!-- Desktop Table -->
+            <div class="hidden md:block">
+                <table class="w-full text-left bills-table">
+                    <thead>
+                        <tr class="border-b border-white/10">
+                            <th class="p-2">Prioridade</th>
+                            <th class="p-2">Nome</th>
+                            <th class="p-2">Valor</th>
+                            <th class="p-2">Vencimento</th>
+                            <th class="p-2">Status</th>
+                            <th class="p-2">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bills-table-body"></tbody>
+                </table>
+            </div>
+
+            <!-- Mobile Cards -->
+            <div id="bills-card-container" class="md:hidden space-y-3"></div>
+        </div>
+
+        <!-- Chart & Upcoming -->
+        <div class="lg:col-span-2 space-y-8">
+            <div class="glass-card p-4 md:p-6">
+                <h2 class="text-xl font-bold mb-4">Gastos por Categoria</h2>
+                <div class="relative h-64">
+                    <canvas id="category-pie-chart"></canvas>
+                </div>
+            </div>
+            <div class="glass-card p-4 md:p-6">
+                <h2 class="text-xl font-bold mb-4">Próximos 7 Dias</h2>
+                <div id="upcoming-bills-list" class="space-y-2"></div>
+            </div>
+        </div>
+      </div>
+
+      <!-- Reminder Settings -->
+      <div class="glass-card p-4 md:p-6 mt-8">
+        <h2 class="text-xl font-bold mb-4">🔔 Lembretes Automáticos</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+            <label class="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="reminders-enabled" class="w-5 h-5 rounded text-cyan-500"> Ativar Lembretes</label>
+            <div>
+                <label for="reminder-time" class="block text-sm mb-1">Horário</label>
+                <input type="time" id="reminder-time" class="w-full p-2 rounded-md bg-white/10">
+            </div>
+            <div>
+                <label for="reminder-lead-time" class="block text-sm mb-1">Antecedência</label>
+                <select id="reminder-lead-time" class="w-full p-2 rounded-md bg-white/10">
+                    <option value="0">No dia do vencimento</option>
+                    <option value="1">1 dia antes</option>
+                    <option value="3">3 dias antes</option>
+                </select>
+            </div>
+            <div class="md:col-span-3 flex justify-end">
+                <button id="test-notification-btn" class="btn-ghost text-sm">Testar Notificação</button>
+            </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Add/Edit Bill Modal -->
+    <div id="bill-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-2xl max-h-[90vh] rounded-xl flex flex-col">
+            <form id="bill-form" class="p-6 flex-1 overflow-y-auto space-y-4">
+                <h2 id="bill-modal-title" class="text-2xl font-bold mb-4">Nova Conta</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="md:col-span-2"><label for="bill-name" class="block mb-1 text-sm">Nome da Conta</label><input type="text" id="bill-name" class="w-full" required></div>
+                    <div><label for="bill-category" class="block mb-1 text-sm">Categoria</label><select id="bill-category" class="w-full"><option>Empresa</option><option>Pessoal</option><option>Dívida</option></select></div>
+                    <div><label for="bill-priority" class="block mb-1 text-sm">Prioridade</label><select id="bill-priority" class="w-full"><option value="1">🔴 Alta</option><option value="2">🟠 Média</option><option value="3">🟡 Baixa</option><option value="4">🟢 Opcional</option></select></div>
+                    <div><label for="bill-type" class="block mb-1 text-sm">Tipo</label><select id="bill-type" class="w-full"><option value="fixed">Fixa (Mensal)</option><option value="installment">Parcelada</option><option value="unique">Única</option></select></div>
+                    <div id="bill-installments-container" class="hidden grid grid-cols-2 gap-2">
+                        <div><label for="bill-current-installment" class="block mb-1 text-sm">Parcela</label><input type="number" id="bill-current-installment" min="1" value="1"></div>
+                        <div><label for="bill-total-installments" class="block mb-1 text-sm">de</label><input type="number" id="bill-total-installments" min="1" value="12"></div>
+                    </div>
+                    <div><label for="bill-amount" class="block mb-1 text-sm">Valor (R$)</label><input type="number" id="bill-amount" step="0.01" class="w-full" required></div>
+                    <div><label for="bill-due-day" class="block mb-1 text-sm">Dia do Vencimento</label><input type="number" id="bill-due-day" min="1" max="31" class="w-full" required></div>
+                    <div id="bill-unique-date-container" class="hidden"><label for="bill-unique-date" class="block mb-1 text-sm">Mês da Conta</label><input type="month" id="bill-unique-date" class="w-full"></div>
+                    <div><label for="bill-payment-method" class="block mb-1 text-sm">Forma de Pagamento</label><select id="bill-payment-method" class="w-full"><option>N/A</option><option>Pix</option><option>Cartão</option><option>Boleto</option><option>Dinheiro</option></select></div>
+                </div>
+                <div><label for="bill-notes" class="block mb-1 text-sm">Observações</label><textarea id="bill-notes" rows="2" class="w-full"></textarea></div>
+
+                <div class="flex justify-end gap-4 pt-4 border-t border-white/10">
+                    <button type="button" id="cancel-bill-btn" class="btn-ghost">Cancelar</button>
+                    <button type="submit" class="btn-shine">Salvar Conta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Pay Bill Modal -->
+    <div id="pay-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-md rounded-xl flex flex-col">
+            <form id="pay-form" class="p-6 space-y-4">
+                <h2 class="text-2xl font-bold mb-4">Confirmar Pagamento</h2>
+                <p class="text-lg">Conta: <b id="pay-modal-name"></b></p>
+                <div><label for="pay-date" class="block mb-1 text-sm">Data do Pagamento</label><input type="date" id="pay-date" class="w-full" required></div>
+                <div><label for="pay-amount" class="block mb-1 text-sm">Valor Pago (R$)</label><input type="number" id="pay-amount" step="0.01" class="w-full" required></div>
+                <div><label for="pay-notes" class="block mb-1 text-sm">Comprovante/Notas</label><input type="text" id="pay-notes" class="w-full" placeholder="Link ou código da transação"></div>
+                <div class="flex justify-end gap-4 pt-4 border-t border-white/10">
+                    <button type="button" id="cancel-pay-btn" class="btn-ghost">Cancelar</button>
+                    <button type="submit" class="btn-shine">Confirmar Pagamento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="notification-container" class="fixed bottom-5 right-5 z-[100] w-full max-w-xs space-y-3"></div>
+  </div>
+
+  <!-- Barra de Navegação Inferior (Mobile) -->
+  <nav class="bottom-nav">
+    <a href="index.html" class="bottom-nav-item">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+      <span>Início</span>
+    </a>
+    <a href="processos.html" class="bottom-nav-item">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+      <span>Processos</span>
+    </a>
+    <a href="contas.html" class="bottom-nav-item active">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H4a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+        <span>Contas</span>
+    </a>
+    <a href="clientes.html" class="bottom-nav-item">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+      <span>Clientes</span>
+    </a>
+    <button id="mobile-menu-button" class="bottom-nav-item">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
+      <span>Menu</span>
+    </button>
+  </nav>
+
+  </div>
+  <script>
+    // Carrega contas.js apenas após o Backend inicializar
+    const checkSync = setInterval(() => {
+        if (window.BackendInitialized) {
+            clearInterval(checkSync);
+            const s = document.createElement('script'); s.src = "contas.js"; document.body.appendChild(s);
+        }
+    }, 100);
+  </script>
+  <script src="theme-toggle.js"></script>
+</body>
+</html>

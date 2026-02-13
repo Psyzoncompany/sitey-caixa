@@ -22,6 +22,7 @@ const init = () => {
     const personalLimitTextEl = document.getElementById('personal-limit-text');
     const personalProgressEl = document.getElementById('personal-progress');
     const breakEvenRevenueEl = document.getElementById('break-even-revenue');
+    const dashboardBillsSummaryEl = document.getElementById('dashboard-bills-summary');
     const breakEvenTargetEl = document.getElementById('break-even-target');
     const breakEvenRevenueBar = document.getElementById('break-even-revenue-bar');
     const breakEvenCostsBar = document.getElementById('break-even-costs-bar');
@@ -55,6 +56,8 @@ const init = () => {
     const fabricColorInput = document.getElementById('fabric-color');
     const fabricWeightInput = document.getElementById('fabric-weight');
     
+    const createBillReminderContainer = document.getElementById('create-bill-reminder-container');
+    const createBillReminderCheckbox = document.getElementById('create-bill-reminder-checkbox');
     // Wizard Elements
     const prevStepBtn = document.getElementById('prev-step-btn');
     const nextStepBtn = document.getElementById('next-step-btn');
@@ -132,7 +135,14 @@ const init = () => {
     };
 
     const toggleScopeField = () => {
-        scopeContainer.classList.toggle('hidden', typeInput.value !== 'expense');
+        const isExpense = typeInput.value === 'expense';
+        scopeContainer.classList.toggle('hidden', !isExpense);
+        if (createBillReminderContainer) {
+            createBillReminderContainer.classList.toggle('hidden', !isExpense);
+            if (!isExpense && createBillReminderCheckbox) {
+                createBillReminderCheckbox.checked = false;
+            }
+        }
     };
     
     const updateCategoryOptions = () => {
@@ -184,6 +194,33 @@ const init = () => {
             fabricColor: null
         };
 
+        // --- NEW LOGIC: Create Bill Reminder ---
+        if (createBillReminderCheckbox && createBillReminderCheckbox.checked && transactionData.type === 'expense') {
+            try {
+                const DB_KEY = 'psyzon_accounts_db_v1';
+                const billsDataRaw = localStorage.getItem(DB_KEY);
+                let billsDb = billsDataRaw ? JSON.parse(billsDataRaw) : { accounts: [], monthly_records: {}, settings: {} };
+                
+                if (!Array.isArray(billsDb.accounts)) billsDb.accounts = [];
+
+                const transactionDate = new Date(transactionData.date + 'T03:00:00');
+
+                const newBill = {
+                    id: Date.now(),
+                    name: transactionData.description,
+                    category: transactionData.scope === 'personal' ? 'Pessoal' : 'Empresa',
+                    type: 'unique',
+                    amount: Math.abs(transactionData.amount),
+                    due_day: transactionDate.getDate(),
+                    unique_date: transactionData.date.substring(0, 7), // YYYY-MM
+                    priority: 3, // Baixa
+                    notes: 'Criado a partir de lançamento no dashboard.'
+                };
+                billsDb.accounts.push(newBill);
+                localStorage.setItem(DB_KEY, JSON.stringify(billsDb));
+                showNotification('Lembrete de conta criado com sucesso!', 'info');
+            } catch (error) { console.error("Erro ao criar lembrete de conta:", error); showNotification('Falha ao criar lembrete de conta.', 'danger'); }
+        }
         if (isProductSale) {
             transactionData.quantity = parseInt(quantityInput.value, 10) || 0;
         }
@@ -302,6 +339,7 @@ const init = () => {
         if (clientSearchInput) clientSearchInput.value = ''; // Reset search
         Array.from(clientSelect.options).forEach(opt => opt.style.display = ''); // Reset visibility
         clientSelectionContainer.classList.add('hidden');
+        if (createBillReminderCheckbox) createBillReminderCheckbox.checked = false;
         selectedScope = 'business';
         scopeButtons.forEach(btn => btn.classList.replace('border-cyan-400', 'border-transparent'));
         if (document.querySelector('.scope-btn[data-scope="business"]')) {
@@ -320,6 +358,7 @@ const init = () => {
         if (!transaction) return;
         
         form.reset();
+        if (createBillReminderCheckbox) createBillReminderCheckbox.checked = false;
         nameInput.value = transaction.name || '';
         descriptionInput.value = transaction.description;
         amountInput.value = Math.abs(transaction.amount);
@@ -508,6 +547,49 @@ const init = () => {
         });
     };
     
+    const updateDashboardBillsCard = () => {
+        if (!dashboardBillsSummaryEl) return;
+
+        const billsDataRaw = localStorage.getItem('psyzon_accounts_db_v1');
+        if (!billsDataRaw) {
+            dashboardBillsSummaryEl.innerHTML = '<a href="contas.html" class="text-sm text-gray-400 hover:text-cyan-400">Nenhuma conta configurada. Clique para começar.</a>';
+            return;
+        }
+
+        const billsDb = JSON.parse(billsDataRaw);
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth() + 1;
+        const monthKey = `${year}-${String(month).padStart(2, '0')}`;
+
+        const monthlyRecords = billsDb.monthly_records?.[monthKey] || {};
+
+        const pendingBills = billsDb.accounts
+            .map(acc => {
+                const record = monthlyRecords[acc.id] || { status: 'pending' };
+                // Considera apenas as ativas para o mês atual
+                if (acc.type === 'fixed' || (acc.type === 'unique' && acc.unique_date === monthKey) || (acc.type === 'installment' && acc.current_installment <= acc.total_installments)) {
+                     if (record.status === 'pending' || record.status === 'overdue') {
+                        return { ...acc, ...record };
+                    }
+                }
+                return null;
+            })
+            .filter(Boolean)
+            .sort((a, b) => a.due_day - b.due_day);
+
+        const totalPending = pendingBills.reduce((sum, bill) => sum + bill.amount, 0);
+        const next3Bills = pendingBills.slice(0, 3);
+
+        let html = `<div class="flex justify-between items-baseline mb-2"><span class="font-bold text-yellow-400">${formatCurrency(totalPending)}</span><span class="text-sm text-gray-400">Pendente</span></div>`;
+        if (next3Bills.length > 0) {
+            html += next3Bills.map(bill => `<div class="text-sm flex justify-between border-t border-white/5 pt-1 mt-1"><span>${bill.name}</span><span class="font-semibold">Vence dia ${bill.due_day}</span></div>`).join('');
+        } else {
+            html += '<p class="text-sm text-green-400 mt-2">Tudo pago este mês! 🎉</p>';
+        }
+        dashboardBillsSummaryEl.innerHTML = html;
+    };
+
     const updateUI = () => {
         const now = new Date();
         const currentMonth = now.getMonth();
@@ -571,6 +653,7 @@ const init = () => {
         updateCharts(monthlyTransactions);
         saveTransactions();
         updateDeadlinesCard();
+        updateDashboardBillsCard();
     };
 
     const updateCharts = (monthlyTransactions) => {
