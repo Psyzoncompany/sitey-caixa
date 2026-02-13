@@ -1002,3 +1002,168 @@ html[data-theme="light"] .white-text, html[data-theme="light"] .text-white {
     transition: background-color 0.2s;
     border-radius: 8px;
 }
+
+/* --- MOBILE DASHBOARD OPTIMIZATION (App Feel) --- */
+@media (max-width: 768px) {
+    /* 1. Layout & Container Fixes (Largura Total) */
+    html, body {
+        width: 100%;
+        max-width: 100vw;
+        overflow-x: hidden;
+    }
+    
+    main {
+        padding: 12px !important; /* Padding lateral reduzido para 12px */
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .container {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+    }
+
+    /* 2. Header Optimization (Topo Compacto) */
+    main > div.flex.justify-between {
+        margin-bottom: 12px !important;
+        align-items: center !important;
+    }
+    
+    main h1 {
+        font-size: 1.25rem !important; /* 20px */
+        line-height: 1.2;
+    }
+
+    #add-transaction-btn, .btn-shine {
+        padding: 0.4rem 0.8rem !important;
+        font-size: 0.8rem !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* 3. Metrics Cards Optimization (Cards Finos) */
+    .grid {
+        gap: 10px !important;
+    }
+
+    .glass-card {
+        padding: 12px !important;
+        border-radius: 12px !important;
+        min-height: auto !important;
+        margin-bottom: 0 !important;
+    }
+
+    .glass-card h3, .glass-card .text-gray-400 {
+        font-size: 0.75rem !important; /* 12px */
+        margin-bottom: 2px !important;
+        opacity: 0.8;
+    }
+
+    /* Valores em Destaque */
+    #balance, #total-income, #total-expense, #profit, #cost-per-piece-dashboard {
+        font-size: 1.35rem !important; /* ~21px */
+        font-weight: 700 !important;
+        line-height: 1.2 !important;
+        letter-spacing: -0.5px;
+    }
+
+    .glass-card .text-sm {
+        font-size: 0.7rem !important; /* 11px */
+    }
+
+    .glass-card svg {
+        width: 16px !important;
+        height: 16px !important;
+        opacity: 0.7;
+    }
+
+    /* 5. Deadlines Section (Prazos Compactos) */
+    #deadlines-list .border-b {
+        padding-bottom: 8px !important;
+        margin-bottom: 8px !important;
+        border-color: rgba(255,255,255,0.05) !important;
+    }
+    
+    #deadlines-list p.font-semibold {
+        font-size: 0.85rem !important;
+        margin-bottom: 2px !important;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* 6. Budget & Progress Bars (Barras Finas) */
+    #business-progress, #personal-progress, .rounded-full.bg-gray-700 {
+        height: 6px !important;
+    }
+    
+    #business-spent, #personal-spent {
+        font-size: 0.9rem !important;
+        font-weight: 700;
+    }
+    
+    #business-limit-text, #personal-limit-text {
+        font-size: 0.7rem !important;
+        opacity: 0.7;
+    }
+
+    /* 7. Transaction List (Lista Compacta) */
+    #transaction-list tr td {
+        padding: 8px 4px !important;
+        font-size: 0.75rem !important;
+    }
+    
+    #transaction-list tr td:first-child {
+        font-weight: 600;
+        font-size: 0.8rem !important;
+        max-width: 120px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* 8. Bottom Nav (Otimizada) */
+    .bottom-nav {
+        height: 60px !important;
+        background: rgba(15, 23, 42, 0.98) !important;
+    }
+    
+    .bottom-nav-item svg {
+        width: 20px !important;
+        height: 20px !important;
+        margin-bottom: 2px !important;
+    }
+    
+    .bottom-nav-item span {
+        font-size: 0.65rem !important;
+        font-weight: 500;
+    }
+
+    /* 9. Charts (Menor Altura) */
+    canvas {
+        max-height: 180px !important;
+    }
+
+    /* AI Chat Widget Mobile */
+    #ai-chat-widget {
+        bottom: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        height: 85vh !important;
+        border-radius: 20px 20px 0 0 !important;
+        z-index: 10000 !important;
+    }
+    
+    #ai-toggle-btn {
+        bottom: 75px !important;
+        right: 16px !important;
+        width: 44px !important;
+        height: 44px !important;
+        z-index: 9995 !important;
+    }
+}
