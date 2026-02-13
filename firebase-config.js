@@ -63,8 +63,10 @@ const createFloatingSaveButton = () => {
     
     const btn = document.createElement('button');
     btn.id = 'floating-save-btn';
-    // Estilo: Flutuante, canto inferior direito, redondo, transição suave
-    btn.style.cssText = "position:fixed;bottom:24px;right:24px;width:64px;height:64px;border-radius:50%;background:#3b82f6;color:white;border:none;box-shadow:0 4px 14px rgba(0,0,0,0.4);z-index:10000;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);";
+    // Classes iniciais (estilos movidos para style.css para responsividade)
+    btn.className = 'saved';
+    // Estilos base que não mudam com media queries podem ficar aqui ou no CSS
+    btn.style.cssText = "position:fixed; z-index:10000; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); border:none; color:white; box-shadow:0 4px 14px rgba(0,0,0,0.4); bottom:24px; right:24px; width:64px; height:64px; border-radius:50%; background:#3b82f6;";
     // Ícone de disquete (Save)
     btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>`;
     btn.title = "Salvar Alterações";
@@ -92,12 +94,16 @@ const updateSaveButtonState = () => {
     if (!btn) return;
 
     if (hasUnsavedChanges) {
+        btn.classList.remove('saved');
+        btn.classList.add('unsaved');
         btn.style.background = "#ef4444"; // Vermelho (Alterado)
-        btn.style.transform = "scale(1.1)";
+        // Transform removido daqui para ser controlado pelo CSS no mobile
         btn.style.boxShadow = "0 0 15px rgba(239, 68, 68, 0.6)";
     } else {
+        btn.classList.remove('unsaved');
+        btn.classList.add('saved');
         btn.style.background = "#3b82f6"; // Azul (Salvo)
-        btn.style.transform = "scale(1)";
+        // Transform removido daqui
         btn.style.boxShadow = "0 4px 14px rgba(0,0,0,0.4)";
     }
 };
