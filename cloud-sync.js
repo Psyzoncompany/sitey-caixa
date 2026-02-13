@@ -61,34 +61,44 @@ window.cloudSync = (() => {
   }
 
   async function pull() {
-    await ensureAuth();
-    const db = firebase.firestore();
-    const ref = db.collection(COL).doc(DOC);
-    const snap = await ref.get();
-    if (!snap.exists) return;
+    try {
+      await ensureAuth();
+      const db = firebase.firestore();
+      const ref = db.collection(COL).doc(DOC);
+      const snap = await ref.get();
+      if (!snap.exists) return;
 
-    const cloud = snap.data() || {};
-    const cloudUpdated = cloud.updatedAt || 0;
-    const localUpdated = Number(localStorage.getItem("cloud_last_updated") || "0");
+      const cloud = snap.data() || {};
+      const cloudUpdated = cloud.updatedAt || 0;
+      const localUpdated = Number(localStorage.getItem("cloud_last_updated") || "0");
 
-    // Se a nuvem está mais nova, baixa pro dispositivo
-    if (cloudUpdated > localUpdated) {
-      SYNC_KEYS.forEach((k) => {
-        if (typeof cloud[k] === "string") localStorage.setItem(k, cloud[k]);
-      });
-      localStorage.setItem("cloud_last_updated", String(cloudUpdated));
+      // Se a nuvem está mais nova, baixa pro dispositivo
+      if (cloudUpdated > localUpdated) {
+        SYNC_KEYS.forEach((k) => {
+          if (typeof cloud[k] === "string") localStorage.setItem(k, cloud[k]);
+        });
+        localStorage.setItem("cloud_last_updated", String(cloudUpdated));
+      }
+    } catch (error) {
+      console.warn("Aviso: Falha ao sincronizar com Firebase (prosseguindo sem sincronização):", error.message);
+      // Mesmo se falhar, deixa o site carregar normalmente
     }
   }
 
   async function push() {
-    await ensureAuth();
-    const db = firebase.firestore();
-    const ref = db.collection(COL).doc(DOC);
+    try {
+      await ensureAuth();
+      const db = firebase.firestore();
+      const ref = db.collection(COL).doc(DOC);
 
-    const payload = getLocalPayload();
-    await ref.set(payload, { merge: true });
+      const payload = getLocalPayload();
+      await ref.set(payload, { merge: true });
 
-    localStorage.setItem("cloud_last_updated", String(payload.updatedAt));
+      localStorage.setItem("cloud_last_updated", String(payload.updatedAt));
+    } catch (error) {
+      console.warn("Aviso: Falha ao fazer push para Firebase:", error.message);
+      // Continua funcionando mesmo se falhar o push
+    }
   }
 
   function patchLocalStorage() {
@@ -108,3 +118,4 @@ window.cloudSync = (() => {
 
   return { init, pull, push };
 })();
+

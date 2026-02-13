@@ -224,18 +224,31 @@
     <div id="notification-container" class="fixed bottom-5 right-5 z-[100] w-full max-w-xs space-y-3"></div>
   </div>
   <script>
+    // Timeout: se Firebase demorar >5s, carrega o site de qualquer forma
+    let scriptsLoaded = false;
+
+    const loadScript = (src) => {
+      if (scriptsLoaded) return;
+      scriptsLoaded = true;
+      const s = document.createElement("script");
+      s.src = src;
+      document.body.appendChild(s);
+    };
+
+    const timeoutId = setTimeout(() => {
+      console.warn("Firebase está demorando, carregando site sem sincronização");
+      loadScript("script.js");
+    }, 5000);
+
     cloudSync.pull()
       .then(() => {
-        const s = document.createElement("script");
-        s.src = "script.js";
-        document.body.appendChild(s);
+        clearTimeout(timeoutId);
+        loadScript("script.js");
       })
       .catch((e) => {
-        console.error("Falha ao sincronizar Firebase:", e);
-        // Mesmo se falhar, carrega o site normal:
-        const s = document.createElement("script");
-        s.src = "script.js";
-        document.body.appendChild(s);
+        clearTimeout(timeoutId);
+        console.error("Falha ao sincronizar Firebase, carregando site normalmente:", e);
+        loadScript("script.js");
       });
   </script>
 </body>
