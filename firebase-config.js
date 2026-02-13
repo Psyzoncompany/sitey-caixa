@@ -193,7 +193,13 @@ onAuthStateChanged(auth, async (user) => {
             const loader = document.createElement('div');
             loader.id = 'backend-loader';
             loader.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;background:#111827;z-index:9999;display:flex;justify-content:center;align-items:center;color:white;font-family:sans-serif;flex-direction:column;gap:1rem;";
-            loader.innerHTML = '<div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500"></div><div class="text-gray-300">Carregando seus dados da nuvem...</div>';
+            loader.innerHTML = `
+                <style>
+                    @keyframes pulse-logo { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.8; } 100% { transform: scale(1); opacity: 1; } }
+                </style>
+                <img src="img/logo.png" alt="Logo" style="width: 100px; height: auto; animation: pulse-logo 2s infinite ease-in-out;">
+                <div class="text-gray-300 mt-4 font-medium">Carregando...</div>
+            `;
             document.body.appendChild(loader);
         }
 
