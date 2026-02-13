@@ -3,7 +3,7 @@
 // Importa as funções do Firebase (versão compat para facilitar o uso com scripts existentes)
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteField } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // --- CONFIGURAÇÃO DO FIREBASE ---
 // 1. Vá em console.firebase.google.com
@@ -25,43 +25,32 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Lista de chaves do localStorage que queremos sincronizar
-const SYNC_KEYS = [
-    'transactions',
-    'clients',
-    'production_orders',
-    'monthlyProduction',
-    'incomeCategories',
-    'expenseCategories',
-    'businessSpendingLimit',
-    'personalSpendingLimit',
-    'psyzon_notes_v3',
-    'psyzon_active_note_v3'
-];
-
-// Promessa para garantir que só tentamos baixar dados depois de verificar o login
-let resolveAuth;
-const authReady = new Promise(resolve => resolveAuth = resolve);
-
-// Flag para enfileirar um push se uma alteração do usuário ocorrer durante a sincronização
-let pushNeededAfterSync = false;
-
 // Som de sucesso sutil (Web Audio API)
+let audioCtx = null;
+const unlockAudio = () => {
+    if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) audioCtx = new AudioContext();
+    }
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+};
+document.addEventListener('touchstart', unlockAudio, { once: true });
+document.addEventListener('click', unlockAudio, { once: true });
+
 const playSuccessSound = () => {
     try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContext) return;
-        const ctx = new AudioContext();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
+        if (!audioCtx) unlockAudio();
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
         osc.connect(gain);
-        gain.connect(ctx.destination);
+        gain.connect(audioCtx.destination);
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, ctx.currentTime); // Nota A5
-        gain.gain.setValueAtTime(0.05, ctx.currentTime); // Volume baixo (5%)
-        gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.15);
-        osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + 0.15);
+        osc.frequency.setValueAtTime(880, audioCtx.currentTime); // Nota A5
+        gain.gain.setValueAtTime(0.05, audioCtx.currentTime); // Volume baixo (5%)
+        gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.15);
+        osc.start(audioCtx.currentTime);
+        osc.stop(audioCtx.currentTime + 0.15);
     } catch (e) {}
 };
 
@@ -71,7 +60,8 @@ const updateSavingIndicator = (status) => {
     if (!indicator) {
         indicator = document.createElement('div');
         indicator.id = 'saving-indicator';
-        indicator.style.cssText = "position:fixed;bottom:20px;right:20px;background:rgba(15, 23, 42, 0.9);color:#e2e8f0;padding:8px 16px;border-radius:9999px;font-size:12px;font-family:sans-serif;z-index:9999;display:flex;align-items:center;gap:8px;backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,0.1);transition:opacity 0.5s ease;opacity:0;pointer-events:none;";
+        // Posicionado no topo central para evitar conflito com teclado ou FABs no mobile
+        indicator.style.cssText = "position:fixed;top:24px;left:50%;transform:translateX(-50%);background:rgba(15, 23, 42, 0.95);color:#e2e8f0;padding:8px 16px;border-radius:9999px;font-size:12px;font-family:sans-serif;z-index:10000;display:flex;align-items:center;gap:8px;backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,0.1);transition:opacity 0.3s ease, transform 0.3s ease;opacity:0;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,0.3);white-space:nowrap;";
         document.body.appendChild(indicator);
         const style = document.createElement('style');
         style.innerHTML = `@keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }`;
@@ -81,213 +71,135 @@ const updateSavingIndicator = (status) => {
     if (status === 'saving') {
         indicator.innerHTML = '<span style="width:8px;height:8px;background:#facc15;border-radius:50%;display:inline-block;animation:pulse-dot 1s infinite;"></span> Salvando...';
         indicator.style.opacity = '1';
+        indicator.style.transform = 'translateX(-50%) translateY(0)';
     } else if (status === 'saved') {
         indicator.innerHTML = '<span style="width:8px;height:8px;background:#4ade80;border-radius:50%;display:inline-block;"></span> Salvo';
-        setTimeout(() => { indicator.style.opacity = '0'; }, 2000);
+        indicator.style.opacity = '1';
+        setTimeout(() => { indicator.style.opacity = '0'; indicator.style.transform = 'translateX(-50%) translateY(-10px)'; }, 2000);
     } else if (status === 'error') {
         indicator.innerHTML = '<span style="width:8px;height:8px;background:#ef4444;border-radius:50%;display:inline-block;"></span> Erro ao salvar';
         indicator.style.opacity = '1';
-        setTimeout(() => { indicator.style.opacity = '0'; }, 5000);
+        setTimeout(() => { indicator.style.opacity = '0'; indicator.style.transform = 'translateX(-50%) translateY(-10px)'; }, 5000);
     }
 };
 
-// Objeto global de sincronização
-window.cloudSync = {
-    user: null,
-    isSyncing: false, // Evita loop infinito (Nuver -> Local -> Nuvem)
-    isInternalWrite: false, // Nova flag para identificar escritas internas do sistema
+// --- BACKEND REAL (Memória + Firestore) ---
+// Substitui o localStorage real por um armazenamento em memória conectado à nuvem
+let memoryStore = {};
+window.BackendInitialized = false;
+let saveTimeout = null;
+
+const saveToCloud = async () => {
+    if (!auth.currentUser) return;
+    const uid = auth.currentUser.uid;
     
-    // Puxa dados da nuvem para o localStorage
-    pull: async function() {
-        await authReady; // Espera o Firebase confirmar o usuário
-        if (!this.user) return;
-        console.log("☁️ Iniciando sincronização (Download)...");
-        
-        try {
-            const docRef = doc(db, "users", this.user.uid);
-            const docSnap = await getDoc(docRef);
-
-            if (docSnap.exists()) {
-                this.isSyncing = true; // Bloqueia o push enquanto salva no local
-                this.isInternalWrite = true; // Marca que estamos escrevendo dados da nuvem
-                try {
-                    const data = docSnap.data();
-                    // Atualiza localStorage com dados da nuvem
-                    Object.keys(data).forEach(key => {
-                        if (SYNC_KEYS.includes(key)) {
-                            // Firestore guarda objetos, localStorage guarda strings
-                            const value = typeof data[key] === 'object' ? JSON.stringify(data[key]) : data[key];
-                            localStorage.setItem(key, value);
-                        }
-                    });
-                    console.log("✅ Dados sincronizados com sucesso!");
-                } finally {
-                    this.isSyncing = false; // Libera o push (garantido mesmo se der erro)
-                    this.isInternalWrite = false; // Desmarca a flag
-                    if (pushNeededAfterSync) {
-                        pushNeededAfterSync = false;
-                        this.schedulePush();
-                    }
-                }
-            } else {
-                console.log("ℹ️ Nenhum dado encontrado na nuvem (primeiro uso?).");
-            }
-        } catch (error) {
-            console.error("❌ Erro ao baixar dados:", error);
-            this.isSyncing = false; // Garante desbloqueio em caso de erro de rede
-            this.isInternalWrite = false;
-            if (pushNeededAfterSync) {
-                pushNeededAfterSync = false;
-                this.schedulePush();
-            }
-        }
-    },
-
-    // Envia dados do localStorage para a nuvem
-    push: async function() {
-        if (!this.user) return;
-        
-        if (this.isSyncing) {
-            this.schedulePush(); // Tenta novamente em breve se estiver ocupado
-            return;
-        }
-        // console.log("☁️ Enviando alterações (Upload)..."); // Comentado para não poluir console
-
-        const dataToSave = {};
-        SYNC_KEYS.forEach(key => {
-            const item = localStorage.getItem(key);
-            if (item) {
-                try {
-                    // Tenta parsear JSON para salvar como objeto no Firestore
-                    dataToSave[key] = JSON.parse(item);
-                } catch (e) {
-                    // Se não for JSON, salva como string
-                    dataToSave[key] = item;
-                }
-            }
-        });
-
-        try {
-            await setDoc(doc(db, "users", this.user.uid), dataToSave, { merge: true });
-            // console.log("✅ Alterações salvas na nuvem.");
-            playSuccessSound();
-            updateSavingIndicator('saved');
-        } catch (error) {
-            console.error("❌ Erro ao salvar na nuvem:", error);
-            updateSavingIndicator('error');
-        }
-    },
-
-    // Debounce para evitar muitos envios seguidos
-    schedulePush: function() {
-        if (this.timeout) clearTimeout(this.timeout);
-        updateSavingIndicator('saving');
-        this.timeout = setTimeout(() => this.push(), 500); // Espera 0.5s (mais rápido no mobile)
+    try {
+        // Salva o estado atual da memória no Firestore
+        await setDoc(doc(db, "users", uid), memoryStore, { merge: true });
+        playSuccessSound();
+        updateSavingIndicator('saved');
+    } catch (e) {
+        console.error("❌ Erro ao salvar na nuvem:", e);
+        updateSavingIndicator('error');
     }
 };
 
-// --- LÓGICA DE AUTENTICAÇÃO ---
+const scheduleSave = () => {
+    if (saveTimeout) clearTimeout(saveTimeout);
+    updateSavingIndicator('saving');
+    saveTimeout = setTimeout(saveToCloud, 1000); // Espera 1 segundo após a última alteração
+};
 
-// Monitora estado do login
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        // Usuário logado
-        window.cloudSync.user = user;
-        localStorage.setItem("logado", "sim"); // Mantém compatibilidade com scripts antigos
-        
-        // Ativa escuta em tempo real (Realtime Listener)
-        if (window.cloudSync.unsubscribe) window.cloudSync.unsubscribe();
-        
-        window.cloudSync.unsubscribe = onSnapshot(doc(db, "users", user.uid), (docSnap) => {
-            // Ignora atualizações que nós mesmos acabamos de enviar (evita loops)
-            if (docSnap.metadata.hasPendingWrites) return;
-
-            if (docSnap.exists()) {
-                window.cloudSync.isSyncing = true;
-                window.cloudSync.isInternalWrite = true;
-                try {
-                    const data = docSnap.data();
-                    Object.keys(data).forEach(key => {
-                        if (SYNC_KEYS.includes(key)) {
-                            const value = typeof data[key] === 'object' ? JSON.stringify(data[key]) : data[key];
-                            // Só atualiza se for diferente para evitar disparar eventos desnecessários
-                            if (localStorage.getItem(key) !== value) {
-                                localStorage.setItem(key, value);
-                            }
-                        }
-                    });
-                } finally {
-                    window.cloudSync.isSyncing = false;
-                    window.cloudSync.isInternalWrite = false;
-                    if (pushNeededAfterSync) {
-                        pushNeededAfterSync = false;
-                        window.cloudSync.schedulePush();
-                    }
-                }
-                // console.log("🔄 Atualização em tempo real recebida!");
+// Interceptador do localStorage (Mágica para fazer o site funcionar com a nuvem)
+Object.defineProperty(window, 'localStorage', {
+    value: {
+        getItem: (key) => {
+            const val = memoryStore[key];
+            if (val === undefined) return null;
+            // Se for objeto, retorna string JSON (comportamento padrão do localStorage)
+            return typeof val === 'object' ? JSON.stringify(val) : val;
+        },
+        setItem: (key, value) => {
+            try {
+                // Tenta salvar como objeto JSON puro para o Firestore
+                memoryStore[key] = JSON.parse(value);
+            } catch (e) {
+                // Se não for JSON, salva como string
+                memoryStore[key] = value;
             }
-        });
+            scheduleSave();
+        },
+        removeItem: (key) => {
+            delete memoryStore[key];
+            if (auth.currentUser) {
+                // Remove o campo específico no Firestore
+                updateDoc(doc(db, "users", auth.currentUser.uid), {
+                    [key]: deleteField()
+                }).catch(err => console.error("Erro ao deletar campo:", err));
+            }
+            scheduleSave();
+        },
+        clear: () => {
+            memoryStore = {};
+            scheduleSave();
+        }
+    },
+    writable: true
+});
 
+// --- AUTENTICAÇÃO E CARREGAMENTO INICIAL ---
+onAuthStateChanged(auth, async (user) => {
+    if (user) {
         // Se estivermos na página de login, redireciona para index
         if (window.location.pathname.endsWith('login.html')) {
             window.location.href = 'index.html';
+            return;
+        }
+
+        // Exibe tela de carregamento
+        if (!document.getElementById('backend-loader')) {
+            const loader = document.createElement('div');
+            loader.id = 'backend-loader';
+            loader.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;background:#111827;z-index:9999;display:flex;justify-content:center;align-items:center;color:white;font-family:sans-serif;flex-direction:column;gap:1rem;";
+            loader.innerHTML = '<div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-cyan-500"></div><div class="text-gray-300">Carregando seus dados da nuvem...</div>';
+            document.body.appendChild(loader);
+        }
+
+        try {
+            // Baixa TUDO do Firestore de uma vez
+            const docRef = doc(db, "users", user.uid);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                memoryStore = docSnap.data();
+                console.log("✅ Dados carregados da nuvem.");
+            } else {
+                memoryStore = {};
+                console.log("ℹ️ Novo usuário ou sem dados.");
+            }
+            
+            window.BackendInitialized = true;
+            
+            // Remove tela de carregamento
+            const loader = document.getElementById('backend-loader');
+            if (loader) loader.remove();
+
+        } catch (error) {
+            console.error("Erro crítico ao carregar dados:", error);
+            alert("Erro de conexão. Tente recarregar a página.");
         }
     } else {
-        // Usuário deslogado
-        window.cloudSync.user = null;
-        if (window.cloudSync.unsubscribe) window.cloudSync.unsubscribe();
-        localStorage.removeItem("logado");
-        
-        // Se NÃO estivermos na página de login, redireciona para login
+        // Não logado
+        window.BackendInitialized = false;
+        memoryStore = {};
         if (!window.location.pathname.endsWith('login.html')) {
             window.location.href = 'login.html';
         }
     }
-    // Libera o pull() para rodar
-    if (resolveAuth) resolveAuth();
 });
-
-// Intercepta alterações no localStorage para salvar automaticamente
-const originalSetItem = localStorage.setItem;
-localStorage.setItem = function(key, value) {
-    originalSetItem.apply(this, arguments);
-    if (SYNC_KEYS.includes(key)) {
-        if (window.cloudSync.isInternalWrite) {
-            return; // Se for escrita interna (da nuvem), ignora e não agenda push
-        }
-        if (window.cloudSync.isSyncing) {
-            pushNeededAfterSync = true; // Marca que uma alteração precisa ser salva
-        } else {
-            window.cloudSync.schedulePush();
-        }
-    }
-};
-
-// Intercepta remoções no localStorage (ex: limpar dados)
-const originalRemoveItem = localStorage.removeItem;
-localStorage.removeItem = function(key) {
-    originalRemoveItem.apply(this, arguments);
-    if (SYNC_KEYS.includes(key)) {
-        if (window.cloudSync.isInternalWrite) {
-            return;
-        }
-        if (window.cloudSync.isSyncing) {
-            pushNeededAfterSync = true; // Marca que uma alteração precisa ser salva
-        } else {
-            window.cloudSync.schedulePush();
-        }
-    }
-};
 
 // Expõe funções de auth globalmente para uso nos botões
 window.firebaseAuth = {
     login: (email, password) => signInWithEmailAndPassword(auth, email, password),
     logout: () => signOut(auth)
 };
-
-// Força o salvamento imediato se o usuário minimizar o app ou trocar de aba no mobile
-document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') {
-        window.cloudSync.push();
-    }
-});
