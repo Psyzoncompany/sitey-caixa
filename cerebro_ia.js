@@ -55,15 +55,15 @@ const initAI = () => {
         },
         {
             name: "calculateDeadline",
-            description: "Calcula data de entrega.",
+            description: "Calcula data de entrega. Se 'days' não for informado, usa a média histórica do HipocampoIA.",
             parameters: {
                 type: "OBJECT",
                 properties: {
-                    days: { type: "NUMBER" },
-                    isBusinessDays: { type: "BOOLEAN" },
-                    startDate: { type: "STRING" }
+                    days: { type: "NUMBER", description: "Opcional. Se omitido, usa histórico." },
+                    isBusinessDays: { type: "BOOLEAN", description: "Se true, considera feriados (padrão)." },
+                    startDate: { type: "STRING", description: "Data inicial YYYY-MM-DD" }
                 },
-                required: ["days"]
+                required: []
             }
         }
     ];
@@ -76,6 +76,10 @@ const initAI = () => {
     - Se o usuário especificar "Babylook", defina 'variation' como "Babylook". Caso contrário, "Normal".
     - Se especificar "Gola Polo", coloque em 'notes'.
     - Gênero padrão: "Masculina" (se não especificado).
+
+    ✅ REGRAS DE PRAZO:
+    - Se o usuário pedir uma previsão ("quando fica pronto?"), chame calculateDeadline SEM 'days' para usar a IA histórica.
+    - Se o usuário der dias ("daqui 10 dias úteis"), chame calculateDeadline COM 'days'.
 
     ✅ REGRAS GERAIS:
     - Aja, não converse muito.
@@ -316,10 +320,28 @@ const initAI = () => {
         }
 
         if (name === 'calculateDeadline') {
-            // Lógica simplificada de dias úteis
-            const start = args.startDate ? new Date(args.startDate) : new Date();
-            start.setDate(start.getDate() + args.days); // Simplificado
-            return { finalDate: start.toISOString().split('T')[0] };
+            const start = args.startDate ? new Date(args.startDate + "T00:00:00") : new Date();
+            
+            // Integração com HipocampoIA (Histórico Real)
+            if (window.HipocampoIA) {
+                // 1. Previsão Inteligente (Sem dias definidos)
+                if (args.days === undefined || args.days === null) {
+                    const prediction = window.HipocampoIA.predictDeadline(start);
+                    return {
+                        estimatedDate: prediction.estimatedDate,
+                        safeDate: prediction.safeDate,
+                        avgDays: prediction.avgDays,
+                        confidence: prediction.confidence,
+                        source: "Hipocampo IA (Histórico Real)"
+                    };
+                }
+                
+                // 2. Cálculo Exato (Com dias definidos, usando calendário do Hipocampo)
+                const finalDate = window.HipocampoIA.calculateDate(start, args.days, args.isBusinessDays !== false);
+                return { finalDate, startDate: start.toISOString().split('T')[0], daysCounted: args.days, type: args.isBusinessDays !== false ? "dias úteis" : "dias corridos" };
+            }
+            
+            return { error: "HipocampoIA não está disponível." };
         }
 
         return { success: false, message: "Ferramenta desconhecida." };

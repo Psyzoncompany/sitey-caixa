@@ -176,6 +176,33 @@
             };
         }
 
+        // 2.1.1 EVOLUÇÃO DE CUSTO (MATERIAIS)
+        getMaterialCostEvolution() {
+            // Filtra compras de material com peso e custo válidos
+            const events = this.db.events.filter(e => e.type === 'material_purchase' && e.payload.weightKg > 0 && e.payload.cost > 0);
+            
+            const monthlyData = {};
+            events.forEach(e => {
+                const dateStr = e.payload.date || e.meta.timestamp;
+                const date = new Date(dateStr);
+                if (isNaN(date.getTime())) return;
+
+                const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                
+                if (!monthlyData[monthKey]) monthlyData[monthKey] = { totalCost: 0, totalWeight: 0 };
+                
+                monthlyData[monthKey].totalCost += Number(e.payload.cost);
+                monthlyData[monthKey].totalWeight += Number(e.payload.weightKg);
+            });
+
+            const trend = Object.keys(monthlyData).sort().map(month => {
+                const data = monthlyData[month];
+                return { month, avgPrice: data.totalCost / data.totalWeight };
+            });
+
+            return trend.slice(-6); // Retorna os últimos 6 meses com dados
+        }
+
         // 2.2 TEMPO (PRAZOS)
         getTimeInsights() {
             // Agrupa eventos por OrderID para calcular deltas
@@ -258,6 +285,54 @@
             };
         }
 
+        // Helper exposto para o CerebroIA usar a mesma lógica de feriados
+        calculateDate(startDate, days, businessDays = true) {
+            const start = new Date(startDate);
+            if (businessDays) {
+                return MathEngine.addBusinessDays(start, days).toISOString().split('T')[0];
+            }
+            const result = new Date(start);
+            result.setDate(result.getDate() + days);
+            return result.toISOString().split('T')[0];
+        }
+
+        // Renderizador de Gráfico SVG Simples (Sem dependências)
+        _renderChart(data) {
+            if (!data || data.length < 2) return '<div class="w-full h-48 bg-black/20 rounded-lg border border-white/5 flex items-center justify-center text-gray-500 text-xs mt-4">Histórico insuficiente para gráfico de evolução</div>';
+            
+            const w = 600;
+            const h = 200;
+            const pad = 30;
+            
+            const vals = data.map(d => d.avgPrice);
+            const min = Math.min(...vals) * 0.95;
+            const max = Math.max(...vals) * 1.05;
+            const range = max - min || 1;
+            
+            const getX = (i) => pad + (i / (data.length - 1)) * (w - pad * 2);
+            const getY = (v) => h - pad - ((v - min) / range) * (h - pad * 2);
+            
+            let pathD = `M ${getX(0)} ${getY(vals[0])}`;
+            data.forEach((d, i) => { if (i === 0) return; pathD += ` L ${getX(i)} ${getY(d.avgPrice)}`; });
+
+            const pointsHtml = data.map((d, i) => {
+                const x = getX(i); const y = getY(d.avgPrice);
+                return `<g class="group"><circle cx="${x}" cy="${y}" r="4" class="fill-cyan-500 transition-all group-hover:r-6" /><rect x="${x - 30}" y="${y - 40}" width="60" height="25" rx="4" class="fill-gray-900 opacity-0 group-hover:opacity-100 pointer-events-none" /><text x="${x}" y="${y - 23}" text-anchor="middle" class="fill-white text-[12px] opacity-0 group-hover:opacity-100 pointer-events-none font-bold">R$${d.avgPrice.toFixed(2)}</text></g>`;
+            }).join('');
+
+            const labelsHtml = data.map((d, i) => {
+                const x = getX(i); const [y, m] = d.month.split('-');
+                return `<text x="${x}" y="${h - 10}" text-anchor="middle" class="fill-gray-500 text-[10px]">${m}/${y.slice(2)}</text>`;
+            }).join('');
+
+            return `
+                <div class="w-full h-48 bg-black/20 rounded-lg border border-white/5 p-2 relative mt-4">
+                    <h4 class="absolute top-2 left-3 text-xs font-bold text-gray-400">Evolução Preço Médio (R$/Kg)</h4>
+                    <svg viewBox="0 0 ${w} ${h}" class="w-full h-full"><path d="${pathD}" fill="none" stroke="#06b6d4" stroke-width="2" />${labelsHtml}${pointsHtml}</svg>
+                </div>
+            `;
+        }
+
         // 4. UI - PAINEL DE INTELIGÊNCIA
         openDashboard() {
             // Remove se já existir
@@ -270,6 +345,7 @@
             
             // Dados
             const matData = this.getMaterialInsights();
+            const costTrend = this.getMaterialCostEvolution();
             const timeData = this.getTimeInsights();
             const artData = this.getArtInsights();
             const priceData = this.getPriceInsights();
@@ -329,6 +405,7 @@
                                     Mais dados necessários (Tinta, Papel)
                                 </div>
                             </div>
+                            ${this._renderChart(costTrend)}
                         </div>
 
                         <!-- Section: Financeiro -->

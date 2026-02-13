@@ -607,6 +607,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (isProductSale) {
                 updateMonthlyProduction(newTransaction.date.substring(0, 7), newTransaction.quantity);
             }
+
+            // HOOK HIPOCAMPO: Aprendizado de Custo de Material
+            if (window.HipocampoIA && newTransaction.type === 'expense' && newTransaction.category.includes('Matéria-Prima')) {
+                window.HipocampoIA.recordEvent('material_purchase', {
+                    cost: Math.abs(newTransaction.amount),
+                    description: newTransaction.description,
+                    weightKg: newTransaction.weightKg || 0,
+                    fabricColor: newTransaction.fabricColor || '',
+                    date: newTransaction.date
+                }, { transactionId: newTransaction.id });
+            }
         }
         
         saveTransactions();
