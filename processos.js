@@ -231,6 +231,31 @@ const init = () => {
 
     addCuttingItemBtn.addEventListener('click', () => renderCuttingSubtask());
 
+    // --- FIX: Listeners que estavam faltando ---
+    if (addOrderBtn) addOrderBtn.addEventListener('click', () => openModal());
+
+    // DTF Image Handlers (Order Modal)
+    if (orderAddDtfImageBtn && orderDtfImageInput) {
+        orderAddDtfImageBtn.addEventListener('click', () => orderDtfImageInput.click());
+        orderDtfImageInput.addEventListener('change', (e) => {
+            Array.from(e.target.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    activeDtfImages.push(ev.target.result);
+                    renderOrderPrintingPreviews(activeDtfImages);
+                };
+                reader.readAsDataURL(file);
+            });
+            e.target.value = '';
+        });
+    }
+    if (clearDtfImagesBtn) {
+        clearDtfImagesBtn.addEventListener('click', () => {
+            activeDtfImages = [];
+            renderOrderPrintingPreviews(activeDtfImages);
+        });
+    }
+
     if (orderForm) {
         orderForm.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -596,6 +621,9 @@ const init = () => {
         renderCuttingTasks();
         renderKanban();
     };
+
+    // Listener para salvar cortes
+    if (saveCutsBtn) saveCutsBtn.addEventListener('click', saveCuts);
 
     const closeCuttingModal = () => {
         cuttingModal.classList.add('hidden');
