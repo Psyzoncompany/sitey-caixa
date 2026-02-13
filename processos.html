@@ -106,6 +106,12 @@
       <div class="glass-card w-full max-w-4xl h-[95vh] md:h-auto md:max-h-[90vh] rounded-t-2xl md:rounded-xl flex flex-col">
           <form id="order-form" class="flex-1 flex flex-col gap-6 overflow-y-auto p-2">
             <div class="flex justify-between items-center"><h2 id="order-modal-title" class="text-3xl font-bold">Novo Pedido de Produção</h2><button type="button" id="cancel-order-btn" class="p-2 rounded-full hover:bg-white/10 text-3xl leading-none">&times;</button></div>
+            <div class="py-1">
+                <label class="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" id="is-art-only" class="w-5 h-5 rounded text-cyan-500 bg-gray-700 border-gray-600 focus:ring-cyan-600">
+                    <span class="font-bold text-cyan-300">Pedido Exclusivo de Arte/Design</span>
+                </label>
+            </div>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-6">
                 <div class="space-y-4">
                     <div><label for="order-description" class="block mb-2 text-sm font-medium">Descrição do Pedido</label><input type="text" id="order-description" class="w-full p-3 rounded-md bg-white/10 border border-white/20" required></div>
@@ -114,7 +120,7 @@
                         <div><label for="order-deadline" class="block mb-2 text-sm font-medium">Prazo de Entrega</label><input type="date" id="order-deadline" class="w-full p-3 rounded-md bg-white/10 border border-white/20" required></div>
                     </div>
                     <div><label for="order-notes" class="block mb-2 text-sm font-medium">Anotações do Pedido</label><textarea id="order-notes" rows="5" class="w-full p-3 rounded-md bg-white/10 border border-white/20"></textarea></div>
-                    <div class="border-t border-white/10 pt-4">
+                    <div id="payment-section" class="border-t border-white/10 pt-4">
                         <h3 class="text-lg font-semibold mb-3">Checklist de Pagamento</h3>
                         <div class="space-y-4">
                             <div class="grid grid-cols-2 gap-4">
@@ -125,7 +131,7 @@
                         </div>
                     </div>
                 </div>
-                <div>
+                <div id="production-section">
                     <h3 class="text-lg font-semibold mb-3">Checklist de Produção</h3>
                     <div id="order-checklist" class="space-y-2 text-sm"></div>
                     <div id="cutting-details-section" class="hidden mt-4 p-4 rounded-lg bg-white/5 border border-white/10">
@@ -135,12 +141,21 @@
                     </div>
                 </div>
             </div>
-            <div class="grid grid-cols-2 gap-4">
+            
+            <div id="art-only-block" class="hidden p-4 rounded-lg bg-white/5 border border-white/10">
+                <label class="block mb-2 text-sm font-medium">Imagens de Referência</label>
+                <div id="art-only-images-preview" class="flex gap-2 flex-wrap mb-3"></div>
+                <input type="file" id="art-only-image-input" accept="image/*" multiple class="hidden">
+                <button type="button" id="add-art-only-image-btn" class="btn-shine py-1 px-3 text-xs rounded-md">Adicionar Imagem</button>
+            </div>
+
+            <div id="print-type-section" class="grid grid-cols-2 gap-4">
                 <div>
                     <label for="order-print-type" class="block mb-2 text-sm font-medium">Tipo de Estampa</label>
                     <select id="order-print-type" class="w-full p-3 rounded-md bg-white/10 border border-white/20">
                         <option value="dtf">DTF</option>
                         <option value="silk">Silk</option>
+                        <option value="art">Arte (Design)</option>
                     </select>
                 </div>
 
@@ -175,7 +190,7 @@
 
                 </div>
             </div>
-            <div>
+            <div id="colors-section">
                 <label class="block mb-2 text-sm font-medium">Cores (CMYK)</label>
                 <div id="order-colors-container" class="flex gap-2 flex-wrap"></div>
                 <button type="button" id="add-color-btn" class="mt-2 text-xs btn-shine py-1 px-2 rounded-md">+ Cor</button>

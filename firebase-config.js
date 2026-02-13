@@ -56,6 +56,20 @@ const playSuccessSound = () => {
 
 // State for unsaved changes
 let hasUnsavedChanges = false;
+let initialSnapshot = "{}"; // Armazena o estado inicial para comparação
+
+// Helper para criar um snapshot determinístico (ordena chaves para garantir comparação correta)
+const getSnapshot = (data) => {
+    const sortObj = (obj) => {
+        if (obj === null || typeof obj !== 'object') return obj;
+        if (Array.isArray(obj)) return obj.map(sortObj);
+        return Object.keys(obj).sort().reduce((acc, key) => {
+            acc[key] = sortObj(obj[key]);
+            return acc;
+        }, {});
+    };
+    return JSON.stringify(sortObj(data));
+};
 
 // Floating Save Button Logic
 const createFloatingSaveButton = () => {
@@ -189,17 +203,22 @@ const saveToCloud = async () => {
     try {
         // Salva o estado atual da memória no Firestore
         await setDoc(doc(db, "users", uid), memoryStore, { merge: true });
-        playSuccessSound();
+        
+        // Atualiza o snapshot inicial para refletir o novo estado salvo
+        initialSnapshot = getSnapshot(memoryStore);
         hasUnsavedChanges = false;
         updateSaveButtonState();
+        playSuccessSound();
     } catch (e) {
         console.error("❌ Erro ao salvar na nuvem:", e);
         alert("Erro ao salvar na nuvem. Verifique sua conexão.");
     }
 };
 
-const markUnsaved = () => {
-    hasUnsavedChanges = true;
+const checkDirtyState = () => {
+    const currentSnapshot = getSnapshot(memoryStore);
+    // O botão fica vermelho APENAS se o estado atual for diferente do inicial
+    hasUnsavedChanges = currentSnapshot !== initialSnapshot;
     updateSaveButtonState();
 };
 
@@ -213,22 +232,23 @@ Object.defineProperty(window, 'localStorage', {
             return typeof val === 'object' ? JSON.stringify(val) : val;
         },
         setItem: (key, value) => {
+            const stringValue = String(value);
             // Verifica se o valor realmente mudou para evitar "falsos positivos" de alterações não salvas
             const currentValue = memoryStore[key];
             const currentString = typeof currentValue === 'object' ? JSON.stringify(currentValue) : (currentValue === undefined ? null : String(currentValue));
             
             // Se o valor for idêntico, não faz nada (não marca como não salvo)
             // Nota: localStorage sempre armazena strings. Se currentString for null (undefined), é mudança.
-            if (currentString === value) return;
+            if (currentString === stringValue) return;
 
             try {
                 // Tenta salvar como objeto JSON puro para o Firestore
-                memoryStore[key] = JSON.parse(value);
+                memoryStore[key] = JSON.parse(stringValue);
             } catch (e) {
                 // Se não for JSON, salva como string
-                memoryStore[key] = value;
+                memoryStore[key] = stringValue;
             }
-            markUnsaved();
+            checkDirtyState();
         },
         removeItem: (key) => {
             if (!(key in memoryStore)) return; // Se a chave não existe, não faz nada (evita ficar vermelho à toa)
@@ -239,11 +259,11 @@ Object.defineProperty(window, 'localStorage', {
                     [key]: deleteField()
                 }).catch(err => console.error("Erro ao deletar campo:", err));
             }
-            markUnsaved();
+            checkDirtyState();
         },
         clear: () => {
             memoryStore = {};
-            markUnsaved();
+            checkDirtyState();
         }
     },
     writable: true
@@ -273,6 +293,10 @@ onAuthStateChanged(auth, async (user) => {
                 memoryStore = {};
                 console.log("ℹ️ Novo usuário ou sem dados.");
             }
+            
+            // Define o ponto de partida (estado limpo)
+            initialSnapshot = getSnapshot(memoryStore);
+            hasUnsavedChanges = false;
             
             window.BackendInitialized = true;
             createFloatingSaveButton();

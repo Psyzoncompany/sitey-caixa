@@ -619,7 +619,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (confirm("Venda registrada com sucesso! Deseja criar um pedido de produção para este item na aba 'Processos'?")) {
                     const client = clients.find(c => c.id === transactionData.clientId);
                     const prefillData = { description: transactionData.description, clientId: transactionData.clientId };
-                    localStorage.setItem('prefill_order_form', JSON.stringify(prefillData));
+                sessionStorage.setItem('prefill_order_form', JSON.stringify(prefillData));
                     window.location.href = 'processos.html?action=new_order';
                 }
             }, 500);
@@ -720,6 +720,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateMonthlyProduction(transactionToDelete.date.substring(0, 7), -transactionToDelete.quantity);
             }
             transactions = transactions.filter(t => t.id !== id);
+            saveTransactions();
             updateUI();
         }
     };
@@ -898,7 +899,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         updateCharts(monthlyTransactions);
         updateFabricChart(monthlyTransactions);
-        saveTransactions();
         updateDeadlinesCard();
     };
     

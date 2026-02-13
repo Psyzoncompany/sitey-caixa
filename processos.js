@@ -40,6 +40,18 @@ const init = () => {
     const orderColorsContainer = document.getElementById('order-colors-container');
     const addColorBtn = document.getElementById('add-color-btn');
 
+    // Art Only Mode Refs
+    const isArtOnlyCheckbox = document.getElementById('is-art-only');
+    const artOnlyBlock = document.getElementById('art-only-block');
+    const artOnlyImagesPreview = document.getElementById('art-only-images-preview');
+    const artOnlyImageInput = document.getElementById('art-only-image-input');
+    const addArtOnlyImageBtn = document.getElementById('add-art-only-image-btn');
+    const paymentSection = document.getElementById('payment-section');
+    const productionSection = document.getElementById('production-section');
+    const printTypeSection = document.getElementById('print-type-section');
+    const colorsSection = document.getElementById('colors-section');
+    let activeArtOnlyImages = [];
+
     // printing UI / notes / conditional block
     const orderPrintingBlock = document.getElementById('order-printing-block');
     const orderDtfImageInput = document.getElementById('order-dtf-image-input');
@@ -60,6 +72,69 @@ const init = () => {
     if (orderPrintTypeSelect) orderPrintTypeSelect.addEventListener('change', togglePrintingBlock);
     // make sure block reflects initial state
     togglePrintingBlock();
+
+    // Toggle Art Only Mode
+    const toggleArtOnlyMode = () => {
+        if (!isArtOnlyCheckbox) return;
+        const isArt = isArtOnlyCheckbox.checked;
+        const deadlineLabel = document.querySelector('label[for="order-deadline"]');
+        
+        if (isArt) {
+            if(paymentSection) paymentSection.classList.add('hidden');
+            if(productionSection) productionSection.classList.add('hidden');
+            if(printTypeSection) printTypeSection.classList.add('hidden');
+            if(colorsSection) colorsSection.classList.add('hidden');
+            if(artOnlyBlock) artOnlyBlock.classList.remove('hidden');
+            if(deadlineLabel) deadlineLabel.textContent = "Data de Entrega da Arte";
+            // Disable required on hidden fields if any (total value is required)
+            if(orderTotalValueInput) orderTotalValueInput.removeAttribute('required');
+        } else {
+            if(paymentSection) paymentSection.classList.remove('hidden');
+            if(productionSection) productionSection.classList.remove('hidden');
+            if(printTypeSection) printTypeSection.classList.remove('hidden');
+            if(colorsSection) colorsSection.classList.remove('hidden');
+            if(artOnlyBlock) artOnlyBlock.classList.add('hidden');
+            if(deadlineLabel) deadlineLabel.textContent = "Prazo de Entrega";
+            if(orderTotalValueInput) orderTotalValueInput.setAttribute('required', 'true');
+        }
+    };
+    if (isArtOnlyCheckbox) isArtOnlyCheckbox.addEventListener('change', toggleArtOnlyMode);
+
+    // Art Only Image Handlers
+    const renderArtOnlyPreviews = () => {
+        if (!artOnlyImagesPreview) return;
+        artOnlyImagesPreview.innerHTML = '';
+        activeArtOnlyImages.forEach((img, idx) => {
+            const wrap = document.createElement('div');
+            wrap.className = 'relative w-24 h-24 rounded overflow-hidden border border-white/10';
+            const imageEl = document.createElement('img');
+            imageEl.src = img;
+            imageEl.className = 'w-full h-full object-cover';
+            const del = document.createElement('button');
+            del.type = 'button';
+            del.className = 'absolute top-1 right-1 bg-black/60 text-white rounded px-1';
+            del.innerHTML = '&times;';
+            del.onclick = (e) => { e.stopPropagation(); activeArtOnlyImages.splice(idx, 1); renderArtOnlyPreviews(); };
+            wrap.appendChild(imageEl);
+            wrap.appendChild(del);
+            artOnlyImagesPreview.appendChild(wrap);
+        });
+    };
+
+    if (addArtOnlyImageBtn && artOnlyImageInput) {
+        addArtOnlyImageBtn.addEventListener('click', () => artOnlyImageInput.click());
+        artOnlyImageInput.addEventListener('change', (e) => {
+            Array.from(e.target.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    activeArtOnlyImages.push(ev.target.result);
+                    renderArtOnlyPreviews();
+                };
+                reader.readAsDataURL(file);
+            });
+            e.target.value = '';
+        });
+    }
 
     const artTasksContainer = document.getElementById('art-tasks-container');
     const artModal = document.getElementById('art-modal');
@@ -135,6 +210,10 @@ const init = () => {
         activeDtfImages = [];
         if (orderPrintingImagesContainer) orderPrintingImagesContainer.innerHTML = '';
         if (orderPrintQuantityInput) orderPrintQuantityInput.value = '';
+        // reset Art Only temp
+        activeArtOnlyImages = [];
+        if (artOnlyImagesPreview) artOnlyImagesPreview.innerHTML = '';
+        if (isArtOnlyCheckbox) isArtOnlyCheckbox.checked = false;
 
         if (orderId) {
             const order = productionOrders.find(o => o.id === orderId);
@@ -165,6 +244,13 @@ const init = () => {
             if (order.printing && typeof order.printing.notes !== 'undefined' && orderPrintingNotesInput) {
                 orderPrintingNotesInput.value = order.printing.notes;
             }
+            // Art Only check
+            if (order.isArtOnly) {
+                if (isArtOnlyCheckbox) isArtOnlyCheckbox.checked = true;
+                if (order.art && order.art.images) activeArtOnlyImages = order.art.images.slice();
+                renderArtOnlyPreviews();
+            }
+
             // ensure DTF block visibility
             togglePrintingBlock();
         } else {
@@ -179,6 +265,7 @@ const init = () => {
             if (orderPrintingNotesInput) orderPrintingNotesInput.value = '';
             togglePrintingBlock();
         }
+        toggleArtOnlyMode(); // Apply visibility based on checkbox state
         orderModal.classList.remove('hidden');
         // Adicione aqui:
         const cancelBtn = document.getElementById('cancel-order-btn');
@@ -296,6 +383,8 @@ const init = () => {
                       .map(i => (i.value || '').trim())
                       .filter(v => v)
                 : [];
+            
+            const isArtOnly = isArtOnlyCheckbox ? isArtOnlyCheckbox.checked : false;
 
             const orderData = {
                 description: orderDescriptionInput.value,
@@ -306,13 +395,20 @@ const init = () => {
                 totalValue: parseFloat(orderTotalValueInput.value) || 0,
                 amountPaid: parseFloat(orderAmountPaidInput.value) || 0,
                 isPaid: orderIsPaidCheckbox.checked,
-                printType: orderPrintTypeSelect ? orderPrintTypeSelect.value : 'dtf',
+                printType: isArtOnly ? 'art' : (orderPrintTypeSelect ? orderPrintTypeSelect.value : 'dtf'),
+                isArtOnly: isArtOnly,
                 // shirtType removido conforme solicitado
                 colors: colors,
                 printing: {
                     images: activeDtfImages.slice(),
                     total: parseInt(orderPrintQuantityInput?.value) || (checklist.printing && checklist.printing.total ? parseInt(checklist.printing.total) : 0),
                     notes: orderPrintingNotesInput ? (orderPrintingNotesInput.value || '').trim() : ''
+                }
+            };
+            
+            if (isArtOnly) {
+                orderData.art = {
+                    images: activeArtOnlyImages.slice()
                 }
             };
             if (editingOrderId) {
@@ -331,7 +427,8 @@ const init = () => {
     const createOrderCard = (order) => {
         const client = clients.find(c => c.id === order.clientId);
         const card = document.createElement('div');
-        card.className = 'kanban-card bg-gray-800 p-3 rounded-lg border border-white/10 shadow-lg cursor-pointer hover:border-cyan-400 relative';
+        const borderClass = order.isArtOnly ? 'border-purple-500' : 'border-white/10';
+        card.className = `kanban-card bg-gray-800 p-3 rounded-lg border ${borderClass} shadow-lg cursor-pointer hover:border-cyan-400 relative`;
         card.setAttribute('draggable', true);
         card.dataset.id = order.id;
 
@@ -498,7 +595,7 @@ const init = () => {
 
     const renderCuttingTasks = () => {
         cuttingTasksContainer.innerHTML = '';
-        const pendingCutOrders = productionOrders.filter(order => order.checklist && order.checklist.cutting && !order.checklist.cutting.completed && order.checklist.cutting.subtasks && order.checklist.cutting.subtasks.length > 0);
+        const pendingCutOrders = productionOrders.filter(order => !order.isArtOnly && order.checklist && order.checklist.cutting && !order.checklist.cutting.completed && order.checklist.cutting.subtasks && order.checklist.cutting.subtasks.length > 0);
         if (pendingCutOrders.length === 0) {
             cuttingTasksContainer.innerHTML = '<div class="glass-card p-6 text-center text-gray-400">Nenhuma tarefa de corte pendente. ✨</div>';
             return;
@@ -636,15 +733,16 @@ const init = () => {
 
     const renderArtTasks = () => {
         artTasksContainer.innerHTML = '';
-        const ordersWithArt = productionOrders.filter(order => {
-            // Só mostra pedidos onde a checklist de arte NÃO está marcada como concluída
-            return order.status !== 'done' && (!order.checklist?.art?.completed);
-        });
-        if (ordersWithArt.length === 0) {
+        
+        const artOnlyOrders = productionOrders.filter(order => order.status !== 'done' && order.isArtOnly);
+        const productionArtOrders = productionOrders.filter(order => order.status !== 'done' && !order.isArtOnly && (!order.checklist?.art?.completed));
+
+        if (artOnlyOrders.length === 0 && productionArtOrders.length === 0) {
             artTasksContainer.innerHTML = '<div class="glass-card p-6 text-center text-gray-400">Nenhum pedido pendente para arte. ✨</div>';
             return;
         }
-        ordersWithArt.forEach(order => {
+
+        const createArtCard = (order) => {
             const client = clients.find(c => c.id === order.clientId);
             const artData = order.art || {};
             const deadline = artData.deadline || order.deadline;
@@ -654,7 +752,8 @@ const init = () => {
                 deadlineText = `Prazo: ${deadlineDate.toLocaleDateString('pt-BR')}`;
             }
             const card = document.createElement('div');
-            card.className = 'glass-card p-4 flex justify-between items-center';
+            const borderClass = order.isArtOnly ? 'border-l-4 border-purple-500' : '';
+            card.className = `glass-card p-4 flex justify-between items-center ${borderClass}`;
             card.innerHTML = `
                 <div>
                     <p class="font-bold">${order.description}</p>
@@ -663,8 +762,30 @@ const init = () => {
                 </div>
                 <button data-order-id="${order.id}" class="open-art-modal-btn btn-shine py-2 px-4 rounded-lg text-sm">Abrir Arte</button>
             `;
-            artTasksContainer.appendChild(card);
-        });
+            return card;
+        };
+
+        if (artOnlyOrders.length > 0) {
+            const title = document.createElement('h3');
+            title.className = 'text-lg font-bold text-purple-400 mb-3 border-b border-white/10 pb-2';
+            title.textContent = 'Pedidos Exclusivos de Arte';
+            artTasksContainer.appendChild(title);
+            const container = document.createElement('div');
+            container.className = 'space-y-3 mb-6';
+            artOnlyOrders.forEach(order => container.appendChild(createArtCard(order)));
+            artTasksContainer.appendChild(container);
+        }
+
+        if (productionArtOrders.length > 0) {
+            const title = document.createElement('h3');
+            title.className = 'text-lg font-bold text-cyan-400 mb-3 border-b border-white/10 pb-2';
+            title.textContent = 'Produção - Arte Pendente';
+            artTasksContainer.appendChild(title);
+            const container = document.createElement('div');
+            container.className = 'space-y-3';
+            productionArtOrders.forEach(order => container.appendChild(createArtCard(order)));
+            artTasksContainer.appendChild(container);
+        }
     };
 
     const openArtModal = (orderId) => {
@@ -748,12 +869,12 @@ const init = () => {
     const checkPrefillData = () => {
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('action') === 'new_order') {
-            const prefillData = JSON.parse(localStorage.getItem('prefill_order_form'));
+            const prefillData = JSON.parse(sessionStorage.getItem('prefill_order_form'));
             if (prefillData) {
                 openModal();
                 orderDescriptionInput.value = prefillData.description;
                 orderClientSelect.value = prefillData.clientId;
-                localStorage.removeItem('prefill_order_form');
+                sessionStorage.removeItem('prefill_order_form');
                 window.history.replaceState({}, document.title, window.location.pathname);
             }
         }
