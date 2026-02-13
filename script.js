@@ -380,6 +380,10 @@ const init = () => {
         const personalExpenseMonth = monthlyTransactions.filter(t => t.type === 'expense' && t.scope === 'personal').reduce((acc, t) => acc + t.amount, 0);
         const profitMonth = incomeMonth + businessExpenseMonth;
         balanceEl.textContent = formatCurrency(totalBalance);
+        
+        // Dashboard Mobile Optimization: Ensure elements are visible and sized correctly via CSS
+        // The logic here remains the same, but style.css handles the layout (stacked vs grid)
+        
         incomeEl.textContent = formatCurrency(incomeMonth);
         expenseEl.textContent = formatCurrency(Math.abs(businessExpenseMonth));
         profitEl.textContent = formatCurrency(profitMonth);

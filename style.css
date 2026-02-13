@@ -784,56 +784,6 @@ html[data-theme="light"] .white-text, html[data-theme="light"] .text-white {
     cursor: grabbing;
 }
 
-/* --- Kanban Mobile Tabs --- */
-.mobile-kanban-tabs { display: none; }
-
-@media (max-width: 768px) {
-    .mobile-kanban-tabs {
-        display: flex;
-        gap: 8px;
-        overflow-x: auto;
-        padding: 8px 4px;
-        margin-bottom: 12px;
-        -webkit-overflow-scrolling: touch;
-    }
-    
-    .mobile-kanban-tab {
-        flex: 1;
-        text-align: center;
-        padding: 10px;
-        border-radius: 8px;
-        background: rgba(255,255,255,0.05);
-        color: var(--muted);
-        font-size: 0.85rem;
-        font-weight: 600;
-        white-space: nowrap;
-        border: 1px solid transparent;
-        transition: all 0.2s;
-    }
-    
-    .mobile-kanban-tab.active {
-        background: rgba(59, 130, 246, 0.15);
-        color: var(--accent);
-        border-color: rgba(59, 130, 246, 0.3);
-    }
-
-    /* Hide columns by default on mobile */
-    .kanban-column { display: none !important; }
-    /* Show only active column */
-    .kanban-column.active-mobile-column { display: flex !important; flex-direction: column; }
-    
-    /* Remove grid gap on mobile kanban view to handle manual visibility */
-    #view-quadro .grid { display: block; }
-    
-    /* Card Mobile Optimization (Mercado Livre Style) */
-    .kanban-card {
-        margin-bottom: 12px;
-        padding: 16px;
-        border-radius: 12px;
-        background: rgba(30, 41, 59, 0.7); /* Slightly lighter for contrast */
-    }
-}
-
 /* --- ASSISTENTE IA (CHAT) --- */
 #ai-chat-widget {
     position: fixed;

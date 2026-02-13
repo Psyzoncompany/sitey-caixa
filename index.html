@@ -82,9 +82,17 @@
         <div class="glass-card p-4 md:p-6"><div class="icon-label-container"><span class="text-2xl">💰</span><span class="info-tooltip" data-tooltip="Saldo Atual">?</span></div><p id="balance" class="text-2xl md:text-4xl font-bold mt-2">R$ 0,00</p></div>
         <div class="glass-card p-4 md:p-6"><div class="icon-label-container"><span class="text-2xl">📈</span><span class="info-tooltip" data-tooltip="Receitas (Mês)">?</span></div><p id="total-income" class="text-2xl md:text-4xl font-bold mt-2 text-green-400">R$ 0,00</p></div>
         <div class="glass-card p-4 md:p-6"><div class="icon-label-container"><span class="text-2xl">📉</span><span class="info-tooltip" data-tooltip="Despesas (Mês)">?</span></div><p id="total-expense" class="text-2xl md:text-4xl font-bold mt-2 text-red-400">R$ 0,00</p></div>
-        <div class="glass-card p-4 md:p-6"><div class="icon-label-container"><span class="text-2xl">💎</span><span class="info-tooltip" data-tooltip="Lucro (Mês)">?</span></div><p id="profit" class="text-2xl md:text-4xl font-bold mt-2">R$ 0,00</p></div>
-        <div class="glass-card p-4 md:p-6 lg:col-span-2"><h3 class="text-gray-400 text-base md:text-lg">Custo por Peça (Mês Atual) 🏭</h3><p id="cost-per-piece-dashboard" class="text-2xl md:text-4xl font-bold mt-2 text-yellow-400">R$ 0,00</p></div>
+        
+        <!-- Secondary Metrics (Hidden on Mobile by default) -->
+        <div id="secondary-metrics" class="hidden md:contents">
+            <div class="glass-card p-4 md:p-6"><div class="icon-label-container"><span class="text-2xl">💎</span><span class="info-tooltip" data-tooltip="Lucro (Mês)">?</span></div><p id="profit" class="text-2xl md:text-4xl font-bold mt-2">R$ 0,00</p></div>
+            <div class="glass-card p-4 md:p-6 lg:col-span-2"><h3 class="text-gray-400 text-base md:text-lg">Custo por Peça (Mês Atual) 🏭</h3><p id="cost-per-piece-dashboard" class="text-2xl md:text-4xl font-bold mt-2 text-yellow-400">R$ 0,00</p></div>
+        </div>
       </div>
+      <button id="toggle-metrics-btn" class="md:hidden w-full py-3 mb-8 text-sm font-semibold text-gray-400 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-colors flex items-center justify-center gap-2">
+        <span>Ver mais métricas</span>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+      </button>
       
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <div class="lg:col-span-1 glass-card p-6">
@@ -258,6 +266,18 @@
             clearInterval(checkSync);
             clearTimeout(timeoutId);
             loadScript("script.js");
+            
+            // Mobile Dashboard Toggle Logic
+            const toggleBtn = document.getElementById('toggle-metrics-btn');
+            const secondaryMetrics = document.getElementById('secondary-metrics');
+            if(toggleBtn && secondaryMetrics) {
+                toggleBtn.addEventListener('click', () => {
+                    secondaryMetrics.classList.toggle('hidden');
+                    secondaryMetrics.classList.toggle('contents'); // Use contents to respect grid layout
+                    toggleBtn.querySelector('span').textContent = secondaryMetrics.classList.contains('hidden') ? 'Ver mais métricas' : 'Ocultar métricas';
+                    toggleBtn.querySelector('svg').style.transform = secondaryMetrics.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+                });
+            }
         }
       }, 100);
     })();

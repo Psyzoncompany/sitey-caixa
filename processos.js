@@ -11,59 +11,11 @@ const init = () => {
     const viewAfazeres = document.getElementById('view-afazeres');
     const viewCortes = document.getElementById('view-cortes');
 
-    const columns = { todo: document.getElementById('column-todo'), doing: document.getElementById('column-doing'), done: document.getElementById('column-done') };
-
-    // --- LÓGICA DE TABS DO KANBAN MOBILE ---
-    const mobileKanbanTabs = document.querySelectorAll('.mobile-kanban-tab');
-    if (mobileKanbanTabs.length > 0) {
-        mobileKanbanTabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                // Remove active class from all tabs
-                mobileKanbanTabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                
-                // Hide all columns, show target
-                document.querySelectorAll('.kanban-column').forEach(col => col.classList.remove('active-mobile-column'));
-                const targetId = tab.dataset.target;
-                document.getElementById(targetId).classList.add('active-mobile-column');
-            });
-        });
-
-        // --- SWIPE GESTURE (KANBAN MOBILE) ---
-        const kanbanView = document.getElementById('view-quadro');
-        let touchStartX = 0;
-        let touchStartY = 0;
-
-        if (kanbanView) {
-            kanbanView.addEventListener('touchstart', (e) => {
-                touchStartX = e.changedTouches[0].screenX;
-                touchStartY = e.changedTouches[0].screenY;
-            }, { passive: true });
-
-            kanbanView.addEventListener('touchend', (e) => {
-                const touchEndX = e.changedTouches[0].screenX;
-                const touchEndY = e.changedTouches[0].screenY;
-                const diffX = touchEndX - touchStartX;
-                const diffY = touchEndY - touchStartY;
-
-                // Se o movimento for horizontal (> 50px) e maior que o vertical (para não atrapalhar scroll)
-                if (Math.abs(diffX) > 50 && Math.abs(diffX) > Math.abs(diffY)) {
-                    const tabs = Array.from(mobileKanbanTabs);
-                    const activeIndex = tabs.findIndex(t => t.classList.contains('active'));
-                    
-                    if (activeIndex !== -1) {
-                        if (diffX < 0) {
-                            // Swipe Left (dedo vai para esquerda) -> Próxima aba (direita)
-                            if (activeIndex < tabs.length - 1) tabs[activeIndex + 1].click();
-                        } else {
-                            // Swipe Right (dedo vai para direita) -> Aba anterior (esquerda)
-                            if (activeIndex > 0) tabs[activeIndex - 1].click();
-                        }
-                    }
-                }
-            }, { passive: true });
-        }
-    }
+    const columns = { 
+        todo: document.getElementById('column-todo'), 
+        doing: document.getElementById('column-doing'), 
+        done: document.getElementById('column-done') 
+    };
 
     const orderModal = document.getElementById('order-modal');
     const orderForm = document.getElementById('order-form');
@@ -607,6 +559,32 @@ const init = () => {
         });
     }
 
+    // --- KANBAN MOBILE TABS LOGIC ---
+    const mobileTabs = document.querySelectorAll('.mobile-kanban-tab');
+    const columnWrappers = {
+        'column-todo': document.getElementById('wrapper-todo'),
+        'column-doing': document.getElementById('wrapper-doing'),
+        'column-done': document.getElementById('wrapper-done')
+    };
+
+    mobileTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            // Remove active class from all tabs
+            mobileTabs.forEach(t => t.classList.remove('active'));
+            // Add active to clicked
+            tab.classList.add('active');
+            
+            // Hide all columns on mobile
+            Object.values(columnWrappers).forEach(wrapper => {
+                if(wrapper) wrapper.classList.remove('active-mobile-view');
+            });
+            
+            // Show target column
+            const targetId = tab.dataset.target;
+            if(columnWrappers[targetId]) columnWrappers[targetId].classList.add('active-mobile-view');
+        });
+    });
+
     const createOrderCard = (order) => {
         const client = clients.find(c => c.id === order.clientId);
         const card = document.createElement('div');
@@ -642,7 +620,7 @@ const init = () => {
              else payStatus = '<span class="w-2 h-2 rounded-full bg-red-500" title="Pendente"></span>';
         }
 
-        // Layout "Mercado Livre" Style
+        // Layout "Mercado Livre" Style / App Compact
         card.innerHTML = `
             <div onclick="window.openOrderModal(${order.id})">
                 <!-- Header: Title & Status -->
@@ -714,12 +692,22 @@ const init = () => {
     window.openOrderModal = (orderId) => openModal(orderId);
 
     const renderKanban = () => {
-        Object.values(columns).forEach(col => col.innerHTML = '');
+        Object.values(columns).forEach(col => { if (col) col.innerHTML = ''; });
         productionOrders.forEach(order => {
             if (columns[order.status]) {
                 const card = createOrderCard(order);
                 columns[order.status].appendChild(card);
             }
+        });
+        
+        // Update Mobile Tab Badges
+        const counts = { todo: 0, doing: 0, done: 0 };
+        productionOrders.forEach(o => { if(counts[o.status] !== undefined) counts[o.status]++; });
+        
+        mobileTabs.forEach(tab => {
+            const target = tab.dataset.target.replace('column-', '');
+            const label = target === 'todo' ? 'A Fazer' : (target === 'doing' ? 'Em Andamento' : 'Concluído');
+            tab.textContent = `${label} (${counts[target]})`;
         });
     };
 
@@ -961,40 +949,72 @@ const init = () => {
             return;
         }
 
+        // Mobile Filter Header (Injected dynamically)
+        if (!document.getElementById('art-mobile-filters')) {
+            const filterHTML = `
+                <div id="art-mobile-filters" class="flex gap-2 overflow-x-auto pb-2 mb-4 md:hidden no-scrollbar">
+                    <button class="px-3 py-1 rounded-full bg-cyan-600 text-white text-xs font-bold whitespace-nowrap">Todos</button>
+                    <button class="px-3 py-1 rounded-full bg-white/10 text-gray-400 text-xs font-bold whitespace-nowrap">Pendentes</button>
+                    <button class="px-3 py-1 rounded-full bg-white/10 text-gray-400 text-xs font-bold whitespace-nowrap">Aprovados</button>
+                </div>`;
+            artTasksContainer.insertAdjacentHTML('beforebegin', filterHTML);
+        }
+
         const createArtCard = (order) => {
             const client = clients.find(c => c.id === order.clientId);
             const artData = order.art || {};
             const artControl = order.artControl || { versions: [] };
             const lastVersion = artControl.versions.length > 0 ? artControl.versions[artControl.versions.length - 1] : null;
             
-            let statusBadge = '<span class="px-2 py-1 rounded bg-gray-700 text-gray-300 text-xs">Rascunho</span>';
+            let statusClass = 'bg-gray-700 text-gray-300';
+            let statusText = 'Rascunho';
+            
             if (lastVersion) {
-                if (lastVersion.status === 'approved') statusBadge = '<span class="px-2 py-1 rounded bg-green-500/20 text-green-400 border border-green-500/50 text-xs font-bold">Aprovada V' + lastVersion.version + '</span>';
-                else if (lastVersion.status === 'sent') statusBadge = '<span class="px-2 py-1 rounded bg-yellow-500/20 text-yellow-400 border border-yellow-500/50 text-xs font-bold">Enviada V' + lastVersion.version + '</span>';
-                else if (lastVersion.status === 'changes_requested') statusBadge = '<span class="px-2 py-1 rounded bg-red-500/20 text-red-400 border border-red-500/50 text-xs font-bold">Ajustes V' + lastVersion.version + '</span>';
+                if (lastVersion.status === 'approved') { statusClass = 'bg-green-500/20 text-green-400 border border-green-500/30'; statusText = `Aprovada V${lastVersion.version}`; }
+                else if (lastVersion.status === 'sent') { statusClass = 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'; statusText = `Enviada V${lastVersion.version}`; }
+                else if (lastVersion.status === 'changes_requested') { statusClass = 'bg-red-500/20 text-red-400 border border-red-500/30'; statusText = `Ajustes V${lastVersion.version}`; }
             }
 
+            // Thumb logic
+            const thumbSrc = (lastVersion && lastVersion.images[0]) ? lastVersion.images[0] : (order.art?.images?.[0] || 'img/placeholder-art.png');
+
+            // New Compact Card HTML
             const card = document.createElement('div');
-            const borderClass = order.isArtOnly ? 'border-l-4 border-purple-500' : '';
-            card.className = `glass-card p-4 flex flex-col gap-3 ${borderClass}`;
+            card.className = `art-card-compact`;
             card.innerHTML = `
-                <div class="flex justify-between items-start">
+                <div class="art-card-header">
                     <div>
-                        <p class="font-bold">${order.description}</p>
-                        <p class="text-sm text-cyan-300">${client ? client.name : 'Cliente'}</p>
+                        <h3 class="art-card-title">${order.description}</h3>
+                        <p class="art-card-subtitle">${client ? client.name : 'Cliente'}</p>
                     </div>
-                    ${statusBadge}
+                    <span class="art-card-badge ${statusClass}">${statusText}</span>
                 </div>
-                <div class="flex justify-between items-center mt-2">
-                    <span class="text-xs text-gray-400">${artControl.versions.length} versões</span>
-                    <button data-order-id="${order.id}" class="open-art-modal-btn btn-shine py-2 px-4 rounded-lg text-sm">Gerenciar Arte</button>
+                
+                <div class="art-card-body">
+                    <img src="${thumbSrc}" class="art-thumb" onerror="this.style.display='none'">
+                    <div class="art-info-grid">
+                        <div class="art-info-item">
+                            <span class="text-gray-500">Prazo:</span>
+                            <span class="text-white font-medium">${new Date(order.deadline).toLocaleDateString('pt-BR').slice(0,5)}</span>
+                        </div>
+                        <div class="art-info-item">
+                            <span class="text-gray-500">Versões:</span>
+                            <span class="text-white font-medium">${artControl.versions.length}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="art-card-actions">
+                    <button data-order-id="${order.id}" class="open-art-modal-btn art-btn-action primary">Gerenciar</button>
+                    <button class="art-btn-action" onclick="alert('Link copiado!')">Link</button>
                 </div>
             `;
             return card;
         };
 
         const container = document.createElement('div');
-        container.className = 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4';
+        // Use simple flex column for mobile, grid for desktop
+        container.className = 'flex flex-col md:grid md:grid-cols-2 xl:grid-cols-3 gap-3';
         artOrders.forEach(order => container.appendChild(createArtCard(order)));
         artTasksContainer.appendChild(container);
     };
