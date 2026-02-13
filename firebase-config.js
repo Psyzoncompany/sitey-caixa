@@ -60,22 +60,26 @@ window.cloudSync = {
 
             if (docSnap.exists()) {
                 this.isSyncing = true; // Bloqueia o push enquanto salva no local
-                const data = docSnap.data();
-                // Atualiza localStorage com dados da nuvem
-                Object.keys(data).forEach(key => {
-                    if (SYNC_KEYS.includes(key)) {
-                        // Firestore guarda objetos, localStorage guarda strings
-                        const value = typeof data[key] === 'object' ? JSON.stringify(data[key]) : data[key];
-                        localStorage.setItem(key, value);
-                    }
-                });
-                this.isSyncing = false; // Libera o push
-                console.log("✅ Dados sincronizados com sucesso!");
+                try {
+                    const data = docSnap.data();
+                    // Atualiza localStorage com dados da nuvem
+                    Object.keys(data).forEach(key => {
+                        if (SYNC_KEYS.includes(key)) {
+                            // Firestore guarda objetos, localStorage guarda strings
+                            const value = typeof data[key] === 'object' ? JSON.stringify(data[key]) : data[key];
+                            localStorage.setItem(key, value);
+                        }
+                    });
+                    console.log("✅ Dados sincronizados com sucesso!");
+                } finally {
+                    this.isSyncing = false; // Libera o push (garantido mesmo se der erro)
+                }
             } else {
                 console.log("ℹ️ Nenhum dado encontrado na nuvem (primeiro uso?).");
             }
         } catch (error) {
             console.error("❌ Erro ao baixar dados:", error);
+            this.isSyncing = false; // Garante desbloqueio em caso de erro de rede
         }
     },
 
@@ -136,17 +140,20 @@ onAuthStateChanged(auth, (user) => {
 
             if (docSnap.exists()) {
                 window.cloudSync.isSyncing = true;
-                const data = docSnap.data();
-                Object.keys(data).forEach(key => {
-                    if (SYNC_KEYS.includes(key)) {
-                        const value = typeof data[key] === 'object' ? JSON.stringify(data[key]) : data[key];
-                        // Só atualiza se for diferente para evitar disparar eventos desnecessários
-                        if (localStorage.getItem(key) !== value) {
-                            localStorage.setItem(key, value);
+                try {
+                    const data = docSnap.data();
+                    Object.keys(data).forEach(key => {
+                        if (SYNC_KEYS.includes(key)) {
+                            const value = typeof data[key] === 'object' ? JSON.stringify(data[key]) : data[key];
+                            // Só atualiza se for diferente para evitar disparar eventos desnecessários
+                            if (localStorage.getItem(key) !== value) {
+                                localStorage.setItem(key, value);
+                            }
                         }
-                    }
-                });
-                window.cloudSync.isSyncing = false;
+                    });
+                } finally {
+                    window.cloudSync.isSyncing = false;
+                }
                 // console.log("🔄 Atualização em tempo real recebida!");
             }
         });
@@ -174,7 +181,7 @@ onAuthStateChanged(auth, (user) => {
 const originalSetItem = localStorage.setItem;
 localStorage.setItem = function(key, value) {
     originalSetItem.apply(this, arguments);
-    if (SYNC_KEYS.includes(key)) {
+    if (SYNC_KEYS.includes(key) && !window.cloudSync.isSyncing) { // FIX: Só salva se NÃO estiver sincronizando
         window.cloudSync.schedulePush();
     }
 };
@@ -183,7 +190,7 @@ localStorage.setItem = function(key, value) {
 const originalRemoveItem = localStorage.removeItem;
 localStorage.removeItem = function(key) {
     originalRemoveItem.apply(this, arguments);
-    if (SYNC_KEYS.includes(key)) {
+    if (SYNC_KEYS.includes(key) && !window.cloudSync.isSyncing) { // FIX: Só salva se NÃO estiver sincronizando
         window.cloudSync.schedulePush();
     }
 };
