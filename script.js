@@ -1,6 +1,10 @@
 const init = () => {
     const mobileMenuButton = document.getElementById('mobile-menu-button');
     const mobileMenu = document.getElementById('mobile-menu');
+    
+    // Menu Mobile Listener (Movido para o topo para garantir que funcione mesmo se houver erros abaixo)
+    if (mobileMenuButton) { mobileMenuButton.addEventListener('click', () => mobileMenu.classList.toggle('open')); }
+
     const balanceEl = document.getElementById('balance');
     const incomeEl = document.getElementById('total-income');
     const expenseEl = document.getElementById('total-expense');
@@ -488,7 +492,6 @@ const init = () => {
     };
 
     // --- EVENT LISTENERS ---
-    if (mobileMenuButton) { mobileMenuButton.addEventListener('click', () => mobileMenu.classList.toggle('hidden')); }
     if(addTransactionBtn) addTransactionBtn.addEventListener('click', openAddModal);
     if(cancelBtn) cancelBtn.addEventListener('click', closeModal);
     if(form) form.addEventListener('submit', handleFormSubmit);
@@ -505,6 +508,12 @@ const init = () => {
     updateUI();
     setTimeout(checkDeadlinesAndNotify, 2000);
 };
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
 
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);

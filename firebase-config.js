@@ -116,6 +116,27 @@ window.addEventListener('beforeunload', (e) => {
     }
 });
 
+// Intercepta cliques em links para avisar sobre alterações não salvas
+document.addEventListener('click', async (e) => {
+    const link = e.target.closest('a');
+    // Verifica se é um link de navegação interna válido
+    if (link && hasUnsavedChanges && link.href && !link.target && !link.href.includes('#') && !link.getAttribute('download')) {
+        if (link.hostname === window.location.hostname) {
+            e.preventDefault();
+            // Pergunta personalizada
+            if (confirm('⚠️ Existem alterações não salvas.\n\n[OK] para SALVAR e ir para a página.\n[Cancelar] para DESCARTAR as alterações e ir.')) {
+                await saveToCloud();
+                window.location.href = link.href;
+            } else {
+                // Usuário escolheu descartar (ou não salvar)
+                hasUnsavedChanges = false; // Evita que o beforeunload dispare
+                updateSaveButtonState();
+                window.location.href = link.href;
+            }
+        }
+    }
+});
+
 // --- BACKEND REAL (Memória + Firestore) ---
 // Substitui o localStorage real por um armazenamento em memória conectado à nuvem
 let memoryStore = {};
@@ -152,6 +173,13 @@ Object.defineProperty(window, 'localStorage', {
             return typeof val === 'object' ? JSON.stringify(val) : val;
         },
         setItem: (key, value) => {
+            // Verifica se o valor realmente mudou para evitar "falsos positivos" de alterações não salvas
+            const currentValue = memoryStore[key];
+            const currentString = typeof currentValue === 'object' ? JSON.stringify(currentValue) : String(currentValue || '');
+            
+            // Se o valor for idêntico, não faz nada (não marca como não salvo)
+            if (currentString === value) return;
+
             try {
                 // Tenta salvar como objeto JSON puro para o Firestore
                 memoryStore[key] = JSON.parse(value);
@@ -188,20 +216,8 @@ onAuthStateChanged(auth, async (user) => {
             return;
         }
 
-        // Exibe tela de carregamento
-        if (!document.getElementById('backend-loader')) {
-            const loader = document.createElement('div');
-            loader.id = 'backend-loader';
-            loader.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;background:#111827;z-index:9999;display:flex;justify-content:center;align-items:center;color:white;font-family:sans-serif;flex-direction:column;gap:1rem;";
-            loader.innerHTML = `
-                <style>
-                    @keyframes pulse-logo { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.8; } 100% { transform: scale(1); opacity: 1; } }
-                </style>
-                <img src="img/logo.png" alt="Logo" style="width: 100px; height: auto; animation: pulse-logo 2s infinite ease-in-out;">
-                <div class="text-gray-300 mt-4 font-medium">Carregando...</div>
-            `;
-            document.body.appendChild(loader);
-        }
+        // O loader agora já existe no HTML (id="initial-loader") para aparecer instantaneamente.
+        // Não precisamos criá-lo aqui, apenas garantir que ele não seja removido antes da hora.
 
         try {
             // Baixa TUDO do Firestore de uma vez
@@ -220,8 +236,11 @@ onAuthStateChanged(auth, async (user) => {
             createFloatingSaveButton();
             
             // Remove tela de carregamento
-            const loader = document.getElementById('backend-loader');
-            if (loader) loader.remove();
+            const loader = document.getElementById('initial-loader');
+            if (loader) {
+                loader.style.opacity = '0';
+                setTimeout(() => loader.remove(), 500);
+            }
 
         } catch (error) {
             console.error("Erro crítico ao carregar dados:", error);

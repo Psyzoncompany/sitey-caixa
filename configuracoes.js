@@ -1,7 +1,7 @@
 const init = () => {
     const mobileMenuButton = document.getElementById('mobile-menu-button');
     const mobileMenu = document.getElementById('mobile-menu');
-    if (mobileMenuButton) { mobileMenuButton.addEventListener('click', () => mobileMenu.classList.toggle('hidden')); }
+    if (mobileMenuButton) { mobileMenuButton.addEventListener('click', () => mobileMenu.classList.toggle('open')); }
 
     const incomeList = document.getElementById('income-categories-list');
     const expenseList = document.getElementById('expense-categories-list');

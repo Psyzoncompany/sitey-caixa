@@ -663,11 +663,6 @@ html[data-theme="light"] .white-text, html[data-theme="light"] .text-white {
         display: flex;
     }
 
-    /* Esconde o botão de menu antigo no topo */
-    #mobile-menu-button {
-        display: none !important;
-    }
-
     /* Adiciona espaço no final da página para o conteúdo não ficar escondido atrás da barra */
     body {
         padding-bottom: 80px;
@@ -689,4 +684,83 @@ html[data-theme="light"] .white-text, html[data-theme="light"] .text-white {
     #floating-save-btn.unsaved {
         transform: translateX(-50%) scale(1.1) !important;
     }
+}
+
+/* --- Animação do Menu Mobile (Slide Down) --- */
+#mobile-menu {
+    transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    display: block !important; /* Sobrescreve o hidden do Tailwind se necessário */
+}
+
+#mobile-menu.open {
+    max-height: 500px; /* Altura suficiente para o conteúdo */
+    opacity: 1;
+}
+
+/* --- Tooltips para Interface Limpa --- */
+.icon-label-container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.info-tooltip {
+    position: relative;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.3);
+    color: rgba(255,255,255,0.5);
+    font-size: 10px;
+    cursor: help;
+}
+.info-tooltip:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.9);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    margin-bottom: 6px;
+    z-index: 50;
+    pointer-events: none;
+}
+
+/* --- Menu Mobile (Bottom Sheet) --- */
+#mobile-menu {
+    position: fixed;
+    bottom: 65px; /* Altura da barra de navegação inferior */
+    left: 0;
+    width: 100%;
+    background: rgba(17, 24, 39, 0.98); /* bg-gray-900 com transparência */
+    backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px 20px 0 0;
+    transform: translateY(120%); /* Escondido para baixo */
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 9980; /* Abaixo do botão flutuante e nav, acima do conteúdo */
+    padding-bottom: 20px;
+    display: block !important; /* Garante que o display:none do tailwind 'hidden' seja ignorado */
+}
+
+#mobile-menu.open {
+    transform: translateY(0);
+}
+
+/* --- Animação ao Segurar Card (Kanban) --- */
+.kanban-card:active {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+    cursor: grabbing;
 }

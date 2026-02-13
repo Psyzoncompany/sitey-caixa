@@ -903,7 +903,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     // --- EVENT LISTENERS ---
-    if (mobileMenuButton) { mobileMenuButton.addEventListener('click', () => mobileMenu.classList.toggle('hidden')); }
+    if (mobileMenuButton) { mobileMenuButton.addEventListener('click', () => mobileMenu.classList.toggle('open')); }
     if(addTransactionBtn) addTransactionBtn.addEventListener('click', openAddModal);
     if(cancelBtn) cancelBtn.addEventListener('click', closeModal);
     if(form) form.addEventListener('submit', handleFormSubmit);

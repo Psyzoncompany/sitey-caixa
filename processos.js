@@ -1,7 +1,7 @@
 const init = () => {
     const mobileMenuButton = document.getElementById('mobile-menu-button');
     const mobileMenu = document.getElementById('mobile-menu');
-    if (mobileMenuButton) { mobileMenuButton.addEventListener('click', () => mobileMenu.classList.toggle('hidden')); }
+    if (mobileMenuButton) { mobileMenuButton.addEventListener('click', () => mobileMenu.classList.toggle('open')); }
 
     const addOrderBtn = document.getElementById('add-order-btn');
     const tabQuadro = document.getElementById('tab-quadro');
