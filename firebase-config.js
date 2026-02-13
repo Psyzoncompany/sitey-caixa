@@ -54,40 +54,66 @@ const playSuccessSound = () => {
     } catch (e) {}
 };
 
-// Helper para o indicador visual de salvamento
-const updateSavingIndicator = (status) => {
-    let indicator = document.getElementById('saving-indicator');
-    if (!indicator) {
-        indicator = document.createElement('div');
-        indicator.id = 'saving-indicator';
-        // Posicionado no topo central para evitar conflito com teclado ou FABs no mobile
-        indicator.style.cssText = "position:fixed;top:24px;left:50%;transform:translateX(-50%);background:rgba(15, 23, 42, 0.95);color:#e2e8f0;padding:8px 16px;border-radius:9999px;font-size:12px;font-family:sans-serif;z-index:10000;display:flex;align-items:center;gap:8px;backdrop-filter:blur(4px);border:1px solid rgba(255,255,255,0.1);transition:opacity 0.3s ease, transform 0.3s ease;opacity:0;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,0.3);white-space:nowrap;";
-        document.body.appendChild(indicator);
-        const style = document.createElement('style');
-        style.innerHTML = `@keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }`;
-        document.head.appendChild(style);
-    }
+// State for unsaved changes
+let hasUnsavedChanges = false;
 
-    if (status === 'saving') {
-        indicator.innerHTML = '<span style="width:8px;height:8px;background:#facc15;border-radius:50%;display:inline-block;animation:pulse-dot 1s infinite;"></span> Salvando...';
-        indicator.style.opacity = '1';
-        indicator.style.transform = 'translateX(-50%) translateY(0)';
-    } else if (status === 'saved') {
-        indicator.innerHTML = '<span style="width:8px;height:8px;background:#4ade80;border-radius:50%;display:inline-block;"></span> Salvo';
-        indicator.style.opacity = '1';
-        setTimeout(() => { indicator.style.opacity = '0'; indicator.style.transform = 'translateX(-50%) translateY(-10px)'; }, 2000);
-    } else if (status === 'error') {
-        indicator.innerHTML = '<span style="width:8px;height:8px;background:#ef4444;border-radius:50%;display:inline-block;"></span> Erro ao salvar';
-        indicator.style.opacity = '1';
-        setTimeout(() => { indicator.style.opacity = '0'; indicator.style.transform = 'translateX(-50%) translateY(-10px)'; }, 5000);
+// Floating Save Button Logic
+const createFloatingSaveButton = () => {
+    if (document.getElementById('floating-save-btn')) return;
+    
+    const btn = document.createElement('button');
+    btn.id = 'floating-save-btn';
+    // Estilo: Flutuante, canto inferior direito, redondo, transição suave
+    btn.style.cssText = "position:fixed;bottom:24px;right:24px;width:64px;height:64px;border-radius:50%;background:#3b82f6;color:white;border:none;box-shadow:0 4px 14px rgba(0,0,0,0.4);z-index:10000;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);";
+    // Ícone de disquete (Save)
+    btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>`;
+    btn.title = "Salvar Alterações";
+    
+    btn.onclick = async () => {
+        if (!hasUnsavedChanges) return;
+        
+        // Feedback visual de carregamento (spinner)
+        const originalContent = btn.innerHTML;
+        btn.innerHTML = `<svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>`;
+        btn.style.pointerEvents = 'none'; // Evita cliques duplos
+
+        await saveToCloud();
+        
+        // Restaura ícone
+        btn.innerHTML = originalContent;
+        btn.style.pointerEvents = 'auto';
+    };
+
+    document.body.appendChild(btn);
+};
+
+const updateSaveButtonState = () => {
+    const btn = document.getElementById('floating-save-btn');
+    if (!btn) return;
+
+    if (hasUnsavedChanges) {
+        btn.style.background = "#ef4444"; // Vermelho (Alterado)
+        btn.style.transform = "scale(1.1)";
+        btn.style.boxShadow = "0 0 15px rgba(239, 68, 68, 0.6)";
+    } else {
+        btn.style.background = "#3b82f6"; // Azul (Salvo)
+        btn.style.transform = "scale(1)";
+        btn.style.boxShadow = "0 4px 14px rgba(0,0,0,0.4)";
     }
 };
+
+// Aviso ao sair da página
+window.addEventListener('beforeunload', (e) => {
+    if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+});
 
 // --- BACKEND REAL (Memória + Firestore) ---
 // Substitui o localStorage real por um armazenamento em memória conectado à nuvem
 let memoryStore = {};
 window.BackendInitialized = false;
-let saveTimeout = null;
 
 const saveToCloud = async () => {
     if (!auth.currentUser) return;
@@ -97,17 +123,17 @@ const saveToCloud = async () => {
         // Salva o estado atual da memória no Firestore
         await setDoc(doc(db, "users", uid), memoryStore, { merge: true });
         playSuccessSound();
-        updateSavingIndicator('saved');
+        hasUnsavedChanges = false;
+        updateSaveButtonState();
     } catch (e) {
         console.error("❌ Erro ao salvar na nuvem:", e);
-        updateSavingIndicator('error');
+        alert("Erro ao salvar na nuvem. Verifique sua conexão.");
     }
 };
 
-const scheduleSave = () => {
-    if (saveTimeout) clearTimeout(saveTimeout);
-    updateSavingIndicator('saving');
-    saveTimeout = setTimeout(saveToCloud, 1000); // Espera 1 segundo após a última alteração
+const markUnsaved = () => {
+    hasUnsavedChanges = true;
+    updateSaveButtonState();
 };
 
 // Interceptador do localStorage (Mágica para fazer o site funcionar com a nuvem)
@@ -127,7 +153,7 @@ Object.defineProperty(window, 'localStorage', {
                 // Se não for JSON, salva como string
                 memoryStore[key] = value;
             }
-            scheduleSave();
+            markUnsaved();
         },
         removeItem: (key) => {
             delete memoryStore[key];
@@ -137,11 +163,11 @@ Object.defineProperty(window, 'localStorage', {
                     [key]: deleteField()
                 }).catch(err => console.error("Erro ao deletar campo:", err));
             }
-            scheduleSave();
+            markUnsaved();
         },
         clear: () => {
             memoryStore = {};
-            scheduleSave();
+            markUnsaved();
         }
     },
     writable: true
@@ -179,6 +205,7 @@ onAuthStateChanged(auth, async (user) => {
             }
             
             window.BackendInitialized = true;
+            createFloatingSaveButton();
             
             // Remove tela de carregamento
             const loader = document.getElementById('backend-loader');
