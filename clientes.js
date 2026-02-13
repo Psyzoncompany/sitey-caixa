@@ -1,4 +1,8 @@
 const init = () => {
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+    if (mobileMenuButton) { mobileMenuButton.addEventListener('click', () => mobileMenu.classList.toggle('hidden')); }
+
     const addClientBtn = document.getElementById('add-client-btn');
     const clientModal = document.getElementById('client-modal');
     const clientForm = document.getElementById('client-form');

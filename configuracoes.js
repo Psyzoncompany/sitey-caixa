@@ -1,4 +1,8 @@
 const init = () => {
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+    if (mobileMenuButton) { mobileMenuButton.addEventListener('click', () => mobileMenu.classList.toggle('hidden')); }
+
     const incomeList = document.getElementById('income-categories-list');
     const expenseList = document.getElementById('expense-categories-list');
     const newIncomeCategoryInput = document.getElementById('new-income-category');

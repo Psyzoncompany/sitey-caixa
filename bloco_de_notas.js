@@ -10,6 +10,10 @@
 */
 document.addEventListener('DOMContentLoaded', () => {
   'use strict';
+  
+  const mobileMenuButton = document.getElementById('mobile-menu-button');
+  const mobileMenu = document.getElementById('mobile-menu');
+  if (mobileMenuButton) { mobileMenuButton.addEventListener('click', () => mobileMenu.classList.toggle('hidden')); }
 
   /* Config */
   const LS_KEY = 'psyzon_notes_v3';
