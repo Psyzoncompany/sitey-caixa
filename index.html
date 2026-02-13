@@ -229,20 +229,12 @@
         loadScript("script.js");
       }, 5000);
       
-      // Aguarda o objeto cloudSync estar disponível (carregado pelo firebase-config.js)
+      // Aguarda o Backend carregar os dados da nuvem
       const checkSync = setInterval(() => {
-        if (window.cloudSync) {
+        if (window.BackendInitialized) {
             clearInterval(checkSync);
-            window.cloudSync.pull()
-                .then(() => {
-                clearTimeout(timeoutId);
-                loadScript("script.js");
-                })
-                .catch((e) => {
-                clearTimeout(timeoutId);
-                console.error("Falha ao sincronizar Firebase, carregando site normalmente:", e);
-                loadScript("script.js");
-                });
+            clearTimeout(timeoutId);
+            loadScript("script.js");
         }
       }, 100);
     })();

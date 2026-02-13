@@ -129,13 +129,11 @@
     </main>
   </div>
   <script>
-    // Carrega configuracoes.js apenas após tentar sincronizar
+    // Carrega configuracoes.js apenas após o Backend inicializar
     const checkSync = setInterval(() => {
-        if (window.cloudSync) {
+        if (window.BackendInitialized) {
             clearInterval(checkSync);
-            window.cloudSync.pull().finally(() => {
-                const s = document.createElement('script'); s.src = "configuracoes.js"; document.body.appendChild(s);
-            });
+            const s = document.createElement('script'); s.src = "configuracoes.js"; document.body.appendChild(s);
         }
     }, 100);
   </script>
