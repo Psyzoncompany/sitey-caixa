@@ -286,34 +286,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     notes: orderPrintingNotesInput ? (orderPrintingNotesInput.value || '').trim() : ''
                 }
             };
-            let savedOrderId = editingOrderId;
             if (editingOrderId) {
                 const orderIndex = productionOrders.findIndex(o => o.id === editingOrderId);
                 productionOrders[orderIndex] = { ...productionOrders[orderIndex], ...orderData };
             } else {
-                savedOrderId = Date.now();
-                const newOrder = { id: savedOrderId, status: 'todo', ...orderData };
+                const newOrder = { id: Date.now(), status: 'todo', ...orderData };
                 productionOrders.push(newOrder);
             }
-
-            // --- CORREÇÃO: Sincronizar Lançamento Financeiro ---
-            let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
-            transactions = transactions.filter(t => t.orderId !== savedOrderId); // Remove anterior para evitar duplicatas
-            
-            if (orderData.amountPaid > 0 && orderData.clientId) {
-                transactions.push({
-                    id: Date.now() + Math.random(),
-                    orderId: savedOrderId,
-                    clientId: orderData.clientId,
-                    description: `Pedido: ${orderData.description}`,
-                    amount: orderData.amountPaid,
-                    type: 'income',
-                    date: new Date().toISOString().split('T')[0]
-                });
-            }
-            localStorage.setItem('transactions', JSON.stringify(transactions));
-            // ---------------------------------------------------
-
             saveOrders();
             renderKanban();
             closeModal();
@@ -386,13 +365,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (confirm('Tem certeza que deseja excluir permanentemente este pedido concluído?')) {
             productionOrders = productionOrders.filter(o => o.id !== orderId);
             saveOrders();
-
-            // --- CORREÇÃO: Remover Lançamento Financeiro associado ---
-            let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
-            transactions = transactions.filter(t => t.orderId !== orderId);
-            localStorage.setItem('transactions', JSON.stringify(transactions));
-            // ---------------------------------------------------------
-
             renderKanban();
         }
     };
@@ -511,9 +483,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const colors = order.colors || [];
             const colorsHtml = colors.map(c => {
                 // try to use as background if looks like hex, otherwise show label
-                const val = (c || '').toString();
-                const safeBg = /^#([0-9A-F]{3}){1,2}$/i.test(val.trim()) ? `background:${val}` : '';
-                return `<div class="flex items-center gap-2"><div class="w-6 h-6 rounded-sm border" style="${safeBg}"></div><span class="text-xs text-gray-300">${val}</span></div>`;
+                const safeBg = /^#([0-9A-F]{3}){1,2}$/i.test(c.trim()) ? `background:${c}` : '';
+                return `<div class="flex items-center gap-2"><div class="w-6 h-6 rounded-sm border" style="${safeBg}"></div><span class="text-xs text-gray-300">${c}</span></div>`;
             }).join('');
 
             const card = document.createElement('div');

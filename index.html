@@ -1,36 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br" class="scroll-smooth">
 <head>
-  <!-- Script de Proteção de Login -->
-  <script>
-    if (localStorage.getItem("logado") !== "sim") {
-      window.location.href = "login.html";
-    }
-  </script>
-
-  <!-- Firebase (CDN compat) -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-
-  <script src="cloud-sync.js"></script>
-  <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyANqzrj3lzHUqMbClwcVHAVQjswjp1nUiY",
-      authDomain: "sitey-caixa-16e06.firebaseapp.com",
-      projectId: "sitey-caixa-16e06",
-      storageBucket: "sitey-caixa-16e06.firebasestorage.app",
-      messagingSenderId: "1077514189419",
-      appId: "1:1077514189419:web:034755d7bf1ab27729cf2e",
-      measurementId: "G-MT69LT56JH"
-    };
-
-    // ⚠️ Coloque aqui o EMAIL e SENHA que você criou no Authentication:
-    cloudSync.init(firebaseConfig, "admin@sitey.com", "451021");
-  </script>
-
-
-
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PSYZON - Dashboard Financeiro</title>
@@ -61,7 +31,6 @@
               <a href="historico.html" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium">Histórico</a>
               <a href="relatorios.html" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium">Relatórios</a>
               <a href="configuracoes.html" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium">Configurações</a>
-              <button onclick="localStorage.removeItem('logado'); location.href='login.html';" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium hover:text-red-400">Sair</button>
             </nav>
           </div>
           <div class="-mr-2 flex md:hidden">
@@ -83,7 +52,6 @@
           <a href="historico.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Histórico</a>
           <a href="relatorios.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Relatórios</a>
           <a href="configuracoes.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Configurações</a>
-          <button onclick="localStorage.removeItem('logado'); location.href='login.html';" class="w-full text-left text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium hover:text-red-400">Sair</button>
         </div>
       </div>
     </header>
@@ -147,7 +115,6 @@
         </div>
         <div class="glass-card p-6">
           <h3 class="text-xl font-bold mb-4">Compras de Malha (Mês Atual)</h3>
-          
           <div class="relative h-80 md:h-96">
             <canvas id="fabricChart"></canvas>
           </div>
@@ -226,34 +193,7 @@
     </div>
     <div id="notification-container" class="fixed bottom-5 right-5 z-[100] w-full max-w-xs space-y-3"></div>
   </div>
-  <script>
-    (function () {
-      let loaded = false;
-
-      const loadScript = (src) => {
-        if (loaded) return;
-        loaded = true;
-        const s = document.createElement("script");
-        s.src = src;
-        document.body.appendChild(s);
-      };
-
-      const timeoutId = setTimeout(() => {
-        console.warn("Firebase está demorando, carregando site sem sincronização");
-        loadScript("script.js");
-      }, 5000);
-
-      cloudSync.pull()
-        .then(() => {
-          clearTimeout(timeoutId);
-          loadScript("script.js");
-        })
-        .catch((e) => {
-          clearTimeout(timeoutId);
-          console.error("Falha ao sincronizar Firebase, carregando site normalmente:", e);
-          loadScript("script.js");
-        });
-    })();
-  </script>
+  <script src="script.js"></script>
+  <script src="theme-toggle.js"></script>
 </body>
 </html>

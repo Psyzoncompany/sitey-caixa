@@ -1,33 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br" class="scroll-smooth">
 <head>
-    <!-- Script de Proteção de Login -->
-    <script>
-      if (localStorage.getItem("logado") !== "sim") {
-        window.location.href = "login.html";
-      }
-    </script>
-
-    <!-- Firebase (CDN compat) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-
-    <script src="cloud-sync.js"></script>
-    <script>
-      const firebaseConfig = {
-        apiKey: "AIzaSyANqzrj3lzHUqMbClwcVHAVQjswjp1nUiY",
-        authDomain: "sitey-caixa-16e06.firebaseapp.com",
-        projectId: "sitey-caixa-16e06",
-        storageBucket: "sitey-caixa-16e06.firebasestorage.app",
-        messagingSenderId: "1077514189419",
-        appId: "1:1077514189419:web:034755d7bf1ab27729cf2e",
-        measurementId: "G-MT69LT56JH"
-      };
-
-      cloudSync.init(firebaseConfig, "admin@sitey.com", "451021");
-    </script>
-
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PSYZON - Configurações</title>
@@ -123,40 +96,7 @@
         </div>
     </main>
   </div>
-  <script>
-    let scriptsLoaded = false;
-
-    const loadScript = (src) => {
-      if (scriptsLoaded) return;
-      scriptsLoaded = true;
-      const s = document.createElement("script");
-      s.src = src;
-      document.body.appendChild(s);
-    };
-
-    // Sempre carregue o script principal, mesmo se o Firebase falhar
-    let firebaseTimeout = false;
-    const timeoutId = setTimeout(() => {
-      firebaseTimeout = true;
-      alert("Não foi possível conectar ao servidor. O site funcionará sem sincronização na nuvem.");
-      loadScript("configuracoes.js");
-    }, 5000);
-
-    cloudSync.pull()
-      .then(() => {
-        if (!firebaseTimeout) {
-          clearTimeout(timeoutId);
-          loadScript("configuracoes.js");
-        }
-      })
-      .catch((e) => {
-        if (!firebaseTimeout) {
-          clearTimeout(timeoutId);
-          alert("Falha ao sincronizar com o servidor. O site funcionará sem sincronização na nuvem.\n\nErro: " + (e && e.message ? e.message : e));
-          loadScript("configuracoes.js");
-        }
-      });
-  </script>
-
+  <script src="configuracoes.js"></script>
+    <script src="theme-toggle.js"></script>
 </body>
 </html>
