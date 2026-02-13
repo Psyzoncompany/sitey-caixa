@@ -1,0 +1,291 @@
+<!-- c:\Users\AAAA\Desktop\sitey-caixa\aprovacao.html -->
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aprovação de Arte - PSYZON</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #e2e8f0; }
+        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .zoom-container { overflow: hidden; cursor: zoom-in; }
+        .zoom-container img { transition: transform 0.3s ease; }
+        .zoom-container:hover img { transform: scale(1.5); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-slate-900 border-b border-white/10 p-4 sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <img src="img/logo.png" alt="Logo" class="h-8 md:h-10">
+                <div class="h-8 w-px bg-white/20 mx-2"></div>
+                <div>
+                    <h1 class="text-sm md:text-base font-bold text-white">Central de Aprovação</h1>
+                    <p id="header-order-id" class="text-xs text-gray-400">Carregando...</p>
+                </div>
+            </div>
+            <div id="status-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-gray-700 text-gray-300">
+                Aguardando
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-4 md:p-8 max-w-5xl mx-auto w-full grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Left: Art Preview -->
+        <div class="lg:col-span-2 space-y-6">
+            <div class="glass rounded-xl p-1">
+                <div class="bg-slate-950 rounded-lg overflow-hidden relative group">
+                    <img id="art-image" src="" alt="Arte para aprovação" class="w-full h-auto object-contain max-h-[70vh]">
+                    <button onclick="toggleFullScreen()" class="absolute top-4 right-4 bg-black/50 hover:bg-black/80 text-white p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Checklist Visual -->
+            <div class="glass rounded-xl p-6">
+                <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Checklist de Conferência
+                </h3>
+                <p class="text-sm text-gray-400 mb-4">Por favor, verifique atentamente os itens abaixo antes de aprovar:</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div class="flex items-center gap-3 p-3 rounded bg-white/5 border border-white/5">
+                        <div class="w-5 h-5 rounded-full border-2 border-gray-500"></div>
+                        <span class="text-sm">Ortografia e Textos</span>
+                    </div>
+                    <div class="flex items-center gap-3 p-3 rounded bg-white/5 border border-white/5">
+                        <div class="w-5 h-5 rounded-full border-2 border-gray-500"></div>
+                        <span class="text-sm">Cores e Tonalidades</span>
+                    </div>
+                    <div class="flex items-center gap-3 p-3 rounded bg-white/5 border border-white/5">
+                        <div class="w-5 h-5 rounded-full border-2 border-gray-500"></div>
+                        <span class="text-sm">Posicionamento (Frente/Costas)</span>
+                    </div>
+                    <div class="flex items-center gap-3 p-3 rounded bg-white/5 border border-white/5">
+                        <div class="w-5 h-5 rounded-full border-2 border-gray-500"></div>
+                        <span class="text-sm">Tamanhos e Dimensões</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Actions -->
+        <div class="space-y-6">
+            <!-- Info Card -->
+            <div class="glass rounded-xl p-6">
+                <h2 class="text-xl font-bold text-white mb-2" id="art-version-title">Versão --</h2>
+                <p class="text-sm text-gray-400 mb-4" id="art-date">Enviada em: --/--/----</p>
+                <div class="text-sm text-gray-300 bg-slate-800 p-3 rounded border-l-4 border-cyan-500 mb-4">
+                    <p class="font-bold text-cyan-400 mb-1">Mensagem do Estúdio:</p>
+                    <p id="art-briefing">--</p>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div id="action-container" class="glass rounded-xl p-6 space-y-4">
+                <h3 class="font-bold text-white">Sua Decisão</h3>
+                
+                <div id="feedback-area" class="hidden">
+                    <label class="block text-sm text-gray-400 mb-2">Descreva os ajustes necessários:</label>
+                    <textarea id="reject-comment" rows="4" class="w-full bg-slate-900 border border-white/20 rounded-lg p-3 text-sm focus:border-cyan-500 outline-none" placeholder="Ex: Aumentar a logo, corrigir o nome..."></textarea>
+                    <div class="flex gap-3 mt-3">
+                        <button onclick="cancelReject()" class="flex-1 py-2 rounded-lg border border-white/20 text-gray-300 hover:bg-white/5">Cancelar</button>
+                        <button onclick="confirmReject()" class="flex-1 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white font-bold">Enviar Ajustes</button>
+                    </div>
+                </div>
+
+                <div id="buttons-area" class="space-y-3">
+                    <button onclick="approveArt()" class="w-full py-4 rounded-xl bg-green-600 hover:bg-green-500 text-white font-bold text-lg shadow-lg shadow-green-900/20 transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        APROVAR ARTE
+                    </button>
+                    <button onclick="startReject()" class="w-full py-3 rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-semibold border border-white/10 transition-all">
+                        Solicitar Ajustes
+                    </button>
+                </div>
+
+                <div id="success-message" class="hidden text-center py-8">
+                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-500/20 text-green-400 mb-4">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-white">Arte Aprovada!</h3>
+                    <p class="text-gray-400 text-sm mt-2">Obrigado. Seu pedido seguirá para produção.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Firebase Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // Configuração (Mesma do admin)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCJVYTzakEJdJ2lODZRjVx4V7r220-iWIQ",
+            authDomain: "sitey-caixa.firebaseapp.com",
+            projectId: "sitey-caixa",
+            storageBucket: "sitey-caixa.firebasestorage.app",
+            messagingSenderId: "995209588095",
+            appId: "1:995209588095:web:d7fdc0e218f7a69f08fe4a",
+            measurementId: "G-F0CJN6MTFE"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Parse URL Params
+        const urlParams = new URLSearchParams(window.location.search);
+        const uid = urlParams.get('uid');
+        const orderId = parseInt(urlParams.get('oid'));
+        const token = urlParams.get('token');
+
+        let currentOrder = null;
+        let currentVersionIndex = -1;
+
+        async function loadData() {
+            if (!uid || !orderId || !token) {
+                alert("Link inválido ou incompleto.");
+                return;
+            }
+
+            try {
+                const docRef = doc(db, "users", uid);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    const orders = data.productionOrders || [];
+                    currentOrder = orders.find(o => o.id === orderId);
+
+                    if (currentOrder && currentOrder.artControl && currentOrder.artControl.versions) {
+                        const versionIdx = currentOrder.artControl.versions.findIndex(v => v.token === token);
+                        
+                        if (versionIdx !== -1) {
+                            currentVersionIndex = versionIdx;
+                            renderPage(currentOrder, currentOrder.artControl.versions[versionIdx]);
+                        } else {
+                            document.body.innerHTML = "<div class='p-10 text-center text-white'><h1>Link expirado ou versão não encontrada.</h1></div>";
+                        }
+                    } else {
+                        document.body.innerHTML = "<div class='p-10 text-center text-white'><h1>Pedido não encontrado.</h1></div>";
+                    }
+                } else {
+                    document.body.innerHTML = "<div class='p-10 text-center text-white'><h1>Dados não encontrados.</h1></div>";
+                }
+            } catch (error) {
+                console.error("Erro ao carregar:", error);
+                alert("Erro de conexão. Tente recarregar.");
+            }
+        }
+
+        function renderPage(order, version) {
+            document.getElementById('header-order-id').textContent = `Pedido #${order.id} • ${order.description}`;
+            document.getElementById('art-image').src = version.images[0] || ''; // Pega a primeira imagem
+            document.getElementById('art-version-title').textContent = `Versão ${version.version}`;
+            document.getElementById('art-date').textContent = `Enviada em: ${new Date(version.createdAt).toLocaleString()}`;
+            document.getElementById('art-briefing').textContent = version.notes || "Sem observações adicionais.";
+
+            const badge = document.getElementById('status-badge');
+            const buttonsArea = document.getElementById('buttons-area');
+            const successMsg = document.getElementById('success-message');
+
+            if (version.status === 'approved') {
+                badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-green-500/20 text-green-400 border border-green-500/50";
+                badge.textContent = "APROVADA";
+                buttonsArea.classList.add('hidden');
+                successMsg.classList.remove('hidden');
+            } else if (version.status === 'changes_requested') {
+                badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/50";
+                badge.textContent = "AJUSTES SOLICITADOS";
+                buttonsArea.innerHTML = "<p class='text-center text-gray-400'>Você solicitou ajustes nesta versão.</p>";
+            } else {
+                badge.className = "px-3 py-1 rounded-full text-xs font-bold bg-yellow-500/20 text-yellow-400 border border-yellow-500/50";
+                badge.textContent = "AGUARDANDO APROVAÇÃO";
+            }
+        }
+
+        // Expose functions to window
+        window.toggleFullScreen = () => {
+            const img = document.getElementById('art-image');
+            if (img.requestFullscreen) img.requestFullscreen();
+            else if (img.webkitRequestFullscreen) img.webkitRequestFullscreen();
+        };
+
+        window.startReject = () => {
+            document.getElementById('buttons-area').classList.add('hidden');
+            document.getElementById('feedback-area').classList.remove('hidden');
+        };
+
+        window.cancelReject = () => {
+            document.getElementById('feedback-area').classList.add('hidden');
+            document.getElementById('buttons-area').classList.remove('hidden');
+        };
+
+        window.approveArt = async () => {
+            if (!confirm("Confirmar aprovação da arte? Isso autoriza o início da produção.")) return;
+            await updateStatus('approved', 'Aprovado pelo cliente via link.');
+        };
+
+        window.confirmReject = async () => {
+            const comment = document.getElementById('reject-comment').value.trim();
+            if (!comment) { alert("Por favor, descreva os ajustes necessários."); return; }
+            await updateStatus('changes_requested', comment);
+        };
+
+        async function updateStatus(status, comment) {
+            // Optimistic UI
+            document.getElementById('action-container').style.opacity = '0.5';
+            document.getElementById('action-container').style.pointerEvents = 'none';
+
+            try {
+                // 1. Get fresh data
+                const docRef = doc(db, "users", uid);
+                const docSnap = await getDoc(docRef);
+                const data = docSnap.data();
+                const orders = data.productionOrders;
+                const orderIdx = orders.findIndex(o => o.id === orderId);
+
+                // 2. Update local object
+                const version = orders[orderIdx].artControl.versions[currentVersionIndex];
+                version.status = status;
+                version.history.push({
+                    action: status,
+                    date: Date.now(),
+                    user: 'Cliente (Link)',
+                    comment: comment
+                });
+
+                // Update Order Status Logic
+                if (status === 'approved') {
+                    orders[orderIdx].status = 'doing'; // Move to Doing
+                    if (orders[orderIdx].checklist && orders[orderIdx].checklist.art) {
+                        orders[orderIdx].checklist.art.completed = true;
+                    }
+                }
+
+                // 3. Write back
+                await updateDoc(docRef, { productionOrders: orders });
+
+                alert(status === 'approved' ? "Arte aprovada com sucesso!" : "Solicitação de ajustes enviada.");
+                location.reload();
+
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao salvar. Tente novamente.");
+                document.getElementById('action-container').style.opacity = '1';
+                document.getElementById('action-container').style.pointerEvents = 'auto';
+            }
+        }
+
+        loadData();
+    </script>
+</body>
+</html>

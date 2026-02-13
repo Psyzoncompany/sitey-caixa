@@ -152,6 +152,7 @@ const init = () => {
     const artReferencesContainer = document.getElementById('art-references-container');
     const addArtImageBtn = document.getElementById('add-art-image-btn');
     const artImageInput = document.getElementById('art-image-input');
+    // saveArtBtn removido da lógica antiga, agora usamos o controle de versões
     const saveArtBtn = document.getElementById('save-art-btn');
 
     let productionOrders = JSON.parse(localStorage.getItem('production_orders')) || [];
@@ -538,6 +539,15 @@ const init = () => {
             } else {
                 const newOrder = { id: Date.now(), status: 'todo', ...orderData };
                 productionOrders.push(newOrder);
+                
+                // HOOK HIPOCAMPO: Pedido Criado
+                if (window.HipocampoIA) {
+                    window.HipocampoIA.recordEvent('order_created', {
+                        totalValue: newOrder.totalValue,
+                        totalItems: (newOrder.checklist.cutting?.subtasks || []).reduce((a,b)=>a+b.total,0) || newOrder.printing?.total || 1,
+                        printType: newOrder.printType
+                    }, { orderId: newOrder.id, customerId: newOrder.clientId });
+                }
             }
             saveOrders();
             renderKanban();
@@ -855,10 +865,13 @@ const init = () => {
     const renderArtTasks = () => {
         artTasksContainer.innerHTML = '';
         
-        const artOnlyOrders = productionOrders.filter(order => order.status !== 'done' && order.isArtOnly);
-        const productionArtOrders = productionOrders.filter(order => order.status !== 'done' && !order.isArtOnly && (!order.checklist?.art?.completed));
+        // Filtra pedidos que precisam de arte (seja ArtOnly ou Produção com arte pendente)
+        // Mostra todos que não estão 'done' para permitir gerenciar versões mesmo após aprovação inicial
+        const artOrders = productionOrders.filter(order => 
+            order.status !== 'done' && (order.isArtOnly || (order.checklist && order.checklist.art))
+        );
 
-        if (artOnlyOrders.length === 0 && productionArtOrders.length === 0) {
+        if (artOrders.length === 0) {
             artTasksContainer.innerHTML = '<div class="glass-card p-6 text-center text-gray-400">Nenhum pedido pendente para arte. ✨</div>';
             return;
         }
@@ -866,121 +879,204 @@ const init = () => {
         const createArtCard = (order) => {
             const client = clients.find(c => c.id === order.clientId);
             const artData = order.art || {};
-            const deadline = artData.deadline || order.deadline;
-            let deadlineText = '';
-            if (deadline) {
-                const deadlineDate = new Date(deadline + "T03:00:00");
-                deadlineText = `Prazo: ${deadlineDate.toLocaleDateString('pt-BR')}`;
+            const artControl = order.artControl || { versions: [] };
+            const lastVersion = artControl.versions.length > 0 ? artControl.versions[artControl.versions.length - 1] : null;
+            
+            let statusBadge = '<span class="px-2 py-1 rounded bg-gray-700 text-gray-300 text-xs">Rascunho</span>';
+            if (lastVersion) {
+                if (lastVersion.status === 'approved') statusBadge = '<span class="px-2 py-1 rounded bg-green-500/20 text-green-400 border border-green-500/50 text-xs font-bold">Aprovada V' + lastVersion.version + '</span>';
+                else if (lastVersion.status === 'sent') statusBadge = '<span class="px-2 py-1 rounded bg-yellow-500/20 text-yellow-400 border border-yellow-500/50 text-xs font-bold">Enviada V' + lastVersion.version + '</span>';
+                else if (lastVersion.status === 'changes_requested') statusBadge = '<span class="px-2 py-1 rounded bg-red-500/20 text-red-400 border border-red-500/50 text-xs font-bold">Ajustes V' + lastVersion.version + '</span>';
             }
+
             const card = document.createElement('div');
             const borderClass = order.isArtOnly ? 'border-l-4 border-purple-500' : '';
-            card.className = `glass-card p-4 flex justify-between items-center ${borderClass}`;
+            card.className = `glass-card p-4 flex flex-col gap-3 ${borderClass}`;
             card.innerHTML = `
-                <div>
-                    <p class="font-bold">${order.description}</p>
-                    <p class="text-sm text-cyan-300">${client ? client.name : 'Cliente'}</p>
-                    <p class="text-xs text-gray-400">${deadlineText}</p>
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="font-bold">${order.description}</p>
+                        <p class="text-sm text-cyan-300">${client ? client.name : 'Cliente'}</p>
+                    </div>
+                    ${statusBadge}
                 </div>
-                <button data-order-id="${order.id}" class="open-art-modal-btn btn-shine py-2 px-4 rounded-lg text-sm">Abrir Arte</button>
+                <div class="flex justify-between items-center mt-2">
+                    <span class="text-xs text-gray-400">${artControl.versions.length} versões</span>
+                    <button data-order-id="${order.id}" class="open-art-modal-btn btn-shine py-2 px-4 rounded-lg text-sm">Gerenciar Arte</button>
+                </div>
             `;
             return card;
         };
 
-        if (artOnlyOrders.length > 0) {
-            const title = document.createElement('h3');
-            title.className = 'text-lg font-bold text-purple-400 mb-3 border-b border-white/10 pb-2';
-            title.textContent = 'Pedidos Exclusivos de Arte';
-            artTasksContainer.appendChild(title);
-            const container = document.createElement('div');
-            container.className = 'space-y-3 mb-6';
-            artOnlyOrders.forEach(order => container.appendChild(createArtCard(order)));
-            artTasksContainer.appendChild(container);
-        }
-
-        if (productionArtOrders.length > 0) {
-            const title = document.createElement('h3');
-            title.className = 'text-lg font-bold text-cyan-400 mb-3 border-b border-white/10 pb-2';
-            title.textContent = 'Produção - Arte Pendente';
-            artTasksContainer.appendChild(title);
-            const container = document.createElement('div');
-            container.className = 'space-y-3';
-            productionArtOrders.forEach(order => container.appendChild(createArtCard(order)));
-            artTasksContainer.appendChild(container);
-        }
+        const container = document.createElement('div');
+        container.className = 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4';
+        artOrders.forEach(order => container.appendChild(createArtCard(order)));
+        artTasksContainer.appendChild(container);
     };
 
-    const openArtModal = (orderId) => {
+    // --- NOVO CONTROLE DE ARTES (VERSÕES) ---
+    const openArtControlModal = (orderId) => {
         activeArtOrderId = orderId;
         const order = productionOrders.find(o => o.id === orderId);
         const client = clients.find(c => c.id === order.clientId);
-        artModalTitle.textContent = `Arte: ${order.description} (${client ? client.name : ''})`;
-        artBriefingInput.value = (order.art && order.art.briefing) || '';
-        artReferencesContainer.innerHTML = '';
-        if (order.art && order.art.images) {
-            order.art.images.forEach((img, idx) => {
-                const imgDiv = document.createElement('div');
-                imgDiv.className = 'relative';
-                imgDiv.innerHTML = `<img src="${img}" class="rounded shadow w-full h-24 object-cover"/><button type="button" class="remove-art-image absolute top-1 right-1 bg-black/60 text-white rounded-full px-2" data-idx="${idx}">&times;</button>`;
-                artReferencesContainer.appendChild(imgDiv);
-            });
-        }
+        
+        // Inicializa estrutura se não existir
+        if (!order.artControl) order.artControl = { versions: [] };
+
+        artModalTitle.textContent = `Gestão de Arte: ${order.description}`;
+        
+        // Renderiza o modal customizado para controle de versões
+        const modalBody = artModal.querySelector('.grid'); // Container principal do modal
+        modalBody.innerHTML = `
+            <div class="col-span-1 lg:col-span-2 flex flex-col h-full">
+                <!-- Header com Briefing -->
+                <div class="bg-white/5 p-4 rounded-lg mb-4">
+                    <h3 class="text-sm font-bold text-gray-400 mb-1">Briefing / Notas</h3>
+                    <p class="text-sm text-white">${order.notes || 'Sem anotações no pedido.'}</p>
+                </div>
+
+                <!-- Lista de Versões -->
+                <div id="art-versions-list" class="flex-1 overflow-y-auto space-y-4 mb-4 pr-2">
+                    <!-- Versões renderizadas aqui -->
+                </div>
+
+                <!-- Ações -->
+                <div class="border-t border-white/10 pt-4 flex justify-between items-center">
+                    <input type="file" id="new-version-input" class="hidden" accept="image/*">
+                    <button id="btn-new-version" class="btn-shine py-2 px-4 text-sm">+ Nova Versão</button>
+                    <button id="btn-close-art" class="text-gray-400 hover:text-white">Fechar</button>
+                </div>
+            </div>
+        `;
+
+        renderArtVersionsList(order);
+
+        // Listeners
+        document.getElementById('btn-new-version').onclick = () => document.getElementById('new-version-input').click();
+        document.getElementById('new-version-input').onchange = (e) => handleNewVersionUpload(e, order);
+        document.getElementById('btn-close-art').onclick = () => artModal.classList.add('hidden');
+
         artModal.classList.remove('hidden');
     };
 
-    const saveArtData = () => {
-        const order = productionOrders.find(o => o.id === activeArtOrderId);
-        if (!order) return;
-        order.art = order.art || {};
-        order.art.briefing = artBriefingInput.value;
-        order.art.images = order.art.images || [];
-        order.art.deadline = order.deadline; // Usa o prazo do pedido, pode adicionar campo separado se quiser
-        saveOrders();
-        artModal.classList.add('hidden');
-        activeArtOrderId = null;
-        renderArtTasks();
+    const renderArtVersionsList = (order) => {
+        const container = document.getElementById('art-versions-list');
+        container.innerHTML = '';
+
+        if (order.artControl.versions.length === 0) {
+            container.innerHTML = '<div class="text-center text-gray-500 py-8">Nenhuma versão criada ainda.</div>';
+            return;
+        }
+
+        // Renderiza em ordem decrescente (mais nova primeiro)
+        [...order.artControl.versions].reverse().forEach((ver) => {
+            const isApproved = ver.status === 'approved';
+            const statusColors = {
+                draft: 'text-gray-400 border-gray-600',
+                sent: 'text-yellow-400 border-yellow-500 bg-yellow-500/10',
+                approved: 'text-green-400 border-green-500 bg-green-500/10',
+                changes_requested: 'text-red-400 border-red-500 bg-red-500/10'
+            };
+            const statusLabels = {
+                draft: 'Rascunho', sent: 'Enviada', approved: 'Aprovada', changes_requested: 'Ajustes Solicitados'
+            };
+
+            const card = document.createElement('div');
+            card.className = `p-4 rounded-lg border ${statusColors[ver.status] || 'border-white/10'} bg-white/5 relative`;
+            
+            let historyHtml = '';
+            if (ver.history && ver.history.length > 0) {
+                const lastEvent = ver.history[ver.history.length - 1];
+                historyHtml = `<div class="text-xs text-gray-400 mt-2 pt-2 border-t border-white/10">Última atividade: ${lastEvent.action} - ${lastEvent.comment || ''}</div>`;
+            }
+
+            // Link de Aprovação
+            // Assumindo que o usuário está logado e o UID está disponível via auth.currentUser
+            const uid = auth.currentUser ? auth.currentUser.uid : '';
+            const approvalLink = `${window.location.origin}/aprovacao.html?uid=${uid}&oid=${order.id}&token=${ver.token}`;
+
+            card.innerHTML = `
+                <div class="flex gap-4">
+                    <div class="w-24 h-24 bg-black/50 rounded flex-shrink-0 overflow-hidden">
+                        <img src="${ver.images[0]}" class="w-full h-full object-cover cursor-pointer" onclick="window.open('${ver.images[0]}', '_blank')">
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex justify-between items-start">
+                            <h4 class="font-bold text-lg">Versão ${ver.version}</h4>
+                            <span class="px-2 py-0.5 rounded text-xs border ${statusColors[ver.status]}">${statusLabels[ver.status]}</span>
+                        </div>
+                        <p class="text-xs text-gray-400 mb-2">Criada em: ${new Date(ver.createdAt).toLocaleString()}</p>
+                        
+                        <div class="flex gap-2 mt-2">
+                            <button class="btn-copy-link text-xs bg-cyan-600/20 text-cyan-400 px-2 py-1 rounded hover:bg-cyan-600/40" data-link="${approvalLink}">🔗 Copiar Link</button>
+                            ${!isApproved ? `<button class="btn-approve-manual text-xs bg-green-600/20 text-green-400 px-2 py-1 rounded hover:bg-green-600/40" data-ver="${ver.version}">✅ Aprovar Manual</button>` : ''}
+                        </div>
+                        ${historyHtml}
+                    </div>
+                </div>
+            `;
+
+            // Handlers
+            card.querySelector('.btn-copy-link').onclick = (e) => {
+                navigator.clipboard.writeText(e.target.dataset.link).then(() => alert('Link copiado! Envie para o cliente.'));
+            };
+            const approveBtn = card.querySelector('.btn-approve-manual');
+            if (approveBtn) {
+                approveBtn.onclick = () => {
+                    if(confirm('Marcar esta versão como APROVADA manualmente?')) {
+                        ver.status = 'approved';
+                        ver.history.push({ action: 'approved', date: Date.now(), user: 'Admin', comment: 'Aprovação manual' });
+                        order.checklist.art.completed = true; // Marca tarefa como feita
+                        saveOrders();
+                        renderArtVersionsList(order);
+                        renderArtTasks();
+
+                        // Dispara automação da IA (Parabéns + Sugestão de Mover)
+                        if (window.PsyzonAI && window.PsyzonAI.triggerArtApprovalAutomation) {
+                            window.PsyzonAI.triggerArtApprovalAutomation(order.id);
+                        }
+                    }
+                };
+            }
+
+            container.appendChild(card);
+        });
     };
 
-    addArtImageBtn.addEventListener('click', () => artImageInput.click());
-    artImageInput.addEventListener('change', (e) => {
-        const files = Array.from(e.target.files);
-        const order = productionOrders.find(o => o.id === activeArtOrderId);
-        if (!order) return;
-        order.art = order.art || {};
-        order.art.images = order.art.images || [];
-        files.forEach(file => {
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                order.art.images.push(ev.target.result);
-                renderArtReferences(order.art.images);
+    const handleNewVersionUpload = (e, order) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            const newVerNum = order.artControl.versions.length + 1;
+            const newVersion = {
+                version: newVerNum,
+                images: [ev.target.result],
+                status: 'sent', // Já nasce como enviada/pronta
+                token: Math.random().toString(36).substring(2) + Date.now().toString(36),
+                createdAt: Date.now(),
+                history: [{ action: 'created', date: Date.now(), user: 'Admin' }]
             };
-            reader.readAsDataURL(file);
-        });
-        saveOrders();
-        artImageInput.value = '';
-    });
+            order.artControl.versions.push(newVersion);
+            saveOrders();
+            renderArtVersionsList(order);
+            renderArtTasks();
+        };
+        reader.readAsDataURL(file);
+    };
 
-
-    artReferencesContainer.addEventListener('click', (e) => {
-        if (e.target.classList.contains('remove-art-image')) {
-            const idx = parseInt(e.target.dataset.idx);
-            const order = productionOrders.find(o => o.id === activeArtOrderId);
-            if (order && order.art && order.art.images) {
-                order.art.images.splice(idx, 1);
-                renderArtReferences(order.art.images);
-                saveOrders();
-            }
-        }
-    });
+    // Remove listeners antigos de artImageInput e artReferencesContainer pois a UI mudou completamente
+    // Mantemos apenas o listener de abrir o modal
 
     if (artTasksContainer) {
         artTasksContainer.addEventListener('click', (e) => {
             if (e.target.classList.contains('open-art-modal-btn')) {
-                openArtModal(parseInt(e.target.dataset.orderId));
+                openArtControlModal(parseInt(e.target.dataset.orderId));
             }
         });
     }
-    if (closeArtModalBtn) closeArtModalBtn.addEventListener('click', () => artModal.classList.add('hidden'));
-    if (saveArtBtn) saveArtBtn.addEventListener('click', saveArtData);
+    // closeArtModalBtn agora é tratado dentro de openArtControlModal dinamicamente ou via delegate global
 
     // Ativa renderização da aba de artes
     const tabArtes = document.getElementById('tab-artes');

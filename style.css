@@ -970,3 +970,9 @@ html[data-theme="light"] .white-text, html[data-theme="light"] .text-white {
     opacity: 0.6; transition: opacity 0.2s;
 }
 .cut-actions button:hover { opacity: 1; }
+
+/* Art Control Styles */
+#art-versions-list::-webkit-scrollbar { width: 6px; }
+#art-versions-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+.btn-copy-link { transition: all 0.2s; }
+.btn-copy-link:active { transform: scale(0.95); }
