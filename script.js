@@ -2,6 +2,9 @@ const init = () => {
     const mobileMenuButton = document.getElementById('mobile-menu-button');
     const mobileMenu = document.getElementById('mobile-menu');
     
+    // Chart instances must be in a scope that persists across calls to updateUI/updateCharts
+    let incomeExpenseChart, categoryChart, incomeSourceChart, fabricChart;
+
     // Menu Mobile Listener (Movido para o topo para garantir que funcione mesmo se houver erros abaixo)
     if (mobileMenuButton) { mobileMenuButton.addEventListener('click', () => mobileMenu.classList.toggle('open')); }
 
@@ -53,7 +56,6 @@ const init = () => {
     const prevStepBtn = document.getElementById('prev-step-btn');
     const nextStepBtn = document.getElementById('next-step-btn');
 
-    let incomeExpenseChart, categoryChart, incomeSourceChart, fabricChart;
     let incomeCategories = JSON.parse(localStorage.getItem('incomeCategories')) || ['Venda de Produto', 'Adiantamento', 'Serviços', 'Outros'];
     let expenseCategories = JSON.parse(localStorage.getItem('expenseCategories')) || ['Matéria-Prima (Custo Direto)', 'Aluguel', 'Contas (Água, Luz, Internet)', 'Marketing e Vendas', 'Salários e Pró-labore', 'Impostos', 'Software e Ferramentas', 'Manutenção', 'Despesas Pessoais', 'Outros'];
     let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
@@ -623,12 +625,6 @@ const init = () => {
     updateUI();
     setTimeout(checkDeadlinesAndNotify, 2000);
 };
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-} else {
-    init();
-}
 
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
