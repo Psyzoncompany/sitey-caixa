@@ -29,6 +29,39 @@
     cloudSync.init(firebaseConfig, "admin@sitey.com", "451021");
   </script>
 
+  <script>
+    let scriptsLoaded = false;
+    const loadScript = (src) => {
+      if (scriptsLoaded) return;
+      scriptsLoaded = true;
+      const s = document.createElement("script");
+      s.src = src;
+      document.body.appendChild(s);
+    };
+
+    let firebaseTimeout = false;
+    const timeoutId = setTimeout(() => {
+      firebaseTimeout = true;
+      alert("Não foi possível conectar ao servidor. O site funcionará sem sincronização na nuvem.");
+      loadScript("script.js");
+    }, 5000);
+
+    cloudSync.pull()
+      .then(() => {
+        if (!firebaseTimeout) {
+          clearTimeout(timeoutId);
+          loadScript("script.js");
+        }
+      })
+      .catch((e) => {
+        if (!firebaseTimeout) {
+          clearTimeout(timeoutId);
+          alert("Falha ao sincronizar com o servidor. O site funcionará sem sincronização na nuvem.\n\nErro: " + (e && e.message ? e.message : e));
+          loadScript("script.js");
+        }
+      });
+  </script>
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PSYZON - Dashboard Financeiro</title>
@@ -145,6 +178,7 @@
         </div>
         <div class="glass-card p-6">
           <h3 class="text-xl font-bold mb-4">Compras de Malha (Mês Atual)</h3>
+          
           <div class="relative h-80 md:h-96">
             <canvas id="fabricChart"></canvas>
           </div>

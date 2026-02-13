@@ -218,20 +218,27 @@
       document.body.appendChild(s);
     };
 
+    // Sempre carregue o script principal, mesmo se o Firebase falhar
+    let firebaseTimeout = false;
     const timeoutId = setTimeout(() => {
-      console.warn("Firebase está demorando, carregando site sem sincronização");
+      firebaseTimeout = true;
+      alert("Não foi possível conectar ao servidor. O site funcionará sem sincronização na nuvem.");
       loadScript("processos.js");
     }, 5000);
 
     cloudSync.pull()
       .then(() => {
-        clearTimeout(timeoutId);
-        loadScript("processos.js");
+        if (!firebaseTimeout) {
+          clearTimeout(timeoutId);
+          loadScript("processos.js");
+        }
       })
       .catch((e) => {
-        clearTimeout(timeoutId);
-        console.error("Falha ao sincronizar Firebase, carregando site normalmente:", e);
-        loadScript("processos.js");
+        if (!firebaseTimeout) {
+          clearTimeout(timeoutId);
+          alert("Falha ao sincronizar com o servidor. O site funcionará sem sincronização na nuvem.\n\nErro: " + (e && e.message ? e.message : e));
+          loadScript("processos.js");
+        }
       });
   </script>
 
