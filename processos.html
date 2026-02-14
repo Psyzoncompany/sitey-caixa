@@ -142,7 +142,11 @@
                 <div class="space-y-4">
                     <div><label for="order-description" class="block mb-2 text-sm font-medium">Descrição do Pedido</label><input type="text" id="order-description" class="w-full p-3 rounded-md bg-white/10 border border-white/20" required></div>
                     <div class="grid grid-cols-2 gap-4">
-                        <div><label for="order-client" class="block mb-2 text-sm font-medium">Cliente</label><select id="order-client" class="w-full p-3 rounded-md bg-white/10 border border-white/20" required></select></div>
+                        <div>
+                            <label for="order-client" class="block mb-2 text-sm font-medium">Cliente</label>
+                            <input type="text" id="order-client-search" placeholder="Pesquisar cliente..." class="w-full p-2 mb-2 rounded-md bg-white/10 border border-white/20 text-sm">
+                            <select id="order-client" class="w-full p-3 rounded-md bg-white/10 border border-white/20" required></select>
+                        </div>
                         <div><label for="order-deadline" class="block mb-2 text-sm font-medium">Prazo de Entrega</label><input type="date" id="order-deadline" class="w-full p-3 rounded-md bg-white/10 border border-white/20" required></div>
                     </div>
                     <div><label for="order-notes" class="block mb-2 text-sm font-medium">Anotações do Pedido</label><textarea id="order-notes" rows="5" class="w-full p-3 rounded-md bg-white/10 border border-white/20"></textarea></div>

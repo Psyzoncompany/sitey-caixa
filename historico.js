@@ -32,6 +32,7 @@ const init = () => {
   const linkClientCheckbox = document.getElementById('link-client-checkbox');
   const clientSelectionContainer = document.getElementById('client-selection-container');
   const clientSelect = document.getElementById('client-select');
+  const clientSearchInput = document.getElementById('client-search');
   const notificationContainer = document.getElementById('notification-container');
   const isFabricContainer = document.getElementById('is-fabric-container');
   const isFabricCheckbox = document.getElementById('is-fabric-checkbox');
@@ -52,7 +53,7 @@ const init = () => {
 
   // utils
   const saveTransactions = () => localStorage.setItem('transactions', JSON.stringify(transactions));
-  const formatCurrency = (amount) => Number(amount || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const formatCurrency = (amount) => amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
   const formatDate = (d) => new Date(d + 'T03:00:00').toLocaleDateString('pt-BR');
 
   const showNotification = (msg, type = 'info') => {
@@ -92,6 +93,7 @@ const init = () => {
   const populateClientSelect = () => {
     clients = JSON.parse(localStorage.getItem('clients')) || [];
     clientSelect.innerHTML = '<option value="">Selecione...</option>';
+    if (clientSearchInput) clientSearchInput.value = '';
     clients.forEach(c => {
       const opt = document.createElement('option');
       opt.value = c.id;
@@ -99,6 +101,16 @@ const init = () => {
       clientSelect.appendChild(opt);
     });
   };
+
+  if (clientSearchInput) {
+    clientSearchInput.addEventListener('input', () => {
+      const term = clientSearchInput.value.toLowerCase();
+      Array.from(clientSelect.options).forEach(opt => {
+        if (!opt.value) return;
+        opt.style.display = opt.textContent.toLowerCase().includes(term) ? '' : 'none';
+      });
+    });
+  }
 
   // Build UI for selected month
   const getSelectedMonth = () => {
@@ -448,6 +460,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const linkClientCheckbox = document.getElementById('link-client-checkbox');
     const clientSelectionContainer = document.getElementById('client-selection-container');
     const clientSelect = document.getElementById('client-select');
+    const clientSearchInput = document.getElementById('client-search');
     const notificationContainer = document.getElementById('notification-container');
     const isFabricContainer = document.getElementById('is-fabric-container');
     const isFabricCheckbox = document.getElementById('is-fabric-checkbox');
@@ -822,7 +835,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const updateFabricChart = (monthlyTransactions) => {
         const fabricPurchases = monthlyTransactions.filter(t => t.weightKg > 0);
         const totalSpent = fabricPurchases.reduce((acc, t) => acc + Math.abs(t.amount), 0);
-        const totalKg = fabricPurchases.reduce((acc, t) => acc + (t.weightKg || 0), 0);
+        const totalKg = fabricPurchases.reduce((acc, t) => acc + (t.weightKg||0), 0);
         const ctx = document.getElementById('fabricChart');
         if (!ctx) return;
         const chartOptions = {

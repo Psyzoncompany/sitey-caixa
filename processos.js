@@ -23,6 +23,7 @@ const init = () => {
     const cancelOrderBtn = document.getElementById('cancel-order-btn');
     const orderDescriptionInput = document.getElementById('order-description');
     const orderClientSelect = document.getElementById('order-client');
+    const orderClientSearchInput = document.getElementById('order-client-search');
     const orderDeadlineInput = document.getElementById('order-deadline');
     const orderChecklistContainer = document.getElementById('order-checklist');
     const orderNotesInput = document.getElementById('order-notes');
@@ -203,6 +204,7 @@ const init = () => {
     const populateClientSelect = () => {
         clients = JSON.parse(localStorage.getItem('clients')) || [];
         orderClientSelect.innerHTML = '<option value="">Selecione um cliente</option>';
+        if (orderClientSearchInput) orderClientSearchInput.value = '';
         clients.forEach(client => {
             const option = document.createElement('option');
             option.value = client.id;
@@ -210,6 +212,16 @@ const init = () => {
             orderClientSelect.appendChild(option);
         });
     };
+
+    if (orderClientSearchInput) {
+        orderClientSearchInput.addEventListener('input', () => {
+            const term = orderClientSearchInput.value.toLowerCase();
+            Array.from(orderClientSelect.options).forEach(opt => {
+                if (!opt.value) return; 
+                opt.style.display = opt.textContent.toLowerCase().includes(term) ? '' : 'none';
+            });
+        });
+    }
 
     const renderChecklist = (checklistData = {}) => {
         orderChecklistContainer.innerHTML = '';
