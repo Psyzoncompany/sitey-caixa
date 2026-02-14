@@ -83,6 +83,11 @@ const init = () => {
     let selectedScope = 'business';
     let currentStep = 1;
 
+    let transactionFilters = {
+        period: 'today', // 'today', 'yesterday', '7days', '30days', 'this_month', 'last_month'
+        type: 'all' // 'all', 'income', 'expense'
+    };
+
     const saveTransactions = () => localStorage.setItem('transactions', JSON.stringify(transactions));
     const formatCurrency = (amount) => amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     const formatDate = (dateString) => new Date(dateString + 'T03:00:00').toLocaleDateString('pt-BR');
@@ -127,6 +132,47 @@ const init = () => {
                 }
             }
         });
+    };
+
+    // --- Budget Carousel Logic ---
+    const setupBudgetCarousel = () => {
+        const budgetCarousel = document.getElementById('budget-carousel');
+        const budgetCarouselDots = document.getElementById('budget-carousel-dots');
+
+        if (!budgetCarousel || !budgetCarouselDots) return;
+
+        const slides = Array.from(budgetCarousel.children);
+        if (slides.length <= 1) return;
+
+        let currentIndex = 0;
+        let carouselInterval;
+
+        const goToSlide = (index) => {
+            currentIndex = index;
+            budgetCarousel.style.transform = `translateX(-${currentIndex * 100}%)`;
+            const dots = budgetCarouselDots.querySelectorAll('button');
+            dots.forEach((dot, i) => {
+                dot.classList.toggle('bg-white', i === currentIndex);
+                dot.classList.toggle('bg-white/30', i !== currentIndex);
+            });
+        };
+
+        const autoSlide = () => {
+            const nextIndex = (currentIndex + 1) % slides.length;
+            goToSlide(nextIndex);
+        };
+
+        // Create dots
+        budgetCarouselDots.innerHTML = '';
+        slides.forEach((_, index) => {
+            const dot = document.createElement('button');
+            dot.className = 'w-2 h-2 rounded-full bg-white/30 transition-colors duration-300';
+            if (index === 0) dot.classList.replace('bg-white/30', 'bg-white');
+            dot.addEventListener('click', () => { goToSlide(index); clearInterval(carouselInterval); carouselInterval = setInterval(autoSlide, 5000); });
+            budgetCarouselDots.appendChild(dot);
+        });
+
+        carouselInterval = setInterval(autoSlide, 5000); // Slide every 5 seconds
     };
 
     const toggleQuantityField = () => {
@@ -203,7 +249,8 @@ const init = () => {
             clientId: linkClientCheckbox.checked && clientSelect.value ? parseInt(clientSelect.value) : null,
             quantity: 0,
             weightKg: 0,
-            fabricColor: null
+            fabricColor: null,
+            createdAt: new Date() // Adiciona timestamp para futuras queries no Firestore
         };
 
         // --- NEW LOGIC: Create Bill Reminder ---
@@ -438,89 +485,111 @@ const init = () => {
     
     window.removeTransaction = (id) => {
         if (confirm('Tem certeza que deseja excluir esta transação?')) {
+            saveTransactions(); // Salva o estado atual antes de modificar
             const transactionToDelete = transactions.find(t => t.id === id);
             if (transactionToDelete && transactionToDelete.type === 'income' && transactionToDelete.category === 'Venda de Produto' && transactionToDelete.quantity > 0) {
                 updateMonthlyProduction(transactionToDelete.date.substring(0, 7), -transactionToDelete.quantity);
             }
             transactions = transactions.filter(t => t.id !== id);
             updateUI();
+            showNotification('Transação excluída.', 'warning');
         }
     };
     
     const addTransactionToDOM = (transaction) => {
         const { id, name, description, amount, date, category, type, scope } = transaction;
         const item = document.createElement('div');
-        item.className = 'transaction-card'; // Classe para estilização via CSS
+        item.className = 'transaction-card';
+        item.dataset.id = id; // Add ID for event handling
 
         const colorClass = type === 'income' ? 'text-green-400' : 'text-red-400';
-        let scopeText = '--';
-        if (type === 'expense') {
-            scopeText = scope === 'personal' ? '👤 Pessoal' : '🏢 Empresarial';
-        }
+        let scopeText = scope === 'personal' ? '👤 Pessoal' : '🏢 Empresarial';
+        if (type !== 'expense') scopeText = '--';
+
+        // Meta data for mobile view
+        const metaItems = [
+            `<span class="data-date">${formatDate(date)}</span>`,
+            `<span class="data-category">${category}</span>`,
+            type === 'expense' ? `<span class="data-scope">${scopeText}</span>` : ''
+        ].filter(Boolean).join(' <span class="text-gray-600 mx-1">•</span> ');
 
         item.innerHTML = `
+            <!-- Sticky Action Bar (Mobile Only, shown on expand) -->
+            <div class="syt-sticky-actions">
+                <button class="syt-action-btn edit" data-action="edit" data-id="${id}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
+                    Editar
+                </button>
+                <button class="syt-action-btn delete" data-action="delete" data-id="${id}">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                    Excluir
+                </button>
+            </div>
+
+            <!-- Card Content (Grid for both mobile and desktop) -->
             <div class="data-name">${name || '--'}</div>
             <div class="data-description">${description}</div>
             <div class="data-amount ${colorClass}">${formatCurrency(Math.abs(amount))}</div>
             <div class="data-scope">${scopeText}</div>
             <div class="data-category">${category}</div>
             <div class="data-date">${formatDate(date)}</div>
+            
+            <!-- Meta for mobile (replaces some columns) -->
+            <div class="data-meta">${metaItems}</div>
+
+            <!-- Desktop Actions (old dropdown, now just buttons) -->
             <div class="data-action">
-                <div class="relative">
-                    <button class="action-toggle-btn text-gray-500 hover:text-white p-1 rounded-full">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path></svg>
+                <div class="flex items-center justify-end gap-2">
+                    <button class="action-toggle-btn text-gray-500 hover:text-cyan-400 p-1 rounded-full" data-action="edit" data-id="${id}" title="Editar">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
                     </button>
-                    <div class="action-menu hidden absolute right-0 mt-2 w-32 bg-gray-800 border border-white/10 rounded-md shadow-lg z-10">
-                        <a href="#" data-action="edit" data-id="${id}" class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">Editar</a>
-                        <a href="#" data-action="delete" data-id="${id}" class="block px-4 py-2 text-sm text-red-400 hover:bg-gray-700">Excluir</a>
-                    </div>
+                    <button class="action-toggle-btn text-gray-500 hover:text-red-400 p-1 rounded-full" data-action="delete" data-id="${id}" title="Excluir">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                    </button>
                 </div>
             </div>
         `;
         transactionListEl.appendChild(item);
     };
 
-    // Close action menus when clicking outside
-    document.addEventListener('click', (e) => {
-        if (!e.target.closest('.action-toggle-btn')) {
-            document.querySelectorAll('.action-menu').forEach(m => m.classList.add('hidden'));
-        }
-    });
-
     // Event Delegation for Transaction List (Menu Toggle, Edit, Delete)
     transactionListEl.addEventListener('click', (e) => {
-        const toggleBtn = e.target.closest('.action-toggle-btn');
-        const actionLink = e.target.closest('.action-menu a[data-action]');
+        const card = e.target.closest('.transaction-card');
+        const actionBtn = e.target.closest('[data-action]');
 
-        // Handle menu toggle
-        if (toggleBtn) {
-            e.stopPropagation();
-            const menu = toggleBtn.nextElementSibling;
-            const isHidden = menu.classList.contains('hidden');
-            // Close all other menus first
-            document.querySelectorAll('.action-menu').forEach(m => m.classList.add('hidden'));
-            // Then toggle the current one if it was closed
-            if (isHidden) {
-                menu.classList.remove('hidden');
-            }
-            return; // Stop further processing
-        }
-
-        // Handle menu actions (edit/delete)
-        if (actionLink) {
-            e.preventDefault();
-            const action = actionLink.dataset.action;
-            const id = parseInt(actionLink.dataset.id, 10);
+        // Handle Edit/Delete actions from any button
+        if (actionBtn) {
+            e.stopPropagation(); // Prevent card from toggling if button is clicked
+            const action = actionBtn.dataset.action;
+            const id = parseInt(actionBtn.dataset.id, 10);
 
             if (action === 'edit') {
                 openEditModal(id);
             } else if (action === 'delete') {
-                removeTransaction(id);
+                if (confirm('Tem certeza que deseja excluir esta transação? A ação não pode ser desfeita.')) {
+                    removeTransaction(id);
+                }
             }
+            return;
+        }
 
-            // Close the parent menu
-            const menu = actionLink.closest('.action-menu');
-            if (menu) menu.classList.add('hidden');
+        // Handle card expansion on mobile
+        if (card && window.innerWidth <= 768) {
+            const isExpanded = card.classList.contains('expanded');
+            
+            // Close all other cards
+            transactionListEl.querySelectorAll('.transaction-card.expanded').forEach(c => {
+                c.classList.remove('expanded');
+            });
+
+            // Toggle the clicked card
+            if (!isExpanded) {
+                card.classList.add('expanded');
+                // Scroll to top of card after a short delay to allow rendering
+                setTimeout(() => {
+                    card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+            }
         }
     });
 
@@ -600,6 +669,53 @@ const init = () => {
             html += '<p class="text-sm text-green-400 mt-2">Tudo pago este mês! 🎉</p>';
         }
         dashboardBillsSummaryEl.innerHTML = html;
+    };
+
+    const renderRecentTransactions = () => {
+        transactionListEl.innerHTML = '<div class="text-center text-gray-400 p-4">Carregando...</div>';
+
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+        let startDate = new Date(now);
+        let endDate = new Date(now);
+        endDate.setHours(23, 59, 59, 999);
+
+        switch (transactionFilters.period) {
+            case 'yesterday':
+                startDate.setDate(now.getDate() - 1);
+                endDate.setDate(now.getDate() - 1);
+                break;
+            case '7days':
+                startDate.setDate(now.getDate() - 6);
+                break;
+            case '30days':
+                startDate.setDate(now.getDate() - 29);
+                break;
+            case 'this_month':
+                startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+                break;
+            case 'last_month':
+                startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                endDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+                break;
+        }
+
+        let filteredTransactions = transactions.filter(t => {
+            const tDate = new Date(t.date + 'T03:00:00');
+            const typeMatch = transactionFilters.type === 'all' || t.type === transactionFilters.type;
+            const dateMatch = tDate >= startDate && tDate <= endDate;
+            return typeMatch && dateMatch;
+        });
+
+        filteredTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        transactionListEl.innerHTML = '';
+        if (filteredTransactions.length === 0) {
+            transactionListEl.innerHTML = '<div class="text-center text-gray-400 p-4">Nenhum lançamento encontrado para este filtro.</div>';
+            return;
+        }
+        filteredTransactions.forEach(addTransactionToDOM);
     };
 
     const updateUI = () => {
@@ -700,9 +816,8 @@ const init = () => {
             let costPerPiece = piecesProduced > 0 ? totalIndirectCosts / piecesProduced : 0;
             costPerPieceDashboardEl.textContent = formatCurrency(costPerPiece);
         }
-        transactionListEl.innerHTML = '';
-        transactions.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10).forEach(addTransactionToDOM);
         
+        renderRecentTransactions();
         updateCharts(monthlyTransactions);
         saveTransactions();
         updateDeadlinesCard();
@@ -786,6 +901,29 @@ const init = () => {
         fabricDetailsContainer.classList.toggle('hidden', !isFabricCheckbox.checked);
     });
 
+    // Filter Listeners
+    const filtersContainer = document.getElementById('syt-filters-container');
+    if (filtersContainer) {
+        filtersContainer.addEventListener('click', (e) => {
+            const periodBtn = e.target.closest('.syt-filter-btn');
+            const typeBtn = e.target.closest('.syt-type-filter-btn');
+
+            if (periodBtn) {
+                filtersContainer.querySelectorAll('.syt-filter-btn').forEach(btn => btn.classList.remove('active'));
+                periodBtn.classList.add('active');
+                transactionFilters.period = periodBtn.dataset.filterPeriod;
+            }
+
+            if (typeBtn) {
+                filtersContainer.querySelectorAll('.syt-type-filter-btn').forEach(btn => btn.classList.remove('active'));
+                typeBtn.classList.add('active');
+                transactionFilters.type = typeBtn.dataset.filterType;
+            }
+
+            if (periodBtn || typeBtn) renderRecentTransactions();
+        });
+    }
+
     // Client Search in Modal
     if (clientSearchInput) {
         clientSearchInput.addEventListener('input', () => {
@@ -818,6 +956,7 @@ const init = () => {
     // --- INICIALIZAÇÃO ---
     updateUI();
     setTimeout(checkDeadlinesAndNotify, 2000);
+    setupBudgetCarousel();
 };
 
 if (document.readyState === 'loading') {

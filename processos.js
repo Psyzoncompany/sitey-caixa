@@ -588,101 +588,90 @@ const init = () => {
     const createOrderCard = (order) => {
         const client = clients.find(c => c.id === order.clientId);
         const card = document.createElement('div');
-        const borderClass = order.isArtOnly ? 'border-l-4 border-purple-500' : 'border border-white/10';
-        card.className = `kanban-card bg-gray-800 p-4 rounded-xl ${borderClass} shadow-lg cursor-pointer hover:border-cyan-400 relative transition-all`;
+        // Adicionada a classe syt-process-card para o novo estilo
+        const borderClass = order.isArtOnly ? 'border-l-4 border-purple-500' : 'border-l-4 border-cyan-500';
+        card.className = `kanban-card syt-process-card ${borderClass}`;
         card.setAttribute('draggable', true);
         card.dataset.id = order.id;
 
-        // CORREÇÃO DO BUG DE DATA
+        // --- Cálculos ---
+        // Data
         const deadline = new Date(order.deadline + "T03:00:00");
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const diffTime = deadline - today;
         const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
         
+        // Progresso do Processo
+        const totalTasks = order.checklist ? Object.keys(order.checklist).length : 0;
+        const completedTasks = order.checklist ? Object.values(order.checklist).filter(task => task.completed).length : 0;
+        const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+
+        // Financeiro
+        const total = order.totalValue || 0;
+        const paid = order.amountPaid || 0;
+        const due = Math.max(0, total - paid);
+        const paidPercent = total > 0 ? Math.min(100, (paid / total) * 100) : 0;
+        const paymentStatusText = total > 0 && due <= 0.01 ? '✅ Quitado' : '💰 Em aberto';
+        const paymentStatusColor = total > 0 && due <= 0.01 ? 'text-green-400' : 'text-yellow-400';
+
+        // --- Badges e Textos ---
         let deadlineBadge = `<span class="text-xs text-gray-400 bg-white/5 px-2 py-1 rounded">${diffDays} dias</span>`;
         if (diffDays < 0) { deadlineBadge = `<span class="text-xs text-white bg-red-500 px-2 py-1 rounded font-bold">-${Math.abs(diffDays)}d</span>`; }
         else if (diffDays === 0) { deadlineBadge = `<span class="text-xs text-white bg-red-500 px-2 py-1 rounded font-bold">Hoje</span>`; }
         else if (diffDays === 1) { deadlineBadge = `<span class="text-xs text-gray-900 bg-yellow-400 px-2 py-1 rounded font-bold">Amanhã</span>`; }
         else if (diffDays <= 3) { deadlineBadge = `<span class="text-xs text-gray-900 bg-yellow-400 px-2 py-1 rounded font-bold">${diffDays}d</span>`; }
 
-        const totalTasks = order.checklist ? Object.keys(order.checklist).length : 0;
-        const completedTasks = order.checklist ? Object.values(order.checklist).filter(task => task.completed).length : 0;
-        const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
-
-        // Payment Status Logic
-        const total = order.totalValue || 0;
-        const paid = order.amountPaid || 0;
-        const due = total - paid;
-        let payStatus = '';
-        let paymentText = `<span>${formatCurrency(total)}</span>`;
-        if (total > 0) {
-             if (order.isPaid || due <= 0) {
-                payStatus = '<span class="w-2 h-2 rounded-full bg-green-500" title="Pago"></span>';
-             } else if (paid > 0) {
-                payStatus = '<span class="w-2 h-2 rounded-full bg-yellow-500" title="Parcial"></span>';
-                paymentText = `<span class="text-yellow-400" title="Valor total: ${formatCurrency(total)}">Falta: ${formatCurrency(due)}</span>`;
-             } else { // paid is 0 or less
-                payStatus = '<span class="w-2 h-2 rounded-full bg-red-500" title="Pendente"></span>';
-                paymentText = `<span class="text-red-400">${formatCurrency(total)}</span>`;
-             }
-        }
-
-        // Layout "Mercado Livre" Style / App Compact
+        // --- Estrutura HTML do Novo Card ---
         card.innerHTML = `
-            <div onclick="window.openOrderModal(${order.id})">
-                <!-- Header: Title & Status -->
-                <div class="flex justify-between items-start mb-2">
-                    <h3 class="font-bold text-base text-white leading-tight pr-2">${order.description}</h3>
-                    ${order.notes ? '<span class="text-xs text-yellow-400" title="Tem notas">📝</span>' : ''}
+            <div class="syt-card-header">
+                <div class="syt-card-title-block">
+                    <h3 class="syt-card-title">${order.description}</h3>
+                    <p class="syt-card-client">${client ? client.name : 'Sem cliente'}</p>
                 </div>
+                <button onclick="event.stopPropagation(); window.openOrderModal(${order.id})" class="syt-edit-btn" title="Editar Pedido">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
+                </button>
+            </div>
 
-                <!-- Subheader: Client -->
-                <p class="text-sm text-gray-400 mb-3 flex items-center gap-1">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                    ${client ? client.name : 'Sem cliente'}
-                </p>
-
-                <!-- Grid Metadata -->
-                <div class="grid grid-cols-2 gap-y-2 gap-x-4 text-xs text-gray-300 mb-3 bg-black/20 p-2 rounded-lg">
-                    <div class="flex flex-col hidden md:flex">
-                        <span class="text-gray-500 text-[10px] uppercase">Técnica</span>
-                        <span class="font-medium">${order.printType === 'dtf' ? 'DTF' : (order.printType === 'silk' ? 'Silk' : 'Arte')}</span>
+            <div class="syt-card-meta-grid">
+                <div class="syt-meta-item">
+                    <span class="label">Técnica</span>
+                    <span class="value">${order.printType ? order.printType.toUpperCase() : 'N/A'}</span>
+                </div>
+                <div class="syt-meta-item">
+                    <span class="label">Prazo</span>
+                    <span class="value">${deadlineBadge}</span>
+                </div>
+                <div class="syt-meta-item syt-meta-progress">
+                    <div class="flex justify-between">
+                        <span class="label">Progresso</span>
+                        <span class="value">${Math.round(progress)}%</span>
                     </div>
-                    <div class="flex flex-col items-end">
-                        <span class="text-gray-500 text-[10px] uppercase">Prazo</span>
-                        ${deadlineBadge}
-                    </div>
-                    <div class="flex flex-col">
-                        <span class="text-gray-500 text-[10px] uppercase">Progresso</span>
-                        <div class="flex items-center gap-2">
-                            <div class="w-12 bg-gray-700 rounded-full h-1.5 mt-1">
-                                <div class="bg-cyan-500 h-1.5 rounded-full" style="width: ${progress}%"></div>
-                            </div>
-                            <span>${Math.round(progress)}%</span>
-                        </div>
-                    </div>
-                    <div class="flex flex-col items-end hidden md:flex">
-                        <span class="text-gray-500 text-[10px] uppercase">Pagamento</span>
-                        <div class="flex items-center gap-1 mt-0.5">
-                            ${payStatus} ${paymentText}
-                        </div>
+                    <div class="syt-progress-bar-sm-bg">
+                        <div class="syt-progress-bar-sm-fg" style="width: ${progress}%"></div>
                     </div>
                 </div>
+            </div>
 
-                <!-- Footer Actions -->
-                <div class="flex justify-end items-center gap-3 pt-2 border-t border-white/5">
-                    ${order.status === 'done' ? 
-                        `<button onclick="event.stopPropagation(); window.removeOrder(${order.id})" class="text-xs text-red-400 hover:text-red-300 flex items-center gap-1 px-2 py-1 rounded hover:bg-red-500/10 transition-colors">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                            Excluir
-                        </button>` : ''
-                    }
-                    <span class="text-xs text-cyan-400 font-semibold flex items-center gap-1">
-                        Ver Detalhes
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                    </span>
+            <div class="syt-payment-block">
+                <div class="syt-payment-details">
+                    <div><span>Total</span> <strong>${total > 0 ? formatCurrency(total) : '—'}</strong></div>
+                    <div><span>Pago</span> <strong>${formatCurrency(paid)}</strong></div>
+                    <div><span>Falta</span> <strong class="due">${formatCurrency(due)}</strong></div>
                 </div>
+                <div class="syt-payment-progress">
+                    <div class="syt-progress-bar-bg">
+                        <div class="syt-progress-bar-fg" style="width: ${paidPercent}%"></div>
+                    </div>
+                    <span class="syt-progress-percent">${paidPercent.toFixed(0)}%</span>
+                </div>
+                <div class="syt-payment-status ${paymentStatusColor}">${paymentStatusText}</div>
+            </div>
+
+            <div class="syt-card-footer" onclick="window.openOrderModal(${order.id})">
+                <span>Ver detalhes</span>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
             </div>
         `;
         return card;
