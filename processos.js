@@ -7,13 +7,9 @@ const init = () => {
     const tabQuadro = document.getElementById('tab-quadro');
     const tabAfazeres = document.getElementById('tab-afazeres');
     const tabCortes = document.getElementById('tab-cortes');
-    const tabArtes = document.getElementById('tab-artes');
-    const tabDTF = document.getElementById('tab-dtf');
     const viewQuadro = document.getElementById('view-quadro');
     const viewAfazeres = document.getElementById('view-afazeres');
     const viewCortes = document.getElementById('view-cortes');
-    const viewArtes = document.getElementById('view-artes');
-    const viewDTF = document.getElementById('view-dtf');
 
     const columns = { 
         todo: document.getElementById('column-todo'), 
@@ -192,7 +188,55 @@ const init = () => {
         finishing: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l-3 3m6 0l-3 3M11 3l3 3m0 6l3 3m-6 0l3 3m-3-3l-3 3m6-6l-3 3" /></svg>`
     };
 
-    const saveOrders = () => localStorage.setItem('production_orders', JSON.stringify(productionOrders));
+    const enableDragScroll = (el) => {
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+        el.addEventListener('mousedown', (e) => {
+            isDown = true;
+            el.classList.add('active');
+            startX = e.pageX - el.offsetLeft;
+            scrollLeft = el.scrollLeft;
+            el.style.cursor = 'grabbing';
+        });
+        el.addEventListener('mouseleave', () => {
+            isDown = false;
+            el.classList.remove('active');
+            el.style.cursor = 'grab';
+        });
+        el.addEventListener('mouseup', () => {
+            isDown = false;
+            el.classList.remove('active');
+            el.style.cursor = 'grab';
+        });
+        el.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - el.offsetLeft;
+            const walk = (x - startX) * 2; 
+            el.scrollLeft = scrollLeft - walk;
+        });
+        el.style.cursor = 'grab';
+    };
+
+    const applyDragScroll = () => {
+        document.querySelectorAll('.overflow-x-auto').forEach(el => {
+           if(!el.dataset.dragScroll) {
+               enableDragScroll(el);
+               el.dataset.dragScroll = 'true';
+           }
+        });
+    };
+    
+    // Refresh views on save
+    const saveOrders = () => {
+        localStorage.setItem('production_orders', JSON.stringify(productionOrders));
+        if (viewAfazeres && !viewAfazeres.classList.contains('hidden')) renderTasks();
+        if (viewCortes && !viewCortes.classList.contains('hidden')) renderCuttingTasks();
+        if (viewArtes && !viewArtes.classList.contains('hidden')) renderArtTasks();
+        if (viewDTF && !viewDTF.classList.contains('hidden')) renderDTFTasks();
+        applyDragScroll(); 
+    };
     const formatCurrency = (amount) => amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
     const handleTabClick = (activeTab, activeView) => {
@@ -203,9 +247,7 @@ const init = () => {
     };
     tabQuadro.addEventListener('click', () => handleTabClick(tabQuadro, viewQuadro));
     tabAfazeres.addEventListener('click', () => { handleTabClick(tabAfazeres, viewAfazeres); renderTasks(); });
-    tabArtes.addEventListener('click', () => { handleTabClick(tabArtes, viewArtes); renderArtTasks(); });
     tabCortes.addEventListener('click', () => { handleTabClick(tabCortes, viewCortes); renderCuttingTasks(); });
-    tabDTF.addEventListener('click', () => { handleTabClick(tabDTF, viewDTF); renderDTFTasks(); });
 
     const populateClientSelect = () => {
         clients = JSON.parse(localStorage.getItem('clients')) || [];
@@ -946,15 +988,22 @@ const init = () => {
 
     const renderCuttingTasks = () => {
         cuttingTasksContainer.innerHTML = '';
-        const pendingCutOrders = productionOrders.filter(order => !order.isArtOnly && order.checklist && order.checklist.cutting && !order.checklist.cutting.completed && order.checklist.cutting.subtasks && order.checklist.cutting.subtasks.length > 0);
+        // Show orders even if subtasks are not defined yet, so user can open checklist and add them
+        const pendingCutOrders = productionOrders.filter(order => 
+            !order.isArtOnly && 
+            order.checklist && 
+            order.checklist.cutting && 
+            !order.checklist.cutting.completed
+        );
         if (pendingCutOrders.length === 0) {
             cuttingTasksContainer.innerHTML = '<div class="glass-card p-6 text-center text-gray-400">Nenhuma tarefa de corte pendente. ✨</div>';
             return;
         }
         pendingCutOrders.forEach(order => {
             const client = clients.find(c => c.id === order.clientId);
-            const totalToCut = order.checklist.cutting.subtasks.reduce((acc, sub) => acc + sub.total, 0);
-            const totalCut = order.checklist.cutting.subtasks.reduce((acc, sub) => acc + sub.cut, 0);
+            const subtasks = order.checklist.cutting.subtasks || [];
+            const totalToCut = subtasks.reduce((acc, sub) => acc + sub.total, 0);
+            const totalCut = subtasks.reduce((acc, sub) => acc + sub.cut, 0);
 
             // render colors
             const colors = order.colors || [];
@@ -1330,6 +1379,11 @@ const init = () => {
     }
     // closeArtModalBtn agora é tratado dentro de openArtControlModal dinamicamente ou via delegate global
 
+    // Ativa renderização da aba de artes
+    const tabArtes = document.getElementById('tab-artes');
+    const viewArtes = document.getElementById('view-artes');
+    tabArtes.addEventListener('click', () => { handleTabClick(tabArtes, viewArtes); renderArtTasks(); });
+
     const checkPrefillData = () => {
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('action') === 'new_order') {
@@ -1348,8 +1402,12 @@ const init = () => {
     checkPrefillData();
 
     const dtfTasksContainer = document.getElementById('dtf-tasks-container');
+    const tabDTF = document.getElementById('tab-dtf');
+    const viewDTF = document.getElementById('view-dtf');
 
-    const renderDTFTasks = () => {
+    tabDTF.addEventListener('click', () => { handleTabClick(tabDTF, viewDTF); renderDTFTasks(); });
+
+    function renderDTFTasks() {
         dtfTasksContainer.innerHTML = '';
         // filtra pedidos DTF não concluídos (por status e por printing.completed)
         const dtfOrders = productionOrders.filter(order =>
