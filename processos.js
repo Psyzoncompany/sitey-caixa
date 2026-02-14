@@ -613,11 +613,19 @@ const init = () => {
         // Payment Status Logic
         const total = order.totalValue || 0;
         const paid = order.amountPaid || 0;
+        const due = total - paid;
         let payStatus = '';
+        let paymentText = `<span>${formatCurrency(total)}</span>`;
         if (total > 0) {
-             if (order.isPaid || paid >= total) payStatus = '<span class="w-2 h-2 rounded-full bg-green-500" title="Pago"></span>';
-             else if (paid > 0) payStatus = '<span class="w-2 h-2 rounded-full bg-yellow-500" title="Parcial"></span>';
-             else payStatus = '<span class="w-2 h-2 rounded-full bg-red-500" title="Pendente"></span>';
+             if (order.isPaid || due <= 0) {
+                payStatus = '<span class="w-2 h-2 rounded-full bg-green-500" title="Pago"></span>';
+             } else if (paid > 0) {
+                payStatus = '<span class="w-2 h-2 rounded-full bg-yellow-500" title="Parcial"></span>';
+                paymentText = `<span class="text-yellow-400" title="Valor total: ${formatCurrency(total)}">Falta: ${formatCurrency(due)}</span>`;
+             } else { // paid is 0 or less
+                payStatus = '<span class="w-2 h-2 rounded-full bg-red-500" title="Pendente"></span>';
+                paymentText = `<span class="text-red-400">${formatCurrency(total)}</span>`;
+             }
         }
 
         // Layout "Mercado Livre" Style / App Compact
@@ -657,8 +665,7 @@ const init = () => {
                     <div class="flex flex-col items-end hidden md:flex">
                         <span class="text-gray-500 text-[10px] uppercase">Pagamento</span>
                         <div class="flex items-center gap-1 mt-0.5">
-                            ${payStatus}
-                            <span>${formatCurrency(total)}</span>
+                            ${payStatus} ${paymentText}
                         </div>
                     </div>
                 </div>
@@ -693,7 +700,37 @@ const init = () => {
 
     const renderKanban = () => {
         Object.values(columns).forEach(col => { if (col) col.innerHTML = ''; });
-        productionOrders.forEach(order => {
+        
+        // --- Filtro de URL (ex: vindo do Dashboard "A Receber") ---
+        const urlParams = new URLSearchParams(window.location.search);
+        const filterMode = urlParams.get('filter');
+
+        // --- Botão Limpar Filtro (Melhoria de UX) ---
+        const headerTitle = document.querySelector('h1'); 
+        let clearBtn = document.getElementById('clear-filter-btn');
+        
+        if (filterMode === 'receivables') {
+            if (!clearBtn && headerTitle) {
+                clearBtn = document.createElement('button');
+                clearBtn.id = 'clear-filter-btn';
+                clearBtn.className = 'ml-4 text-xs bg-red-500/20 text-red-300 px-2 py-1 rounded hover:bg-red-500/30 transition-colors align-middle';
+                clearBtn.textContent = '✕ Limpar Filtro (A Receber)';
+                clearBtn.onclick = () => { window.history.replaceState({}, document.title, window.location.pathname); renderKanban(); };
+                headerTitle.appendChild(clearBtn);
+            }
+        } else if (clearBtn) { clearBtn.remove(); }
+
+        const filteredOrders = productionOrders.filter(order => {
+            if (filterMode === 'receivables') {
+                const total = order.totalValue || 0;
+                const paid = order.amountPaid || 0;
+                const pending = total - paid;
+                return !order.isPaid && pending > 0.01;
+            }
+            return true;
+        });
+
+        filteredOrders.forEach(order => {
             if (columns[order.status]) {
                 const card = createOrderCard(order);
                 columns[order.status].appendChild(card);

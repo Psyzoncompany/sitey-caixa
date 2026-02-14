@@ -12,6 +12,18 @@ const init = () => {
     const incomeEl = document.getElementById('total-income');
     const expenseEl = document.getElementById('total-expense');
     const profitEl = document.getElementById('profit');
+    const totalReceivablesEl = document.getElementById('total-receivables');
+    if (totalReceivablesEl) {
+        totalReceivablesEl.addEventListener('click', () => {
+            window.location.href = 'processos.html?filter=receivables';
+        });
+    }
+    if (totalReceivablesEl) {
+        totalReceivablesEl.addEventListener('click', () => {
+            window.location.href = 'processos.html?filter=receivables';
+        });
+    }
+
     const costPerPieceDashboardEl = document.getElementById('cost-per-piece-dashboard');
     const transactionListEl = document.getElementById('transaction-list');
     const deadlinesListEl = document.getElementById('deadlines-list');
@@ -613,6 +625,47 @@ const init = () => {
         profitEl.textContent = formatCurrency(profitMonth);
         profitEl.classList.toggle('text-red-400', profitMonth < 0);
         profitEl.classList.toggle('text-green-400', profitMonth >= 0);
+
+        // --- Card A Receber (Lógica Atualizada) ---
+        const productionOrdersList = JSON.parse(localStorage.getItem('production_orders')) || [];
+        let receivablesTotal = 0;
+        let receivablesCount = 0;
+        let hasOverdueReceivables = false;
+        const todayDate = new Date();
+        todayDate.setHours(0,0,0,0);
+
+        productionOrdersList.forEach(order => {
+            if (order.isPaid) return; // Pedido quitado não entra
+
+            const total = order.totalValue || 0;
+            const paid = order.amountPaid || 0;
+            const pending = total - paid;
+
+            if (pending > 0.01) {
+                receivablesTotal += pending;
+                receivablesCount++;
+                
+                if (order.deadline) {
+                    const d = new Date(order.deadline + 'T03:00:00');
+                    if (d < todayDate) hasOverdueReceivables = true;
+                }
+            }
+        });
+
+        if (totalReceivablesEl) {
+            const alertClass = hasOverdueReceivables ? 'text-red-400 font-bold' : 'text-gray-400';
+            const icon = hasOverdueReceivables ? '⚠️' : '📦';
+            
+            totalReceivablesEl.innerHTML = `
+                <div>${formatCurrency(receivablesTotal)}</div>
+                <div class="text-xs ${alertClass} mt-1 flex items-center gap-1 font-normal">
+                    ${icon} ${receivablesCount} pedidos em aberto
+                </div>
+            `;
+            totalReceivablesEl.classList.add('cursor-pointer', 'hover:opacity-80', 'transition-opacity');
+            totalReceivablesEl.title = "Clique para ver pedidos pendentes";
+        }
+
         const businessLimit = parseFloat(localStorage.getItem('businessSpendingLimit')) || 0;
         const personalLimit = parseFloat(localStorage.getItem('personalSpendingLimit')) || 0;
         const businessPercent = businessLimit > 0 ? (Math.abs(businessExpenseMonth) / businessLimit) * 100 : 0;
