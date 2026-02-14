@@ -60,11 +60,11 @@ body {
   pointer-events:none;
   transition: transform 1.4s ease, opacity 600ms;
 }
-.glass-card:hover::before { transform: rotate(-18deg) translateY(-6%); opacity:0.5; }
+.glass-card:hover::before { opacity:0.5; }
 
 /* hover/active */
 .glass-card:hover{
-  transform: translateY(-6px) scale(1.01);
+  /* transform removed */
   box-shadow: 0 10px 30px rgba(2,6,23,0.7), 0 2px 6px rgba(59,130,246,0.04);
 }
 
@@ -317,11 +317,11 @@ body {
   pointer-events:none;
   transition: transform 1.4s ease, opacity 600ms;
 }
-.glass-card:hover::before { transform: rotate(-18deg) translateY(-6%); opacity:0.5; }
+.glass-card:hover::before { opacity:0.5; }
 
 /* hover/active */
 .glass-card:hover{
-  transform: translateY(-6px) scale(1.01);
+  /* transform removed */
   box-shadow: 0 10px 30px rgba(2,6,23,0.7), 0 2px 6px rgba(59,130,246,0.04);
 }
 
