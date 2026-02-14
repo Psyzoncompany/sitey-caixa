@@ -7,9 +7,13 @@ const init = () => {
     const tabQuadro = document.getElementById('tab-quadro');
     const tabAfazeres = document.getElementById('tab-afazeres');
     const tabCortes = document.getElementById('tab-cortes');
+    const tabArtes = document.getElementById('tab-artes');
+    const tabDTF = document.getElementById('tab-dtf');
     const viewQuadro = document.getElementById('view-quadro');
     const viewAfazeres = document.getElementById('view-afazeres');
     const viewCortes = document.getElementById('view-cortes');
+    const viewArtes = document.getElementById('view-artes');
+    const viewDTF = document.getElementById('view-dtf');
 
     const columns = { 
         todo: document.getElementById('column-todo'), 
@@ -199,7 +203,9 @@ const init = () => {
     };
     tabQuadro.addEventListener('click', () => handleTabClick(tabQuadro, viewQuadro));
     tabAfazeres.addEventListener('click', () => { handleTabClick(tabAfazeres, viewAfazeres); renderTasks(); });
+    tabArtes.addEventListener('click', () => { handleTabClick(tabArtes, viewArtes); renderArtTasks(); });
     tabCortes.addEventListener('click', () => { handleTabClick(tabCortes, viewCortes); renderCuttingTasks(); });
+    tabDTF.addEventListener('click', () => { handleTabClick(tabDTF, viewDTF); renderDTFTasks(); });
 
     const populateClientSelect = () => {
         clients = JSON.parse(localStorage.getItem('clients')) || [];
@@ -1324,11 +1330,6 @@ const init = () => {
     }
     // closeArtModalBtn agora é tratado dentro de openArtControlModal dinamicamente ou via delegate global
 
-    // Ativa renderização da aba de artes
-    const tabArtes = document.getElementById('tab-artes');
-    const viewArtes = document.getElementById('view-artes');
-    tabArtes.addEventListener('click', () => { handleTabClick(tabArtes, viewArtes); renderArtTasks(); });
-
     const checkPrefillData = () => {
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('action') === 'new_order') {
@@ -1347,12 +1348,8 @@ const init = () => {
     checkPrefillData();
 
     const dtfTasksContainer = document.getElementById('dtf-tasks-container');
-    const tabDTF = document.getElementById('tab-dtf');
-    const viewDTF = document.getElementById('view-dtf');
 
-    tabDTF.addEventListener('click', () => { handleTabClick(tabDTF, viewDTF); renderDTFTasks(); });
-
-    function renderDTFTasks() {
+    const renderDTFTasks = () => {
         dtfTasksContainer.innerHTML = '';
         // filtra pedidos DTF não concluídos (por status e por printing.completed)
         const dtfOrders = productionOrders.filter(order =>
