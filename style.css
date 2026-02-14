@@ -1737,10 +1737,15 @@ html[data-theme="light"] .white-text, html[data-theme="light"] .text-white {
     overflow: hidden;
     box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    /* Adiciona espaço vertical entre os cards para melhor legibilidade */
+    margin-bottom: 1rem;
 }
 .kanban-card.syt-process-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+.kanban-card.syt-process-card:last-child {
+    margin-bottom: 0; /* Remove a margem do último card da coluna */
 }
 
 .syt-card-header {
@@ -1827,10 +1832,11 @@ html[data-theme="light"] .white-text, html[data-theme="light"] .text-white {
     gap: 0.75rem;
 }
 .syt-payment-details {
-    display: flex;
-    justify-content: space-between;
+    /* Otimizado para grid para melhor controle de espaçamento */
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
     align-items: baseline;
-    font-size: 0.8rem;
 }
 .syt-payment-details > div { display: flex; flex-direction: column; text-align: center; }
 .syt-payment-details span { color: var(--muted, #98a2b3); font-size: 0.7rem; }
