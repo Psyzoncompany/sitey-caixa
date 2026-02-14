@@ -129,8 +129,8 @@
     </main>
 
     <div id="order-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-0 md:p-4">
-      <div class="glass-card w-full max-w-4xl h-[95vh] md:h-auto md:max-h-[90vh] rounded-t-2xl md:rounded-xl flex flex-col">
-          <form id="order-form" class="flex-1 flex flex-col gap-6 overflow-y-auto p-2">
+      <div class="glass-card w-full max-w-4xl h-[95vh] md:h-auto md:max-h-[90vh] rounded-t-2xl md:rounded-xl flex flex-col overflow-x-hidden">
+          <form id="order-form" class="flex-1 flex flex-col gap-6 overflow-y-auto overflow-x-hidden p-2">
             <div class="flex justify-between items-center"><h2 id="order-modal-title" class="text-3xl font-bold">Novo Pedido de Produção</h2><button type="button" id="cancel-order-btn" class="p-2 rounded-full hover:bg-white/10 text-3xl leading-none">&times;</button></div>
             <div class="py-1">
                 <label class="flex items-center gap-2 cursor-pointer select-none">
@@ -257,7 +257,7 @@
     </div>
     
     <div id="cutting-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-0 md:p-4">
-        <div class="glass-card w-full max-w-4xl h-[95vh] md:h-auto md:max-h-[90vh] rounded-t-2xl md:rounded-xl flex flex-col">
+        <div class="glass-card w-full max-w-4xl h-[95vh] md:h-auto md:max-h-[90vh] rounded-t-2xl md:rounded-xl flex flex-col overflow-x-hidden">
           <div class="flex justify-between items-center mb-4"><h2 id="cutting-modal-title" class="text-3xl font-bold">Checklist de Corte</h2><button type="button" id="close-cutting-modal-btn" class="p-2 rounded-full hover:bg-white/10 text-3xl leading-none">&times;</button></div>
           <div id="cutting-checklist-container" class="flex-1 overflow-y-auto space-y-4 pr-2"></div>
           <div class="flex-shrink-0 flex justify-end gap-4 pt-4 mt-auto border-t border-white/10"><button id="save-cuts-btn" class="btn-shine py-3 px-8 font-bold rounded-lg text-lg">Salvar e Concluir</button></div>
@@ -265,7 +265,7 @@
     </div>
 
     <div id="art-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-0 md:p-4">
-        <div class="glass-card w-full max-w-4xl h-[95vh] md:h-auto md:max-h-[90vh] rounded-t-2xl md:rounded-xl flex flex-col">
+        <div class="glass-card w-full max-w-4xl h-[95vh] md:h-auto md:max-h-[90vh] rounded-t-2xl md:rounded-xl flex flex-col overflow-x-hidden">
             <div class="flex justify-between items-center mb-4"><h2 id="art-modal-title" class="text-3xl font-bold">Detalhes da Arte</h2><button type="button" id="close-art-modal-btn" class="p-2 rounded-full hover:bg-white/10 text-3xl leading-none">&times;</button></div>
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1 overflow-y-auto">
                 <div>
