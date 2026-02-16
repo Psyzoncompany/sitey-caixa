@@ -10,7 +10,7 @@
 <body class="arto-body">
   <main class="arto-wrap">
     <section class="arto-card" id="arto-access-card">
-      <p class="arto-kicker">Sitey Caixa · Controle de Artes 1.5.0</p>
+      <p class="arto-kicker">Sitey Caixa · Controle de Artes 1.5.1</p>
       <h1>Digite seu código de 4 dígitos</h1>
       <p class="arto-muted">Seu link já identifica o pedido. Falta só validar o código.</p>
       <label for="arto-code">Código</label>
@@ -39,6 +39,11 @@
         <textarea id="arto-text" rows="4" placeholder="Ex.: Ajustar tamanho da logo, trocar cor e mover para a manga."></textarea>
 
         <button id="arto-submit" class="arto-primary" type="submit">ENVIAR ALTERAÇÃO</button>
+        
+        <div class="arto-upload-progress" aria-live="polite">
+          <div class="arto-upload-progress-track"><span id="arto-progress-bar"></span></div>
+          <small id="arto-progress-label">0%</small>
+        </div>
         <p id="arto-submit-feedback" class="arto-feedback"></p>
       </form>
 
