@@ -177,6 +177,15 @@ const init = () => {
     };
 
 
+
+    const getAuthenticatedUid = () => {
+        try {
+            return window.firebaseAuth?.currentUser?.()?.uid || '';
+        } catch {
+            return '';
+        }
+    };
+
     const checklistItems = { art: "Arte/Design Aprovado", mockup: "Mockup Aprovado", fabric: "Malha/Tecido Comprado", cutting: "Corte Realizado", sewing: "Costura Realizada", printing: "Estampa/Bordado Realizado", finishing: "Acabamento e Embalagem" };
     const sizeOptions = { adulto: ['PP', 'P', 'M', 'G', 'GG', 'EXG', 'G1', 'G2'], infantil: ['1 a 2 anos', '3 a 4 anos', '5 a 6 anos', '7 a 8 anos', '9 a 10 anos'] };
     const categoryIcons = {
@@ -1567,7 +1576,7 @@ const init = () => {
 
             // Link de Aprovação
             // Assumindo que o usuário está logado e o UID está disponível via auth.currentUser
-            const uid = auth.currentUser ? auth.currentUser.uid : '';
+            const uid = getAuthenticatedUid();
             const approvalLink = `${window.location.origin}/aprovacao.html?uid=${uid}&oid=${order.id}&token=${ver.token}`;
 
             card.innerHTML = `
@@ -1656,7 +1665,7 @@ const init = () => {
                 const lastVersion = order?.artControl?.versions?.length
                     ? order.artControl.versions[order.artControl.versions.length - 1]
                     : null;
-                const uid = auth.currentUser ? auth.currentUser.uid : '';
+                const uid = getAuthenticatedUid();
 
                 if (!lastVersion || !lastVersion.token) return;
 

@@ -697,14 +697,14 @@ function setup() {
   if (state.initialized || !$('art-tasks-container')) return;
   state.initialized = true;
 
-  $('artx-create-request-btn')?.addEventListener('click', createManualRequest);
+  $('artx-create-request-btn')?.addEventListener('click', () => { createManualRequest().catch((err) => { console.error(err); toast(isPermissionDenied(err) ? 'Sem permissão para criar solicitação manual.' : 'Erro ao criar solicitação manual.', 'error'); }); });
   $('artx-search-input')?.addEventListener('input', renderCards);
   $('artx-status-filter')?.addEventListener('change', renderCards);
   $('art-tasks-container')?.addEventListener('click', (e) => {
     const target = e.target.closest('[data-action]');
-    if (target) handleAction(target);
+    if (target) handleAction(target).catch((err) => { console.error(err); toast(isPermissionDenied(err) ? 'Sem permissão para esta ação.' : 'Erro ao executar ação.', 'error'); });
   });
-  $('art-tasks-container')?.addEventListener('change', (e) => handleStatusChange(e.target));
+  $('art-tasks-container')?.addEventListener('change', (e) => { handleStatusChange(e.target).catch((err) => { console.error(err); toast(isPermissionDenied(err) ? 'Sem permissão para atualizar status.' : 'Erro ao atualizar status.', 'error'); }); });
 
   onAuthStateChanged(auth, (user) => {
     if (!user) return;
