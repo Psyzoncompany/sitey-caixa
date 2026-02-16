@@ -185,8 +185,12 @@
         </div>
       </div>
       
-      <div class="glass-card p-4 md:p-6">
-        <h3 class="text-xl font-bold mb-4">Lançamentos Recentes</h3>
+      <div class="glass-card p-4 md:p-6 launches-card">
+        <!-- Cabeçalho em estilo "app card" com título em maiúsculo e pill de filtro -->
+        <div class="launches-head mb-4">
+          <strong>🧾 LANÇAMENTOS</strong>
+          <span class="liquid-pill liquid-pill-accent">FILTRO</span>
+        </div>
         <!-- Filter Section -->
         <div id="syt-filters-container" class="mb-4">
             <div class="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
@@ -203,6 +207,11 @@
                 <button data-filter-type="income" class="syt-type-filter-btn">Entradas</button>
                 <button data-filter-type="expense" class="syt-type-filter-btn">Saídas</button>
             </div>
+        </div>
+        <!-- Ações rápidas somente de UI para reforçar o visual premium sem alterar fluxos atuais -->
+        <div class="launches-actions mb-4">
+            <button type="button" class="liquid-action-btn" aria-label="Importar lançamentos (UI)">Importar</button>
+            <button type="button" id="quick-add-transaction-btn" class="liquid-action-btn liquid-action-btn-primary" aria-label="Abrir modal de novo lançamento">Adicionar</button>
         </div>
         <!-- Cabeçalho da Tabela (Apenas Desktop) -->
         <div class="hidden md:grid md:grid-cols-[2fr,3fr,1.5fr,1.5fr,1.5fr,1fr,auto] gap-4 text-sm font-bold text-gray-400 border-b border-white/10 pb-2 mb-4">
@@ -310,8 +319,19 @@
     </button>
   </nav>
 
+  <!-- FAB visual mobile: atalho para o mesmo fluxo de + lançamento -->
+  <button type="button" id="liquid-nav-fab" class="liquid-nav-fab md:hidden" aria-label="Novo lançamento rápido">✦</button>
+
   <!-- Script visual isolado: parallax + lente sem tocar na lógica financeira -->
   <script src="ui-liquid.js"></script>
+  <script>
+    // Bridge visual: botões novos reaproveitam o CTA existente para não duplicar regra de negócio.
+    (function () {
+      const triggerAdd = () => document.getElementById("add-transaction-btn")?.click();
+      document.getElementById("quick-add-transaction-btn")?.addEventListener("click", triggerAdd);
+      document.getElementById("liquid-nav-fab")?.addEventListener("click", triggerAdd);
+    })();
+  </script>
 
   <script>
     (function () {

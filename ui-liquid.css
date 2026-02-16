@@ -328,6 +328,14 @@ input::placeholder, textarea::placeholder{ color: rgba(255,255,255,.45); }
   -webkit-backdrop-filter: blur(22px) saturate(130%);
 }
 
+
+.liquid-dashboard .glass-card::before{
+  background:
+    radial-gradient(460px 180px at var(--lx, 22%) var(--ly, 0%), rgba(255,255,255,.26), transparent 62%),
+    linear-gradient(160deg, rgba(255,255,255,.12), rgba(255,255,255,.02));
+  opacity: .78;
+}
+
 /* Cabeçalho com leitura premium e discreta */
 .liquid-dashboard header{
   border-radius: 0 0 20px 20px;
@@ -417,4 +425,106 @@ input::placeholder, textarea::placeholder{ color: rgba(255,255,255,.45); }
 
 @media (min-width: 1024px){
   .liquid-dashboard .kpi-grid-liquid{ gap: 20px; }
+}
+
+/* ---------------------------------------------------------------------
+   Ajustes solicitados: estética do mock (head + pills + ações + títulos em caixa alta)
+   --------------------------------------------------------------------- */
+.liquid-dashboard h1,
+.liquid-dashboard h2,
+.liquid-dashboard h3,
+.liquid-dashboard strong,
+.liquid-dashboard .bottom-nav-item span {
+  text-transform: uppercase;
+}
+
+.liquid-dashboard .launches-card {
+  position: relative;
+}
+
+.liquid-dashboard .launches-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.liquid-dashboard .launches-head strong {
+  font-size: .95rem;
+  letter-spacing: .08em;
+  color: rgba(255,255,255,.95);
+}
+
+.liquid-pill,
+.liquid-dashboard .syt-filter-btn,
+.liquid-dashboard .syt-type-filter-btn {
+  border-radius: 999px !important;
+  border: 1px solid rgba(255,255,255,.22) !important;
+  background: rgba(255,255,255,.10) !important;
+  color: rgba(255,255,255,.9) !important;
+  font-size: .72rem !important;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  padding: 8px 12px !important;
+}
+
+.liquid-pill-accent,
+.liquid-dashboard .syt-filter-btn.active,
+.liquid-dashboard .syt-type-filter-btn.active {
+  border-color: rgba(24,211,230,.45) !important;
+  background: linear-gradient(130deg, rgba(24,211,230,.20), rgba(59,130,246,.16)) !important;
+  box-shadow: 0 8px 20px rgba(24,211,230,.16);
+}
+
+.liquid-dashboard .launches-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.liquid-action-btn {
+  flex: 1;
+  min-height: 44px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,.2);
+  background: rgba(255,255,255,.1);
+  color: rgba(255,255,255,.95);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.liquid-action-btn-primary {
+  background: linear-gradient(135deg, rgba(59,130,246,.9), rgba(24,211,230,.85));
+  border-color: rgba(24,211,230,.45);
+}
+
+/* mini-linha visual para parecer o "chartbox" do mock acima da lista */
+.liquid-dashboard #transaction-list {
+  min-height: 120px;
+  border-top: 1px solid rgba(255,255,255,.08);
+  padding-top: 12px;
+}
+
+/* FAB central inspirado no exemplo enviado */
+.liquid-nav-fab {
+  position: fixed;
+  bottom: calc(var(--safeB) + 52px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.3);
+  background: linear-gradient(160deg, rgba(24,211,230,.92), rgba(59,130,246,.9));
+  color: #f8fbff;
+  font-size: 1.1rem;
+  font-weight: 900;
+  box-shadow: 0 14px 34px rgba(3, 105, 161, .42);
+  z-index: 70;
+}
+
+@media (max-width: 768px) {
+  .liquid-dashboard .bottom-nav { padding-bottom: 11px; }
+  .liquid-dashboard .bottom-nav-item { min-width: 60px; }
 }

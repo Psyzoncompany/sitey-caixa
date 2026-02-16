@@ -31,6 +31,16 @@
     root.style.setProperty('--ly', `${y}px`);
   };
 
+  // Brilho que acompanha o ponteiro, no mesmo espírito do mock solicitado.
+  const setCardHighlight = (clientX, clientY) => {
+    const xPct = `${Math.round((clientX / (window.innerWidth || 1)) * 100)}%`;
+    const yPct = `${Math.round((clientY / (window.innerHeight || 1)) * 100)}%`;
+    document.querySelectorAll('.liquid-dashboard .glass-card').forEach((card) => {
+      card.style.setProperty('--lx', xPct);
+      card.style.setProperty('--ly', yPct);
+    });
+  };
+
   // Micro distorção nos cards: cria sensação "liquid" quando o ponteiro se move.
   const applyCardTilt = (clientX, clientY) => {
     const cards = document.querySelectorAll('.liquid-dashboard .glass-card');
@@ -66,6 +76,7 @@
 
     setParallax(nx, ny);
     setLensPosition(event.clientX, event.clientY);
+    setCardHighlight(event.clientX, event.clientY);
 
     if (!prefersReducedMotion) {
       applyCardTilt(event.clientX, event.clientY);
@@ -82,6 +93,10 @@
   window.addEventListener('pointerdown', onPointerDown, { passive: true });
   window.addEventListener('pointerup', onPointerUp, { passive: true });
   window.addEventListener('pointercancel', onPointerUp, { passive: true });
+  window.addEventListener('pointerleave', onPointerUp, { passive: true });
+
+  // Fallback explícito para iOS Safari mais antigo.
+  window.addEventListener('touchend', onPointerUp, { passive: true });
 
   if (!prefersReducedMotion) {
     // Movimento sutil contínuo para manter a sensação de profundidade quando o usuário está parado.
