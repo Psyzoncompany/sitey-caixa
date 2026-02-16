@@ -2102,6 +2102,13 @@ body.is-dragging-kanban {
 .syt-delete-btn svg { color: #fca5a5; }
 
 
+.syt-card-summary-stack {
+    padding: 0.35rem 1rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
 .syt-card-carousel {
     padding: 0.35rem 1rem 0.75rem;
 }

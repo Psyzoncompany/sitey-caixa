@@ -1,10 +1,16 @@
 // c:\Users\AAAA\Desktop\sitey-caixa\firebase-config.js
 
 // Importa as funções do Firebase (versão compat para facilitar o uso com scripts existentes)
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteField } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 import { app, auth, db } from "./js/firebase-init.js";
+
+
+const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({
+    prompt: 'select_account'
+});
 
 // Som de sucesso sutil (Web Audio API)
 let audioCtx = null;
@@ -314,6 +320,17 @@ onAuthStateChanged(auth, async (user) => {
 // Expõe funções de auth globalmente para uso nos botões
 window.firebaseAuth = {
     login: (email, password) => signInWithEmailAndPassword(auth, email, password),
+    loginWithGoogle: async () => {
+        try {
+            return await signInWithPopup(auth, googleProvider);
+        } catch (error) {
+            const popupBlocked = error?.code === 'auth/popup-blocked' || error?.code === 'auth/cancelled-popup-request';
+            if (popupBlocked) {
+                return signInWithRedirect(auth, googleProvider);
+            }
+            throw error;
+        }
+    },
     logout: () => signOut(auth),
     currentUser: () => auth.currentUser
 };
