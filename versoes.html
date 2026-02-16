@@ -32,22 +32,23 @@
     <section class="space-y-4">
       <article class="glass-card p-5 border border-cyan-500/20">
         <div class="flex items-center justify-between gap-3 mb-2">
-          <h2 class="text-xl font-bold text-cyan-200">Versão 1.5.1</h2>
+          <h2 class="text-xl font-bold text-cyan-200">Versão 1.5.4</h2>
           <span class="text-xs text-gray-400">Atual</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Integração em tempo real entre <strong>Quadro de Processos</strong> e <strong>Controle de Artes</strong> com vínculo 1:1 por ID do pedido.</li>
-          <li>Fluxo automático para pendências de arte: pedido sem aprovação de arte aparece para geração de link e código.</li>
-          <li>Portal do cliente reforçado com validação por <code>?rid</code>, código de 4 dígitos, upload com progresso e limite de 6 imagens.</li>
-          <li>Histórico completo de versões preservado e organizado em grupos colapsáveis por major (<strong>1.x, 2.x, 3.x...</strong>).</li>
-          <li>Ajustes de schema legado (fallbacks de campos) e correções de status/pagamento em tempo real no Firestore.</li>
+          <li>Fluxo de aprovação reforçado com validações defensivas para <code>uid</code>, <code>oid</code> e <code>token</code>.</li>
+          <li>Compatibilidade entre os campos <code>productionOrders</code> e <code>production_orders</code> durante leitura e gravação.</li>
+          <li>Fallback de imagem na aprovação com placeholder + tratamento de <code>onload/onerror</code>.</li>
+          <li>Funções globais <code>approveArt</code> e <code>submitChanges</code> com tratamento de erro para evitar quebra do fluxo.</li>
+          <li>Inicialização centralizada do Firebase em <code>js/firebase-init.js</code> para evitar <em>duplicate-app</em>.</li>
+          <li>Cópia de texto/link com fallback para <code>execCommand</code> quando <code>navigator.clipboard</code> falhar.</li>
         </ul>
       </article>
     </section>
   </main>
 
   <footer class="version-footer">
-    <a href="versoes.html" class="version-footer-link">Versão 1.5.1</a>
+    <a href="versoes.html" class="version-footer-link">Versão 1.5.4</a>
   </footer>
 
   <nav class="bottom-nav">
