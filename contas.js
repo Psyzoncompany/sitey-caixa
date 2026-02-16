@@ -7,10 +7,12 @@ const initContas = () => {
     const qsa = s => document.querySelectorAll(s);
 
     const addBillBtn = el('add-bill-btn');
+    const addBillFab = el('add-bill-fab');
     const monthSelector = el('month-selector');
     const prevMonthBtn = el('prev-month-btn');
     const nextMonthBtn = el('next-month-btn');
     const currentMonthLabel = el('current-month-label');
+    const currentMonthLabelMobile = el('current-month-label-mobile');
 
     // Summary Cards
     const summaryTotalEl = el('summary-total');
@@ -52,6 +54,11 @@ const initContas = () => {
     const payAmountInput = el('pay-amount');
     const payNotesInput = el('pay-notes');
 
+    // Details Modal
+    const detailsModal = el('details-modal');
+    const closeDetailsBtn = el('close-details-btn');
+    const detailsContent = el('details-content');
+
     // Reminders
     const remindersEnabledCheckbox = el('reminders-enabled');
     const reminderTimeInput = el('reminder-time');
@@ -61,6 +68,8 @@ const initContas = () => {
     // Import/Export
     const exportBtn = el('export-btn');
     const importBtn = el('import-btn');
+    const exportBtnMobile = el('export-btn-mobile');
+    const importBtnMobile = el('import-btn-mobile');
     const importFileInput = el('import-file-input');
 
     // --- STATE ---
@@ -89,6 +98,21 @@ const initContas = () => {
         container.appendChild(toast);
         setTimeout(() => toast.remove(), 4000);
     };
+
+    const normalizeId = (value) => String(value);
+    const escapeHtml = (value = '') => String(value).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+    const actionIcon = {
+        pay: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6L9 17l-5-5"/></svg>',
+        edit: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>',
+        details: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+        delete: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>'
+    };
+
+    const createActionButton = (action, id, title, tone = '') => `
+        <button type="button" class="action-btn ${tone}" data-action="${action}" data-id="${id}" title="${title}" aria-label="${title}">
+            ${actionIcon[action]}
+        </button>
+    `;
 
     // --- DATABASE ---
     const saveDb = () => localStorage.setItem(DB_KEY, JSON.stringify(db));
@@ -179,7 +203,9 @@ const initContas = () => {
         const monthKey = `${year}-${String(month).padStart(2, '0')}`;
 
         monthSelector.value = monthKey;
-        currentMonthLabel.textContent = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+        const monthLabel = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+        currentMonthLabel.textContent = monthLabel;
+        if (currentMonthLabelMobile) currentMonthLabelMobile.textContent = monthLabel;
 
         const bills = getBillsForMonth(year, month);
         renderSummary(bills);
@@ -205,6 +231,8 @@ const initContas = () => {
         bills.sort((a, b) => a.due_day - b.due_day);
         billsTableBody.innerHTML = '';
         billsCardContainer.innerHTML = '';
+        billsTableBody.dataset.monthKey = monthKey;
+        billsCardContainer.dataset.monthKey = monthKey;
 
         if (bills.length === 0) {
             const emptyRow = `<tr><td colspan="6" class="p-4 text-center text-gray-500">Nenhuma conta para este mês.</td></tr>`;
@@ -218,66 +246,49 @@ const initContas = () => {
             const statusClasses = { pending: 'status-pending', paid: 'status-paid', overdue: 'status-overdue' };
             const statusLabels = { pending: 'Pendente', paid: 'Pago', overdue: 'Atrasado' };
             const installmentText = bill.type === 'installment' ? `(${bill.current_installment}/${bill.total_installments})` : '';
+            const payButton = bill.status !== 'paid' ? createActionButton('pay', bill.id, 'Marcar como pago', 'action-btn-pay') : '';
+            const commonButtons = `
+                ${createActionButton('details', bill.id, 'Visualizar detalhes', 'action-btn-details')}
+                ${createActionButton('edit', bill.id, 'Editar conta', 'action-btn-edit')}
+                ${createActionButton('delete', bill.id, 'Excluir conta', 'action-btn-delete')}
+            `;
 
-            // Desktop Row
             const row = document.createElement('tr');
             row.className = 'bill-row';
             row.innerHTML = `
                 <td class="p-2 text-center">${priorityColors[bill.priority] || ''}</td>
-                <td class="p-2 font-bold">${bill.name} <span class="text-xs text-gray-400">${installmentText}</span></td>
+                <td class="p-2 font-bold">${escapeHtml(bill.name)} <span class="text-xs text-gray-400">${installmentText}</span></td>
                 <td class="p-2">${formatCurrency(bill.amount)}</td>
                 <td class="p-2 text-center">${String(bill.due_day).padStart(2, '0')}</td>
                 <td class="p-2"><span class="status-badge ${statusClasses[bill.status]}">${statusLabels[bill.status]}</span></td>
                 <td class="p-2">
-                    <div class="flex items-center gap-2">
-                        ${bill.status !== 'paid' ? `<button class="action-btn pay-btn" data-id="${bill.id}" title="Marcar como Pago">✅</button>` : ''}
-                        <button class="action-btn edit-btn" data-id="${bill.id}" title="Editar Definição">✏️</button>
-                        <button class="action-btn duplicate-btn" data-id="${bill.id}" title="Duplicar">📄</button>
-                        <button class="action-btn delete-btn" data-id="${bill.id}" title="Excluir">🗑️</button>
+                    <div class="actions-group" data-month-key="${monthKey}">
+                        ${payButton}
+                        ${commonButtons}
                     </div>
                 </td>
             `;
             billsTableBody.appendChild(row);
 
-            // Mobile Card
-            const card = document.createElement('div');
+            const card = document.createElement('article');
             card.className = 'bill-card';
             card.innerHTML = `
-                <div class="bill-card-priority" style="background-color: ${ {1:'#ef4444', 2:'#f97316', 3:'#facc15', 4:'#22c55e'}[bill.priority] || '#4b5563' }"></div>
-                <div class="bill-card-main">
-                    <div class="bill-card-name">${bill.name}</div>
-                    <div class="bill-card-meta">${bill.category} ${installmentText}</div>
-                </div>
-                <div class="bill-card-details">
-                    <div class="bill-card-amount">${formatCurrency(bill.amount)}</div>
-                    <div class="bill-card-due">Vence dia ${String(bill.due_day).padStart(2, '0')}</div>
-                </div>
-                <div class="bill-card-status">
+                <header class="bill-card__header">
+                    <h3 class="bill-card__name" title="${escapeHtml(bill.name)}">${escapeHtml(bill.name)}</h3>
                     <span class="status-badge ${statusClasses[bill.status]}">${statusLabels[bill.status]}</span>
+                </header>
+                <div class="bill-card__amount-row">
+                    <p class="bill-card__amount">${formatCurrency(bill.amount)}</p>
+                    <p class="bill-card__due">Vence dia ${String(bill.due_day).padStart(2, '0')}</p>
                 </div>
-                <div class="bill-card-actions">
-                    ${bill.status !== 'paid' ? `<button class="btn-shine pay-btn text-xs" data-id="${bill.id}">Pagar</button>` : ''}
-                    <div class="relative">
-                        <button class="action-btn more-actions-btn">...</button>
-                        <div class="more-actions-menu hidden">
-                            <a href="#" class="edit-btn" data-id="${bill.id}">Editar</a>
-                            <a href="#" class="duplicate-btn" data-id="${bill.id}">Duplicar</a>
-                            <a href="#" class="delete-btn" data-id="${bill.id}">Excluir</a>
-                        </div>
-                    </div>
-                </div>
+                ${bill.category ? `<p class="bill-card__meta" title="${escapeHtml(bill.category)}">${escapeHtml(bill.category)}</p>` : ''}
+                <footer class="bill-card__actions actions-group" data-month-key="${monthKey}">
+                    ${payButton}
+                    ${commonButtons}
+                </footer>
             `;
             billsCardContainer.appendChild(card);
         });
-
-        // Add event listeners for actions
-        qsa('.pay-btn').forEach(btn => btn.addEventListener('click', (e) => openPayModal(e.target.dataset.id, monthKey)));
-        qsa('.edit-btn').forEach(btn => btn.addEventListener('click', (e) => openBillModal(e.target.dataset.id)));
-        qsa('.duplicate-btn').forEach(btn => btn.addEventListener('click', (e) => duplicateBill(e.target.dataset.id)));
-        qsa('.delete-btn').forEach(btn => btn.addEventListener('click', (e) => deleteBill(e.target.dataset.id)));
-        qsa('.more-actions-btn').forEach(btn => btn.addEventListener('click', (e) => {
-            e.target.nextElementSibling.classList.toggle('hidden');
-        }));
     };
 
     const renderCategoryChart = (bills) => {
@@ -372,7 +383,7 @@ const initContas = () => {
         billForm.reset();
         currentEditingId = id;
         if (id) {
-            const bill = db.accounts.find(b => b.id === id);
+            const bill = db.accounts.find(b => normalizeId(b.id) === normalizeId(id));
             if (!bill) return;
             billModalTitle.textContent = 'Editar Conta';
             billNameInput.value = bill.name;
@@ -421,7 +432,7 @@ const initContas = () => {
         }
 
         if (currentEditingId) {
-            const index = db.accounts.findIndex(b => b.id === currentEditingId);
+            const index = db.accounts.findIndex(b => normalizeId(b.id) === normalizeId(currentEditingId));
             db.accounts[index] = data;
         } else {
             db.accounts.push(data);
@@ -433,23 +444,40 @@ const initContas = () => {
     };
 
     const deleteBill = (id) => {
-        if (confirm('Tem certeza que deseja excluir a definição desta conta? Isso removerá ela de todos os meses futuros.')) {
-            db.accounts = db.accounts.filter(b => b.id !== id);
+        const normalizedId = normalizeId(id);
+        const bill = db.accounts.find(b => normalizeId(b.id) === normalizedId);
+        if (!bill) return;
+
+        if (confirm(`Tem certeza que deseja excluir "${bill.name}"? Esta ação não poderá ser desfeita.`)) {
+            db.accounts = db.accounts.filter(b => normalizeId(b.id) !== normalizedId);
             saveDb();
             renderForDate(currentDate);
             showToast('Conta excluída.', 'warning');
         }
     };
 
-    const duplicateBill = (id) => {
-        const original = db.accounts.find(b => b.id === id);
-        if (!original) return;
-        const newBill = { ...original, id: Date.now(), name: `${original.name} (Cópia)` };
-        db.accounts.push(newBill);
-        saveDb();
-        renderForDate(currentDate);
-        showToast('Conta duplicada.', 'info');
+    const openDetailsModal = (id) => {
+        const normalizedId = normalizeId(id);
+        const bill = db.accounts.find(b => normalizeId(b.id) === normalizedId);
+        if (!bill || !detailsModal || !detailsContent) return;
+
+        detailsContent.innerHTML = `
+            <div class="details-grid">
+                <p><span>Conta</span><strong>${escapeHtml(bill.name)}</strong></p>
+                <p><span>Categoria</span><strong>${escapeHtml(bill.category || 'N/A')}</strong></p>
+                <p><span>Valor</span><strong>${formatCurrency(bill.amount)}</strong></p>
+                <p><span>Vencimento</span><strong>Dia ${String(bill.due_day).padStart(2, '0')}</strong></p>
+                <p><span>Tipo</span><strong>${escapeHtml(bill.type)}</strong></p>
+                <p><span>Pagamento</span><strong>${escapeHtml(bill.payment_method || 'N/A')}</strong></p>
+                <p><span>Prioridade</span><strong>${escapeHtml(String(bill.priority))}</strong></p>
+                <p><span>Observações</span><strong>${escapeHtml(bill.notes || 'Sem observações')}</strong></p>
+            </div>
+        `;
+
+        detailsModal.classList.remove('hidden');
     };
+
+    const closeDetailsModal = () => detailsModal?.classList.add('hidden');
 
     const toggleInstallmentFields = () => {
         billInstallmentsContainer.classList.toggle('hidden', billTypeInput.value !== 'installment');
@@ -458,7 +486,7 @@ const initContas = () => {
 
     // --- PAYMENT FLOW ---
     const openPayModal = (accountId, monthKey) => {
-        const bill = db.accounts.find(b => b.id == accountId);
+        const bill = db.accounts.find(b => normalizeId(b.id) === normalizeId(accountId));
         if (!bill) return;
         currentPaying = { accountId, monthKey };
         payModalName.textContent = bill.name;
@@ -481,7 +509,7 @@ const initContas = () => {
         record.paid_notes = payNotesInput.value;
 
         // Advance installment if applicable
-        const account = db.accounts.find(acc => acc.id === accountId);
+        const account = db.accounts.find(acc => normalizeId(acc.id) === normalizeId(accountId));
         if (account && account.type === 'installment') {
             account.current_installment = Math.min(account.current_installment + 1, account.total_installments);
         }
@@ -566,12 +594,42 @@ const initContas = () => {
 
     // --- EVENT LISTENERS ---
     addBillBtn.addEventListener('click', () => openBillModal());
+    if (addBillFab) addBillFab.addEventListener('click', () => openBillModal());
     cancelBillBtn.addEventListener('click', closeBillModal);
     billForm.addEventListener('submit', saveBill);
     billTypeInput.addEventListener('change', toggleInstallmentFields);
 
     cancelPayBtn.addEventListener('click', closePayModal);
     payForm.addEventListener('submit', confirmPayment);
+
+    if (closeDetailsBtn) closeDetailsBtn.addEventListener('click', closeDetailsModal);
+
+    document.addEventListener('click', (event) => {
+        const actionElement = event.target.closest('[data-action][data-id]');
+        if (!actionElement) return;
+
+        event.preventDefault();
+        const { action, id } = actionElement.dataset;
+        const actionScope = actionElement.closest('[data-month-key]');
+        const monthKey = actionScope?.dataset.monthKey || `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+
+        switch (action) {
+            case 'pay':
+                openPayModal(id, monthKey);
+                break;
+            case 'edit':
+                openBillModal(id);
+                break;
+            case 'details':
+                openDetailsModal(id);
+                break;
+            case 'delete':
+                deleteBill(id);
+                break;
+            default:
+                break;
+        }
+    });
 
     prevMonthBtn.addEventListener('click', () => {
         currentDate.setMonth(currentDate.getMonth() - 1);
@@ -601,6 +659,8 @@ const initContas = () => {
     
     exportBtn.addEventListener('click', exportDb);
     importBtn.addEventListener('click', () => importFileInput.click());
+    if (exportBtnMobile) exportBtnMobile.addEventListener('click', exportDb);
+    if (importBtnMobile) importBtnMobile.addEventListener('click', () => importFileInput.click());
     importFileInput.addEventListener('change', (e) => importDb(e.target.files[0]));
 
     // --- INITIALIZATION ---

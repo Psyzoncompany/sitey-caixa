@@ -34,25 +34,25 @@
 
   <div class="flex flex-col min-h-screen">
     
-    <header class="hidden md:block bg-gray-900/80 backdrop-blur-lg sticky top-0 z-40 border-b border-white/10">
+    <header class="hidden md:block desktop-topbar sticky top-0 z-40">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between h-16">
+        <div class="desktop-topbar-inner flex items-center justify-between">
           <div class="flex items-center">
-            <a href="index.html" class="flex-shrink-0">
+            <a href="index.html" class="flex-shrink-0 desktop-topbar-logo">
               <img src="img/logo.png" alt="Logo Psyzon" class="h-10 md:h-12">
             </a>
           </div>
           <div class="hidden md:block">
-            <nav class="ml-10 flex items-baseline space-x-4 lg:space-x-8">
-              <a href="index.html" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
-              <a href="clientes.html" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium">Clientes</a>
-              <a href="processos.html" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium">Processos</a>
-              <a href="contas.html" class="bg-cyan-500/20 text-cyan-300 px-3 py-2 rounded-md text-sm font-bold">Contas Mensais</a>
-              <a href="bloco_de_notas.html" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-bold">Bloco de Notas</a>
-              <a href="historico.html" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium">Histórico</a>
-              <a href="relatorios.html" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium">Relatórios</a>
-              <a href="configuracoes.html" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium">Configurações</a>
-              <button onclick="window.firebaseAuth.logout()" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium hover:text-red-400">Sair</button>
+            <nav class="desktop-topbar-nav">
+              <a href="index.html" class="desktop-nav-link">Dashboard</a>
+              <a href="clientes.html" class="desktop-nav-link">Clientes</a>
+              <a href="processos.html" class="desktop-nav-link">Processos</a>
+              <a href="contas.html" class="desktop-nav-link is-active">Contas Mensais</a>
+              <a href="bloco_de_notas.html" class="desktop-nav-link">Bloco de Notas</a>
+              <a href="historico.html" class="desktop-nav-link">Histórico</a>
+              <a href="relatorios.html" class="desktop-nav-link">Relatórios</a>
+              <a href="configuracoes.html" class="desktop-nav-link">Configurações</a>
+              <button onclick="window.firebaseAuth.logout()" class="desktop-nav-link desktop-nav-logout">Sair</button>
             </nav>
           </div>
         </div>
@@ -72,8 +72,22 @@
         </div>
     </div>
 
-    <main class="flex-1 p-4 md:p-6 lg:p-8">
-      <div class="flex justify-between items-center mb-6">
+    <main class="flex-1 p-4 md:p-6 lg:p-8 contas-main">
+      <div class="accounts-mobile-header md:hidden">
+        <div class="accounts-mobile-header__title-wrap">
+            <h1 class="accounts-mobile-header__title">Contas de <span id="current-month-label-mobile"></span></h1>
+        </div>
+        <div class="accounts-mobile-header__actions">
+            <button id="export-btn-mobile" type="button" class="mobile-icon-btn" title="Exportar" aria-label="Exportar contas">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M4 14v3a4 4 0 004 4h8a4 4 0 004-4v-3"/></svg>
+            </button>
+            <button id="import-btn-mobile" type="button" class="mobile-icon-btn" title="Importar" aria-label="Importar contas">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21V9"/><path d="M16 17l-4 4-4-4"/><path d="M4 10V7a4 4 0 014-4h8a4 4 0 014 4v3"/></svg>
+            </button>
+        </div>
+      </div>
+
+      <div class="hidden md:flex justify-between items-center mb-6">
           <h1 class="text-2xl md:text-3xl font-bold">Contas Mensais</h1>
           <button id="add-bill-btn" class="btn-shine py-2 px-4 font-bold rounded-lg">+ Nova Conta</button>
       </div>
@@ -101,7 +115,7 @@
       <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
         <!-- Bills List -->
         <div class="lg:col-span-3 glass-card p-4 md:p-6">
-            <div class="flex justify-between items-center mb-4">
+            <div class="hidden md:flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold">Contas de <span id="current-month-label"></span></h2>
                 <div class="flex gap-2">
                     <button id="export-btn" class="btn-ghost text-xs">Exportar</button>
@@ -128,7 +142,7 @@
             </div>
 
             <!-- Mobile Cards -->
-            <div id="bills-card-container" class="md:hidden space-y-3"></div>
+            <div id="bills-card-container" class="md:hidden space-y-3 accounts-mobile-list"></div>
         </div>
 
         <!-- Chart & Upcoming -->
@@ -218,7 +232,26 @@
         </div>
     </div>
 
+
+
+    <!-- Details Modal -->
+    <div id="details-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[75] flex items-center justify-center p-4">
+        <div class="glass-card w-full max-w-lg rounded-xl flex flex-col">
+            <div class="p-6 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-2xl font-bold">Detalhes da Conta</h2>
+                    <button type="button" id="close-details-btn" class="btn-ghost">Fechar</button>
+                </div>
+                <div id="details-content" class="text-sm text-gray-200"></div>
+            </div>
+        </div>
+    </div>
+
     <div id="notification-container" class="fixed bottom-5 right-5 z-[100] w-full max-w-xs space-y-3"></div>
+
+    <button id="add-bill-fab" type="button" class="add-bill-fab md:hidden" title="Adicionar conta" aria-label="Adicionar nova conta">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
   </div>
 
   <!-- Barra de Navegação Inferior (Mobile) -->

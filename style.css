@@ -31,6 +31,92 @@ body {
     background-color: #121212; /* Cor de fundo padrão para Material Dark Theme */
 }
 
+/* --- Header desktop moderno (abas principais) --- */
+.desktop-topbar {
+    background:
+      radial-gradient(circle at 12% -40%, rgba(34, 211, 238, 0.24), transparent 58%),
+      radial-gradient(circle at 82% -55%, rgba(59, 130, 246, 0.25), transparent 62%),
+      rgba(2, 6, 23, 0.78);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.28);
+    box-shadow: 0 20px 40px rgba(2, 6, 23, 0.55);
+    backdrop-filter: blur(16px);
+}
+
+.desktop-topbar-inner {
+    min-height: 74px;
+    gap: 1.25rem;
+}
+
+.desktop-topbar-logo {
+    padding: 0.4rem;
+    border-radius: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    background: linear-gradient(140deg, rgba(30, 41, 59, 0.82), rgba(15, 23, 42, 0.6));
+    transition: transform 180ms ease, border-color 180ms ease;
+}
+
+.desktop-topbar-logo:hover {
+    transform: translateY(-1px);
+    border-color: rgba(34, 211, 238, 0.35);
+}
+
+.desktop-topbar-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem;
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.65));
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.desktop-nav-link {
+    color: #cbd5e1;
+    padding: 0.55rem 0.95rem;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    line-height: 1;
+    font-weight: 600;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    transition: color 180ms ease, background-color 180ms ease, transform 180ms ease;
+}
+
+.desktop-nav-link:hover {
+    color: #f8fafc;
+    background: rgba(148, 163, 184, 0.14);
+    transform: translateY(-1px);
+}
+
+.desktop-nav-link.is-active {
+    color: #ecfeff;
+    border: 1px solid rgba(103, 232, 249, 0.45);
+    background: linear-gradient(135deg, rgba(34, 211, 238, 0.28), rgba(37, 99, 235, 0.32));
+    box-shadow: 0 10px 20px rgba(6, 182, 212, 0.25);
+}
+
+.desktop-nav-logout:hover {
+    color: #fca5a5;
+    background: rgba(239, 68, 68, 0.15);
+}
+
+@media (max-width: 1023px) {
+    .desktop-topbar-inner {
+        min-height: 64px;
+    }
+
+    .desktop-topbar-nav {
+        gap: 0.2rem;
+        padding: 0.3rem;
+    }
+
+    .desktop-nav-link {
+        font-size: 0.67rem;
+        padding: 0.48rem 0.78rem;
+    }
+}
+
 /* --- Cards (Material Design) --- */
 /* O nome da classe '.glass-card' foi mantido para compatibilidade */
 .glass-card, .glass-card-fullscreen {
@@ -2500,4 +2586,299 @@ body.neo-dashboard {
     font-size: 0.72rem !important;
     font-weight: 600 !important;
   }
+}
+
+/* --- Contas mensais: ações com SVG inline --- */
+.actions-group {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+
+.action-btn {
+    width: 2.2rem;
+    height: 2.2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.8rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.05));
+    box-shadow: 0 8px 25px rgba(2, 6, 23, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: #dbeafe;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.action-btn:hover {
+    transform: translateY(-1px);
+    border-color: rgba(191, 219, 254, 0.6);
+    box-shadow: 0 12px 28px rgba(14, 116, 144, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.action-btn:active {
+    transform: scale(0.96);
+}
+
+.action-btn:focus-visible {
+    outline: 2px solid rgba(34, 211, 238, 0.85);
+    outline-offset: 2px;
+}
+
+.action-btn svg {
+    width: 1.05rem;
+    height: 1.05rem;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    pointer-events: none;
+}
+
+.action-btn-pay { color: #86efac; }
+.action-btn-edit { color: #93c5fd; }
+.action-btn-details { color: #c4b5fd; }
+.action-btn-delete { color: #fca5a5; }
+
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 0.8rem;
+}
+
+.details-grid p {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.details-grid span {
+    color: #94a3b8;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.details-grid strong {
+    font-size: 0.97rem;
+    color: #f8fafc;
+    font-weight: 600;
+}
+
+@media (max-width: 767px) {
+    .bill-card-actions .action-btn {
+        width: 2rem;
+        height: 2rem;
+    }
+}
+
+/* ===== Contas: redesign mobile-first ===== */
+.contas-main {
+    background: radial-gradient(circle at 10% 0%, rgba(56, 189, 248, 0.16), transparent 45%),
+                radial-gradient(circle at 90% -10%, rgba(139, 92, 246, 0.12), transparent 40%),
+                #0b1220;
+}
+
+.accounts-mobile-header {
+    position: sticky;
+    top: 0;
+    z-index: 35;
+    margin: -0.25rem -0.25rem 1rem;
+    padding: 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    border-radius: 0 0 16px 16px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+    background: linear-gradient(145deg, rgba(15, 23, 42, 0.88), rgba(30, 41, 59, 0.72));
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+.accounts-mobile-header__title {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.3;
+    font-weight: 700;
+    color: #f8fafc;
+}
+
+.accounts-mobile-header__actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.mobile-icon-btn,
+.add-bill-fab {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.17), rgba(255, 255, 255, 0.06));
+    color: #e2e8f0;
+    box-shadow: 0 8px 24px rgba(2, 6, 23, 0.35);
+    transition: transform .2s ease, background .2s ease;
+}
+
+.mobile-icon-btn:active,
+.add-bill-fab:active,
+.bill-card__actions .action-btn:active {
+    transform: scale(0.95);
+}
+
+.mobile-icon-btn svg,
+.add-bill-fab svg {
+    width: 1.15rem;
+    height: 1.15rem;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.accounts-mobile-list {
+    padding-bottom: 7.5rem;
+}
+
+.bill-card {
+    padding: 0.95rem;
+    border-radius: 16px;
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.05));
+    box-shadow: 0 10px 24px rgba(2, 6, 23, 0.45);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+}
+
+.bill-card__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.7rem;
+}
+
+.bill-card__name {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #f8fafc;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.bill-card__amount-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.7rem;
+}
+
+.bill-card__amount {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #e2e8f0;
+}
+
+.bill-card__due,
+.bill-card__meta {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #94a3b8;
+}
+
+.bill-card__due {
+    white-space: nowrap;
+}
+
+.bill-card__meta {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.bill-card__actions {
+    margin-top: 0.35rem;
+    padding-top: 0.55rem;
+    border-top: 1px solid rgba(148, 163, 184, 0.24);
+    justify-content: space-between;
+}
+
+.bill-card__actions .action-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+}
+
+.status-badge.status-paid,
+.status-badge.status-pending,
+.status-badge.status-overdue {
+    font-size: 0.72rem;
+    border-radius: 999px;
+    padding: 0.24rem 0.56rem;
+}
+
+.status-badge.status-paid {
+    color: #86efac;
+    background: rgba(34, 197, 94, 0.15);
+    border: 1px solid rgba(34, 197, 94, 0.35);
+}
+
+.status-badge.status-pending {
+    color: #fdba74;
+    background: rgba(251, 146, 60, 0.15);
+    border: 1px solid rgba(251, 146, 60, 0.35);
+}
+
+.status-badge.status-overdue {
+    color: #fda4af;
+    background: rgba(244, 63, 94, 0.15);
+    border: 1px solid rgba(244, 63, 94, 0.35);
+}
+
+.add-bill-fab {
+    position: fixed;
+    left: 50%;
+    bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom) + 16px);
+    transform: translateX(-50%);
+    width: 58px;
+    height: 58px;
+    border-radius: 999px;
+    z-index: 40;
+    color: #ecfeff;
+    border-color: rgba(103, 232, 249, 0.4);
+    background: linear-gradient(135deg, rgba(34, 211, 238, 0.35), rgba(37, 99, 235, 0.35));
+}
+
+.add-bill-fab svg {
+    width: 1.35rem;
+    height: 1.35rem;
+}
+
+@media (min-width: 769px) {
+    .accounts-mobile-header,
+    .add-bill-fab {
+        display: none !important;
+    }
+
+    .accounts-mobile-list {
+        padding-bottom: 0;
+    }
 }
