@@ -2102,13 +2102,6 @@ body.is-dragging-kanban {
 .syt-delete-btn svg { color: #fca5a5; }
 
 
-.syt-card-summary-stack {
-    padding: 0.35rem 1rem 0.75rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-}
-
 .syt-card-carousel {
     padding: 0.35rem 1rem 0.75rem;
 }
@@ -2191,6 +2184,26 @@ body.is-dragging-kanban {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.6rem;
 }
+
+.syt-payment-details-scroll {
+    display: flex;
+    gap: 0.6rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    padding-bottom: 0.15rem;
+}
+
+.syt-payment-details-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.syt-payment-details-scroll .syt-payment-chip {
+    flex: 0 0 min(150px, 46%);
+    scroll-snap-align: start;
+}
+
 
 .syt-payment-chip {
     min-width: 0;

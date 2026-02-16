@@ -1,7 +1,7 @@
 // c:\Users\AAAA\Desktop\sitey-caixa\firebase-config.js
 
 // Importa as funções do Firebase (versão compat para facilitar o uso com scripts existentes)
-import { onAuthStateChanged, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { onAuthStateChanged, setPersistence, browserLocalPersistence, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteField } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 import { app, auth, db } from "./js/firebase-init.js";
@@ -11,6 +11,18 @@ const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({
     prompt: 'select_account'
 });
+googleProvider.addScope('email');
+googleProvider.addScope('profile');
+
+const ensureAuthPersistence = async () => {
+    try {
+        await setPersistence(auth, browserLocalPersistence);
+    } catch (error) {
+        console.warn('Não foi possível definir persistência local de auth:', error);
+    }
+};
+
+ensureAuthPersistence();
 
 // Som de sucesso sutil (Web Audio API)
 let audioCtx = null;
@@ -324,8 +336,12 @@ window.firebaseAuth = {
         try {
             return await signInWithPopup(auth, googleProvider);
         } catch (error) {
-            const popupBlocked = error?.code === 'auth/popup-blocked' || error?.code === 'auth/cancelled-popup-request';
-            if (popupBlocked) {
+            const fallbackCodes = new Set([
+                'auth/popup-blocked',
+                'auth/cancelled-popup-request',
+                'auth/popup-closed-by-user'
+            ]);
+            if (fallbackCodes.has(error?.code)) {
                 return signInWithRedirect(auth, googleProvider);
             }
             throw error;

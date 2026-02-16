@@ -803,33 +803,39 @@ const init = () => {
                 <span class="syt-pill syt-pill-deadline">${deadlineText}</span>
             </div>
 
-            <div class="syt-card-summary-stack" aria-label="Resumo do pedido">
-                <div class="syt-meta-item syt-meta-progress">
-                    <div class="syt-block-header">
-                        <span class="label">🛠️ Produção</span>
-                        <span class="value">${Math.round(progress)}%</span>
-                    </div>
-                    <div class="syt-progress-bar-sm-bg">
-                        <div class="syt-progress-bar-sm-fg" style="width: ${progress}%"></div>
-                    </div>
-                </div>
+            <div class="syt-card-carousel" aria-label="Resumo do pedido">
+                <div class="syt-card-carousel-track">
+                    <section class="syt-carousel-slide">
+                        <div class="syt-meta-item syt-meta-progress">
+                            <div class="syt-block-header">
+                                <span class="label">🛠️ Produção</span>
+                                <span class="value">${Math.round(progress)}%</span>
+                            </div>
+                            <div class="syt-progress-bar-sm-bg">
+                                <div class="syt-progress-bar-sm-fg" style="width: ${progress}%"></div>
+                            </div>
+                        </div>
+                    </section>
 
-                <div class="syt-payment-block">
-                    <div class="syt-block-header">
-                        <span class="label">💰 Financeiro</span>
-                        <span class="value">${paidPercent.toFixed(0)}%</span>
-                    </div>
-                    <div class="syt-payment-details">
-                        <div class="syt-payment-chip"><span>Total</span> <strong>${total > 0 ? formatCurrency(total) : '—'}</strong></div>
-                        <div class="syt-payment-chip"><span>Pago</span> <strong>${formatCurrency(paid)}</strong></div>
-                        <div class="syt-payment-chip"><span>Falta</span> <strong class="due">${formatCurrency(due)}</strong></div>
-                    </div>
-                    <div class="syt-payment-progress"><div class="syt-progress-bar-bg"><div class="syt-progress-bar-fg" style="width: ${paidPercent}%"></div></div></div>
-                </div>
+                    <section class="syt-carousel-slide">
+                        <div class="syt-payment-block">
+                            <div class="syt-block-header">
+                                <span class="label">💰 Financeiro</span>
+                                <span class="value">${paidPercent.toFixed(0)}%</span>
+                            </div>
+                            <div class="syt-payment-details syt-payment-details-scroll">
+                                <div class="syt-payment-chip"><span>Total</span> <strong>${total > 0 ? formatCurrency(total) : '—'}</strong></div>
+                                <div class="syt-payment-chip"><span>Pago</span> <strong>${formatCurrency(paid)}</strong></div>
+                                <div class="syt-payment-chip"><span>Falta</span> <strong class="due">${formatCurrency(due)}</strong></div>
+                            </div>
+                            <div class="syt-payment-progress"><div class="syt-progress-bar-bg"><div class="syt-progress-bar-fg" style="width: ${paidPercent}%"></div></div></div>
+                        </div>
 
-                <div class="syt-payment-status ${paymentStatusClass}">
-                    <span class="syt-status-dot"></span>
-                    <span>${paymentStatusText}</span>
+                        <div class="syt-payment-status ${paymentStatusClass}">
+                            <span class="syt-status-dot"></span>
+                            <span>${paymentStatusText}</span>
+                        </div>
+                    </section>
                 </div>
             </div>
 
