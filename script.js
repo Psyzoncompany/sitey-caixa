@@ -496,6 +496,11 @@ const init = () => {
         }
     };
     
+    const compactLabel = (text = '', maxLength = 26) => {
+        if (text.length <= maxLength) return text;
+        return `${text.slice(0, maxLength).trimEnd()}…`;
+    };
+
     const addTransactionToDOM = (transaction) => {
         const { id, name, description, amount, date, category, type, scope } = transaction;
         const item = document.createElement('div');
@@ -506,12 +511,14 @@ const init = () => {
         let scopeText = scope === 'personal' ? '👤 Pessoal' : '🏢 Empresarial';
         if (type !== 'expense') scopeText = '--';
 
+        const amountPrefix = type === 'income' ? '+' : '-';
+
         // Meta data for mobile view
         const metaItems = [
-            `<span class="data-date">${formatDate(date)}</span>`,
-            `<span class="data-category">${category}</span>`,
-            type === 'expense' ? `<span class="data-scope">${scopeText}</span>` : ''
-        ].filter(Boolean).join(' <span class="text-gray-600 mx-1">•</span> ');
+            `<span class="data-chip data-date" title="Data">${formatDate(date)}</span>`,
+            `<span class="data-chip data-category" title="${category}">${compactLabel(category)}</span>`,
+            type === 'expense' ? `<span class="data-chip data-scope" title="Escopo">${scopeText}</span>` : ''
+        ].filter(Boolean).join('');
 
         item.innerHTML = `
             <!-- Sticky Action Bar (Mobile Only, shown on expand) -->
@@ -527,9 +534,9 @@ const init = () => {
             </div>
 
             <!-- Card Content (Grid for both mobile and desktop) -->
-            <div class="data-name">${name || '--'}</div>
-            <div class="data-description">${description}</div>
-            <div class="data-amount ${colorClass}">${formatCurrency(Math.abs(amount))}</div>
+            <div class="data-name" title="${name || '--'}">${name || '--'}</div>
+            <div class="data-description" title="${description}">${description}</div>
+            <div class="data-amount ${colorClass}">${amountPrefix} ${formatCurrency(Math.abs(amount))}</div>
             <div class="data-scope">${scopeText}</div>
             <div class="data-category">${category}</div>
             <div class="data-date">${formatDate(date)}</div>
