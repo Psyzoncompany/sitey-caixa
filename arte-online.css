@@ -68,3 +68,8 @@ input:focus, textarea:focus, button:focus { outline: 2px solid #60a5fa; outline-
   .arto-card { padding: 1.4rem; }
   .artx-admin-filters { grid-template-columns: 1.3fr 1fr; }
 }
+
+.arto-upload-progress { margin-top: .7rem; display:flex; align-items:center; gap:.6rem; }
+.arto-upload-progress-track { flex:1; height:8px; border-radius:999px; background:rgba(148,163,184,.25); overflow:hidden; border:1px solid var(--line); }
+.arto-upload-progress-track span { display:block; width:0%; height:100%; background:linear-gradient(90deg,#22d3ee,#2563eb); transition:width .2s ease; }
+#arto-progress-label { color:#cbd5e1; font-size:.75rem; min-width:2.5rem; text-align:right; }

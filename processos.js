@@ -22,6 +22,7 @@ const init = () => {
     const orderClientSelect = document.getElementById('order-client');
     const orderClientSearchInput = document.getElementById('order-client-search');
     const orderDeadlineInput = document.getElementById('order-deadline');
+    const orderClientContactInput = document.getElementById('order-client-contact');
     const orderChecklistContainer = document.getElementById('order-checklist');
     const orderNotesInput = document.getElementById('order-notes');
     const orderTotalValueInput = document.getElementById('order-total-value');
@@ -362,6 +363,7 @@ const init = () => {
             orderClientSelect.value = order.clientId;
             orderDeadlineInput.value = order.deadline;
             orderNotesInput.value = order.notes || '';
+            if (orderClientContactInput) orderClientContactInput.value = order.clientContact || '';
             orderTotalValueInput.value = order.totalValue || '';
             orderAmountPaidInput.value = order.amountPaid || '';
             orderIsPaidCheckbox.checked = order.isPaid || false;
@@ -404,6 +406,7 @@ const init = () => {
             // ensure DTF block visibility
             togglePrintingBlock();
         } else {
+            if (orderClientContactInput) orderClientContactInput.value = '';
             orderModalTitle.textContent = "Novo Pedido de Produção";
             const defaultChecklist = Object.keys(checklistItems).reduce((acc, key) => ({ ...acc, [key]: { completed: false, deadline: '' } }), {});
             renderChecklist(defaultChecklist);
@@ -632,6 +635,7 @@ const init = () => {
                 deadline: orderDeadlineInput.value,
                 checklist: checklist,
                 notes: orderNotesInput.value.trim(),
+                clientContact: orderClientContactInput ? orderClientContactInput.value.trim() : '',
                 totalValue: parseFloat(orderTotalValueInput.value) || 0,
                 amountPaid: parseFloat(orderAmountPaidInput.value) || 0,
                 isPaid: orderIsPaidCheckbox.checked,

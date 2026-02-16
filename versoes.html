@@ -32,22 +32,22 @@
     <section class="space-y-4">
       <article class="glass-card p-5 border border-cyan-500/20">
         <div class="flex items-center justify-between gap-3 mb-2">
-          <h2 class="text-xl font-bold text-cyan-200">Versão 1.5.0</h2>
+          <h2 class="text-xl font-bold text-cyan-200">Versão 1.5.1</h2>
           <span class="text-xs text-gray-400">Atual</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Novo portal do cliente <strong>Arte-Online</strong> com acesso por link + código de 4 dígitos.</li>
-          <li>Upload de imagens no Firebase Storage e envio de textos de alteração por versão.</li>
-          <li>Controle automático de 2 alterações grátis e cobrança de R$10 por alteração adicional.</li>
-          <li>Painel "Controle de Artes" atualizado com geração de link, filtros, histórico e status em tempo real.</li>
-          <li>Atualização geral da versão exibida no sistema para <strong>1.5.0</strong>.</li>
+          <li>Integração em tempo real entre <strong>Quadro de Processos</strong> e <strong>Controle de Artes</strong> com vínculo 1:1 por ID do pedido.</li>
+          <li>Fluxo automático para pendências de arte: pedido sem aprovação de arte aparece para geração de link e código.</li>
+          <li>Portal do cliente reforçado com validação por <code>?rid</code>, código de 4 dígitos, upload com progresso e limite de 6 imagens.</li>
+          <li>Histórico completo de versões preservado e organizado em grupos colapsáveis por major (<strong>1.x, 2.x, 3.x...</strong>).</li>
+          <li>Ajustes de schema legado (fallbacks de campos) e correções de status/pagamento em tempo real no Firestore.</li>
         </ul>
       </article>
     </section>
   </main>
 
   <footer class="version-footer">
-    <a href="versoes.html" class="version-footer-link">Versão 1.5.0</a>
+    <a href="versoes.html" class="version-footer-link">Versão 1.5.1</a>
   </footer>
 
   <nav class="bottom-nav">

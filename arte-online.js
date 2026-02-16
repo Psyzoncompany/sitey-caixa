@@ -3,7 +3,6 @@ import {
   getFirestore,
   doc,
   getDoc,
-  updateDoc,
   collection,
   query,
   orderBy,
@@ -14,7 +13,7 @@ import {
 import {
   getStorage,
   ref,
-  uploadBytes,
+  uploadBytesResumable,
   getDownloadURL
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
@@ -56,11 +55,19 @@ function setFeedback(text, type = 'info', target = accessFeedback) {
   target.textContent = text;
   target.style.color = type === 'error' ? '#fca5a5' : type === 'ok' ? '#86efac' : '#93c5fd';
 }
-function maskCode(v) { return v.replace(/\D/g, '').slice(0, 4); }
+function maskCode(v) { return String(v || '').replace(/\D/g, '').slice(0, 4); }
+function normalizeVersionNumber(value, fallback = 0) {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = Number.parseFloat(value.replace(',', '.').trim());
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return fallback;
+}
 
 if (!rid) {
   setFeedback('Link inválido. Solicite um novo link.', 'error');
-  validateBtn.disabled = true;
+  if (validateBtn) validateBtn.disabled = true;
 }
 
 codeInput?.addEventListener('input', (e) => {
@@ -89,7 +96,7 @@ function clearSession() { localStorage.removeItem(sessionKey); }
 
 async function loadRequest() {
   const snap = await getDoc(doc(db, 'artRequests', rid));
-  if (!snap.exists()) throw new Error('Pedido não encontrado');
+  if (!snap.exists()) throw new Error('Link inválido: pedido não encontrado.');
   requestData = { id: snap.id, ...snap.data() };
   renderStats();
 }
@@ -98,7 +105,7 @@ function renderStats() {
   const used = Number(requestData.changesUsed || 0);
   const freeMax = Number(requestData.freeChangesMax || 2);
   const freeLeft = Math.max(0, freeMax - used);
-  el('arto-request-title').textContent = `Pedido #${requestData.id.slice(0, 8).toUpperCase()}`;
+  el('arto-request-title').textContent = `Pedido #${requestData.id}`;
   el('arto-stats').innerHTML = `
     <div class="arto-stat"><span>Alterações grátis restantes</span><b>${freeLeft}</b></div>
     <div class="arto-stat"><span>Taxa adicional</span><b>${money(requestData.extraCostPerChange || 10)}</b></div>
@@ -135,24 +142,55 @@ el('arto-logout')?.addEventListener('click', () => {
 });
 
 filesInput?.addEventListener('change', () => {
-  const files = Array.from(filesInput.files || []);
-  const valid = files.filter((f) => /image\/(jpeg|png|webp)/.test(f.type) && f.size <= MAX_SIZE).slice(0, MAX_FILES);
+  const selected = Array.from(filesInput.files || []);
+  const valid = selected.filter((f) => /image\/(jpeg|png|webp)/.test(f.type) && f.size <= MAX_SIZE).slice(0, MAX_FILES);
   filesPreview.innerHTML = valid.map((file) => `<div class="arto-stat"><b>${file.name}</b><span>${(file.size / 1024 / 1024).toFixed(1)} MB</span></div>`).join('');
-  if (valid.length !== files.length) {
-    setFeedback('Alguns arquivos foram ignorados (tipo, tamanho ou limite).', 'error', el('arto-submit-feedback'));
+  if (valid.length !== selected.length) {
+    setFeedback('Alguns arquivos foram ignorados (tipo, tamanho > 5MB ou limite de 6).', 'error', el('arto-submit-feedback'));
   }
 });
 
+function updateUploadProgress(percent) {
+  const bar = el('arto-progress-bar');
+  const label = el('arto-progress-label');
+  if (!bar || !label) return;
+  bar.style.width = `${Math.max(0, Math.min(100, percent))}%`;
+  label.textContent = `${Math.round(percent)}%`;
+}
+
 async function uploadImages(versionId, files) {
-  const uploads = [];
-  for (const file of files) {
-    const safeName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-    const path = `artRequests/${rid}/versions/${versionId}/${safeName}`;
-    const storageRef = ref(storage, path);
-    await uploadBytes(storageRef, file);
-    const url = await getDownloadURL(storageRef);
-    uploads.push({ url, path, name: file.name, size: file.size });
+  if (!files.length) {
+    updateUploadProgress(100);
+    return [];
   }
+
+  let uploadedBytes = 0;
+  const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
+  updateUploadProgress(0);
+
+  const uploads = [];
+  for (let index = 0; index < files.length; index += 1) {
+    const file = files[index];
+    const ext = file.name.split('.').pop() || 'jpg';
+    const path = `artRequests/${rid}/versions/${versionId}/img_${index + 1}.${ext}`;
+    const storageRef = ref(storage, path);
+
+    await new Promise((resolve, reject) => {
+      const task = uploadBytesResumable(storageRef, file);
+      task.on('state_changed', (snapshot) => {
+        const currentFileProgress = snapshot.bytesTransferred;
+        const percent = ((uploadedBytes + currentFileProgress) / totalBytes) * 100;
+        updateUploadProgress(percent);
+      }, reject, async () => {
+        uploadedBytes += file.size;
+        const url = await getDownloadURL(task.snapshot.ref);
+        uploads.push({ url, path, name: file.name, size: file.size });
+        resolve();
+      });
+    });
+  }
+
+  updateUploadProgress(100);
   return uploads;
 }
 
@@ -178,6 +216,7 @@ form?.addEventListener('submit', async (e) => {
       const reqSnap = await tx.get(requestRef);
       if (!reqSnap.exists()) throw new Error('Solicitação não encontrada');
       const req = reqSnap.data();
+
       const newChangesUsed = Number(req.changesUsed || 0) + 1;
       const freeMax = Number(req.freeChangesMax || 2);
       const extraCost = Number(req.extraCostPerChange || 10);
@@ -185,15 +224,19 @@ form?.addEventListener('submit', async (e) => {
       const cost = isFree ? 0 : extraCost;
       const totalDue = Math.max(0, (newChangesUsed - freeMax) * extraCost);
       const paymentStatus = totalDue > 0 ? (req.paymentStatus === 'pago' ? 'pago' : 'pendente') : 'nao_aplica';
-      const versionNumber = Number(req.lastVersionNumber || 0) + 1;
+
+      const rawLastVersion = req.lastVersionNumber || 0;
+      const lastVersion = normalizeVersionNumber(rawLastVersion, 0);
+      const versionNumber = Number((lastVersion + 1).toFixed(1));
 
       tx.set(versionRef, {
         versionNumber,
         createdAt: serverTimestamp(),
         clientText: text,
+        source: 'client',
         isFree,
         cost,
-        paymentStatus: cost > 0 ? 'pendente' : 'nao_aplica',
+        paymentStatus: isFree ? 'nao_aplica' : 'pendente',
         images
       });
 
@@ -211,6 +254,7 @@ form?.addEventListener('submit', async (e) => {
     el('arto-text').value = '';
     filesInput.value = '';
     filesPreview.innerHTML = '';
+    updateUploadProgress(0);
     setFeedback('Alteração enviada com sucesso! ✅', 'ok', el('arto-submit-feedback'));
   } catch (err) {
     console.error(err);
@@ -223,24 +267,35 @@ form?.addEventListener('submit', async (e) => {
 
 function subscribeRequest() {
   onSnapshot(doc(db, 'artRequests', rid), (snap) => {
-    if (!snap.exists()) return;
+    if (!snap.exists()) {
+      setFeedback('Link inválido: pedido removido.', 'error');
+      portalCard.classList.add('arto-hidden');
+      accessCard.classList.remove('arto-hidden');
+      return;
+    }
     requestData = { id: snap.id, ...snap.data() };
     renderStats();
   });
 }
 
 function subscribeHistory() {
-  const q = query(collection(db, 'artRequests', rid, 'versions'), orderBy('versionNumber', 'desc'));
+  const q = query(collection(db, 'artRequests', rid, 'versions'), orderBy('createdAt', 'desc'));
   onSnapshot(q, (snap) => {
-    const html = snap.docs.map((d) => {
-      const v = d.data();
+    const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+      .filter((v) => (v.source || (v.fromClient ? 'client' : 'internal')) === 'client');
+
+    const html = rows.map((v) => {
       const created = v.createdAt?.toDate ? v.createdAt.toDate().toLocaleString('pt-BR') : 'agora';
+      const images = v.images || v.uploads || v.files || [];
       return `
         <article class="arto-history-item">
           <div class="arto-header"><strong>Versão v${v.versionNumber}</strong><span>${v.isFree ? 'Grátis' : `Pago (${money(v.cost)})`}</span></div>
-          <p class="arto-muted">${created}</p>
-          <p>${v.clientText || 'Sem descrição.'}</p>
-          <div class="arto-thumb-grid">${(v.images || []).map((img) => `<a href="${img.url}" target="_blank" rel="noopener"><img src="${img.url}" alt="Imagem enviada" /></a>`).join('')}</div>
+          <p class="arto-muted">${created} · ${v.paymentStatus || 'nao_aplica'}</p>
+          <p>${v.clientText || v.text || v.message || 'Sem descrição.'}</p>
+          <div class="arto-thumb-grid">${images.map((img) => {
+            const url = img.url || img.downloadURL || img;
+            return `<a href="${url}" target="_blank" rel="noopener"><img src="${url}" alt="Imagem enviada" /></a>`;
+          }).join('')}</div>
         </article>
       `;
     }).join('');
