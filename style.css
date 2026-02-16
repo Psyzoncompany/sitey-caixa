@@ -2064,3 +2064,16 @@ body.neo-dashboard {
     padding-right: 0.35rem !important;
   }
 }
+
+
+/* Processos: ajustes mobile de modal */
+@media (max-width: 768px) {
+    #order-modal .order-form-actions {
+        position: sticky;
+        bottom: 0;
+        margin-inline: -0.75rem;
+        padding-inline: 0.75rem;
+        background: linear-gradient(to top, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.9));
+        z-index: 2;
+    }
+}

@@ -231,6 +231,8 @@ const init = () => {
     // Refresh views on save
     const saveOrders = () => {
         localStorage.setItem('production_orders', JSON.stringify(productionOrders));
+        // Mantém o quadro sincronizado quando alterações acontecem em outras abas (Cortes/Artes/DTF)
+        renderKanban();
         if (viewAfazeres && !viewAfazeres.classList.contains('hidden')) renderTasks();
         if (viewCortes && !viewCortes.classList.contains('hidden')) renderCuttingTasks();
         if (viewArtes && !viewArtes.classList.contains('hidden')) renderArtTasks();
@@ -245,7 +247,7 @@ const init = () => {
         activeTab.classList.add('active-tab');
         activeView.classList.remove('hidden');
     };
-    tabQuadro.addEventListener('click', () => handleTabClick(tabQuadro, viewQuadro));
+    tabQuadro.addEventListener('click', () => { handleTabClick(tabQuadro, viewQuadro); renderKanban(); });
     tabAfazeres.addEventListener('click', () => { handleTabClick(tabAfazeres, viewAfazeres); renderTasks(); });
     tabCortes.addEventListener('click', () => { handleTabClick(tabCortes, viewCortes); renderCuttingTasks(); });
 
@@ -882,6 +884,18 @@ const init = () => {
             const h = touchGhost.offsetHeight;
             touchGhost.style.left = `${touch.clientX - w / 2}px`;
             touchGhost.style.top = `${touch.clientY - h / 2}px`;
+        }
+
+        // Auto-scroll da tela no mobile durante drag (permite arrastar para baixo/subir)
+        const edgeThreshold = 90;
+        const maxScrollStep = 18;
+        const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+        if (touch.clientY > viewportHeight - edgeThreshold) {
+            const intensity = (touch.clientY - (viewportHeight - edgeThreshold)) / edgeThreshold;
+            window.scrollBy(0, Math.ceil(maxScrollStep * Math.min(1, intensity)));
+        } else if (touch.clientY < edgeThreshold) {
+            const intensity = (edgeThreshold - touch.clientY) / edgeThreshold;
+            window.scrollBy(0, -Math.ceil(maxScrollStep * Math.min(1, intensity)));
         }
 
         // Highlight columns
