@@ -2877,3 +2877,79 @@ body.neo-dashboard {
         padding: .85rem;
     }
 }
+
+/* --- Skeleton de carregamento inicial --- */
+.initial-skeleton {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: #111827;
+    transition: opacity 0.5s ease;
+}
+
+.initial-skeleton-card {
+    width: min(720px, 100%);
+    border-radius: 20px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    background: linear-gradient(160deg, rgba(30, 41, 59, 0.72), rgba(15, 23, 42, 0.8));
+    padding: 1.5rem;
+    box-shadow: 0 24px 48px rgba(2, 6, 23, 0.45);
+}
+
+.initial-skeleton-line,
+.initial-skeleton-tile {
+    border-radius: 12px;
+    background: linear-gradient(90deg, rgba(71, 85, 105, 0.28) 25%, rgba(148, 163, 184, 0.38) 50%, rgba(71, 85, 105, 0.28) 75%);
+    background-size: 200% 100%;
+    animation: initial-skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.initial-skeleton-line {
+    height: 14px;
+    margin-bottom: 0.85rem;
+}
+
+.initial-skeleton-line--lg {
+    width: min(260px, 82%);
+    height: 20px;
+}
+
+.initial-skeleton-line--md {
+    width: min(190px, 58%);
+}
+
+.initial-skeleton-line--full {
+    width: 100%;
+}
+
+.initial-skeleton-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.85rem;
+    margin: 1rem 0 1.1rem;
+}
+
+.initial-skeleton-tile {
+    height: 88px;
+}
+
+.initial-skeleton-text {
+    color: #cbd5e1;
+    font-size: 0.95rem;
+    letter-spacing: 0.02em;
+}
+
+@keyframes initial-skeleton-pulse {
+    0% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0 50%;
+    }
+}

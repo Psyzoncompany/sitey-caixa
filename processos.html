@@ -32,14 +32,23 @@
       }
     </script>
     <style>
-        @keyframes pulse-logo { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.8; } 100% { transform: scale(1); opacity: 1; } }
     </style>
 </head>
 <body class="bg-gray-900 text-gray-200 neo-dashboard">
-  <!-- Loader Inicial Imediato -->
-  <div id="initial-loader" style="position:fixed;inset:0;z-index:99999;background:#111827;display:flex;justify-content:center;align-items:center;flex-direction:column;gap:1rem;transition:opacity 0.5s ease;">
-    <img src="img/logo.png" alt="Logo" style="width: 100px; height: auto; animation: pulse-logo 2s infinite ease-in-out;">
-    <div style="color:#d1d5db;font-family:sans-serif;font-weight:500;">Carregando...</div>
+  <!-- Skeleton Inicial Imediato -->
+  <div id="initial-loader" class="initial-skeleton" role="status" aria-live="polite" aria-label="Carregando conteúdo">
+    <div class="initial-skeleton-card" aria-hidden="true">
+      <div class="initial-skeleton-line initial-skeleton-line--lg"></div>
+      <div class="initial-skeleton-line initial-skeleton-line--md"></div>
+      <div class="initial-skeleton-grid">
+        <div class="initial-skeleton-tile"></div>
+        <div class="initial-skeleton-tile"></div>
+        <div class="initial-skeleton-tile"></div>
+      </div>
+      <div class="initial-skeleton-line initial-skeleton-line--full"></div>
+      <div class="initial-skeleton-line initial-skeleton-line--full"></div>
+    </div>
+    <span class="initial-skeleton-text">Conectando ao servidor…</span>
   </div>
 
   <div class="flex flex-col min-h-screen">
