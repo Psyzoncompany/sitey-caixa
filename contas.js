@@ -7,10 +7,12 @@ const initContas = () => {
     const qsa = s => document.querySelectorAll(s);
 
     const addBillBtn = el('add-bill-btn');
+    const addBillFab = el('add-bill-fab');
     const monthSelector = el('month-selector');
     const prevMonthBtn = el('prev-month-btn');
     const nextMonthBtn = el('next-month-btn');
     const currentMonthLabel = el('current-month-label');
+    const currentMonthLabelMobile = el('current-month-label-mobile');
 
     // Summary Cards
     const summaryTotalEl = el('summary-total');
@@ -66,6 +68,8 @@ const initContas = () => {
     // Import/Export
     const exportBtn = el('export-btn');
     const importBtn = el('import-btn');
+    const exportBtnMobile = el('export-btn-mobile');
+    const importBtnMobile = el('import-btn-mobile');
     const importFileInput = el('import-file-input');
 
     // --- STATE ---
@@ -199,7 +203,9 @@ const initContas = () => {
         const monthKey = `${year}-${String(month).padStart(2, '0')}`;
 
         monthSelector.value = monthKey;
-        currentMonthLabel.textContent = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+        const monthLabel = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+        currentMonthLabel.textContent = monthLabel;
+        if (currentMonthLabelMobile) currentMonthLabelMobile.textContent = monthLabel;
 
         const bills = getBillsForMonth(year, month);
         renderSummary(bills);
@@ -264,25 +270,14 @@ const initContas = () => {
             `;
             billsTableBody.appendChild(row);
 
-            const card = document.createElement('div');
-            card.className = 'bill-card';
-            card.innerHTML = `
-                <div class="bill-card-priority" style="background-color: ${ {1:'#ef4444', 2:'#f97316', 3:'#facc15', 4:'#22c55e'}[bill.priority] || '#4b5563' }"></div>
-                <div class="bill-card-main">
-                    <div class="bill-card-name">${escapeHtml(bill.name)}</div>
-                    <div class="bill-card-meta">${escapeHtml(bill.category)} ${installmentText}</div>
-                </div>
-                <div class="bill-card-details">
-                    <div class="bill-card-amount">${formatCurrency(bill.amount)}</div>
-                    <div class="bill-card-due">Vence dia ${String(bill.due_day).padStart(2, '0')}</div>
-                </div>
-                <div class="bill-card-status">
+
                     <span class="status-badge ${statusClasses[bill.status]}">${statusLabels[bill.status]}</span>
+                </header>
+                <div class="bill-card__amount-row">
+                    <p class="bill-card__amount">${formatCurrency(bill.amount)}</p>
+                    <p class="bill-card__due">Vence dia ${String(bill.due_day).padStart(2, '0')}</p>
                 </div>
-                <div class="bill-card-actions actions-group" data-month-key="${monthKey}">
-                    ${payButton}
-                    ${commonButtons}
-                </div>
+
             `;
             billsCardContainer.appendChild(card);
         });
@@ -483,7 +478,7 @@ const initContas = () => {
 
     // --- PAYMENT FLOW ---
     const openPayModal = (accountId, monthKey) => {
-        const bill = db.accounts.find(b => b.id == accountId);
+        const bill = db.accounts.find(b => normalizeId(b.id) === normalizeId(accountId));
         if (!bill) return;
         currentPaying = { accountId, monthKey };
         payModalName.textContent = bill.name;
@@ -591,6 +586,7 @@ const initContas = () => {
 
     // --- EVENT LISTENERS ---
     addBillBtn.addEventListener('click', () => openBillModal());
+    if (addBillFab) addBillFab.addEventListener('click', () => openBillModal());
     cancelBillBtn.addEventListener('click', closeBillModal);
     billForm.addEventListener('submit', saveBill);
     billTypeInput.addEventListener('change', toggleInstallmentFields);
@@ -655,6 +651,8 @@ const initContas = () => {
     
     exportBtn.addEventListener('click', exportDb);
     importBtn.addEventListener('click', () => importFileInput.click());
+    if (exportBtnMobile) exportBtnMobile.addEventListener('click', exportDb);
+    if (importBtnMobile) importBtnMobile.addEventListener('click', () => importFileInput.click());
     importFileInput.addEventListener('change', (e) => importDb(e.target.files[0]));
 
     // --- INITIALIZATION ---
