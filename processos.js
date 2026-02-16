@@ -41,6 +41,7 @@ const init = () => {
 
     const tasksContainer = document.getElementById('tasks-container');
     const cuttingTasksContainer = document.getElementById('cutting-tasks-container');
+    const ordersHistoryContainer = document.getElementById('orders-history-container');
     const cuttingModal = document.getElementById('cutting-modal');
     const cuttingModalTitle = document.getElementById('cutting-modal-title');
     const closeCuttingModalBtn = document.getElementById('close-cutting-modal-btn');
@@ -234,7 +235,7 @@ const init = () => {
     };
     const formatCurrency = (amount) => amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-    const validTabs = new Set(['quadro', 'afazeres', 'artes', 'cortes', 'dtf']);
+    const validTabs = new Set(['quadro', 'afazeres', 'artes', 'cortes', 'dtf', 'historico-pedidos']);
     if (!validTabs.has(currentTab)) currentTab = 'quadro';
 
     const renderProcessBoard = () => {
@@ -250,6 +251,9 @@ const init = () => {
                 break;
             case 'dtf':
                 renderDTFTasks();
+                break;
+            case 'historico-pedidos':
+                renderOrdersHistory();
                 break;
             case 'quadro':
             default:
@@ -764,6 +768,11 @@ const init = () => {
                 <span>${paymentStatusText}</span>
             </div>
 
+            <div class="flex flex-wrap gap-2 mt-3">
+                ${order.status === 'todo' ? `<button class="syt-action-btn secondary" onclick="event.stopPropagation(); window.moveOrderStatus(${order.id}, 'doing')">Transferir para Andamento</button>` : ''}
+                ${order.status === 'doing' ? `<button class="syt-action-btn secondary" onclick="event.stopPropagation(); window.moveOrderStatus(${order.id}, 'done')">Transferir para Concluído</button>` : ''}
+            </div>
+
             <div class="syt-card-footer">
                 <button class="syt-action-btn primary" onclick="event.stopPropagation(); window.openOrderModal(${order.id})">Receber pagamento</button>
                 <button class="syt-action-btn secondary" onclick="event.stopPropagation(); window.openOrderModal(${order.id})">Ver detalhes <span aria-hidden="true">→</span></button>
@@ -781,6 +790,17 @@ const init = () => {
     };
 
     window.openOrderModal = (orderId) => openModal(orderId);
+
+    const moveOrderStatus = (orderId, newStatus) => {
+        const order = productionOrders.find((item) => item.id === Number(orderId));
+        if (!order || order.status === newStatus) return;
+        order.status = newStatus;
+        saveOrders();
+        renderKanban();
+        if (currentTab === 'historico-pedidos') renderOrdersHistory();
+    };
+
+    window.moveOrderStatus = (orderId, newStatus) => moveOrderStatus(orderId, newStatus);
 
     const renderKanban = () => {
         Object.values(columns).forEach(col => { if (col) col.innerHTML = ''; });
@@ -815,6 +835,7 @@ const init = () => {
         });
 
         filteredOrders.forEach(order => {
+            if (order.status === 'done') return;
             if (columns[order.status]) {
                 const card = createOrderCard(order);
                 columns[order.status].appendChild(card);
@@ -823,7 +844,7 @@ const init = () => {
         
         // Update Mobile Tab Badges
         const counts = { todo: 0, doing: 0, done: 0 };
-        productionOrders.forEach(o => { if(counts[o.status] !== undefined) counts[o.status]++; });
+        productionOrders.forEach(o => { if (o.status === 'done') return; if(counts[o.status] !== undefined) counts[o.status]++; });
         
         mobileTabs.forEach(tab => {
             const target = tab.dataset.target.replace('column-', '');
@@ -833,10 +854,46 @@ const init = () => {
     };
 
 
+    const renderOrdersHistory = () => {
+        if (!ordersHistoryContainer) return;
+        const doneOrders = [...productionOrders]
+            .filter(order => order.status === 'done')
+            .sort((a, b) => Number(b.id) - Number(a.id));
+
+        if (doneOrders.length === 0) {
+            ordersHistoryContainer.innerHTML = '<div class="glass-card p-6 text-center text-gray-400">Nenhum pedido concluído no histórico ainda.</div>';
+            return;
+        }
+
+        ordersHistoryContainer.innerHTML = doneOrders.map((order) => {
+            const client = clients.find((c) => c.id === order.clientId);
+            const total = order.totalValue || 0;
+            const paid = order.amountPaid || 0;
+            const finishedAt = new Date(Number(order.id)).toLocaleDateString('pt-BR');
+            return `
+                <div class="glass-card p-4 border border-green-500/20">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                        <div>
+                            <h3 class="text-lg font-bold text-white">${order.description}</h3>
+                            <p class="text-sm text-cyan-300">${client ? client.name : 'Sem cliente'}</p>
+                        </div>
+                        <span class="text-xs bg-green-500/20 text-green-300 px-2 py-1 rounded">Concluído</span>
+                    </div>
+                    <div class="mt-3 text-sm text-gray-300 grid grid-cols-1 md:grid-cols-3 gap-2">
+                        <p><strong>Entrega:</strong> ${order.deadline ? new Date(order.deadline + 'T03:00:00').toLocaleDateString('pt-BR') : '—'}</p>
+                        <p><strong>Total:</strong> ${formatCurrency(total)}</p>
+                        <p><strong>Pago:</strong> ${formatCurrency(paid)}</p>
+                    </div>
+                    <p class="mt-2 text-xs text-gray-400">Registrado no histórico em ${finishedAt}.</p>
+                </div>
+            `;
+        }).join('');
+    };
+
+
     // Inicializa a aba selecionada (persistida) e renderiza conteúdo correspondente
     setActiveTab(currentTab);
 
-    const kanbanColumns = document.querySelectorAll('.kanban-column');
 
     const dragState = {
         card: null,
@@ -1078,7 +1135,9 @@ const init = () => {
         addDragListener(card, 'lostpointercapture', () => cleanupDrag({ shouldDrop: false }));
     };
 
-    document.addEventListener('pointerdown', handlePointerDown, { passive: true });
+    if (window.matchMedia('(min-width: 768px)').matches) {
+        document.addEventListener('pointerdown', handlePointerDown, { passive: true });
+    }
     // Duplicate checkPrefillData function removed to fix redeclaration error.
 
     const renderTasks = () => {

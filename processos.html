@@ -122,7 +122,12 @@
           <button id="tab-artes" data-tab="artes" class="tab-btn process-tab-btn whitespace-nowrap py-3 px-3 border-b-2 font-medium text-sm" aria-selected="false">Controle de Artes</button>
           <button id="tab-cortes" data-tab="cortes" class="tab-btn process-tab-btn whitespace-nowrap py-3 px-3 border-b-2 font-medium text-sm" aria-selected="false">Controle de Cortes</button>
           <button id="tab-dtf" data-tab="dtf" class="tab-btn process-tab-btn whitespace-nowrap py-3 px-3 border-b-2 font-medium text-sm" aria-selected="false">Controle de DTF</button>
+          <button id="tab-historico-pedidos" data-tab="historico-pedidos" class="tab-btn process-tab-btn whitespace-nowrap py-3 px-3 border-b-2 font-medium text-sm" aria-selected="false">Histórico de Pedidos</button>
         </nav>
+      </div>
+
+      <div class="mb-4 text-xs text-cyan-200 bg-cyan-500/10 border border-cyan-500/20 rounded-lg px-3 py-2">
+        <strong>VERSÃO 1.0.0</strong> — Fluxo mobile do quadro atualizado para transferência por botão e criação da aba de histórico de pedidos concluídos.
       </div>
 
       <div id="view-quadro" data-panel="quadro" class="view-container process-panel active">
@@ -137,7 +142,10 @@
           </div>
           <div class="glass-card p-4 flex flex-col">
               <h2 class="text-lg font-bold text-green-400 border-b-2 border-green-500/50 pb-2 mb-4">CONCLUÍDO</h2>
-              <div id="column-done" class="kanban-column flex-1 space-y-4 p-2 -m-2 overflow-y-auto"></div>
+              <div class="text-sm text-gray-300 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                Pedidos concluídos agora ficam na aba <strong>Histórico de Pedidos</strong>.
+              </div>
+              <div id="column-done" class="kanban-column hidden"></div>
           </div>
         </div>
       </div>
@@ -148,6 +156,9 @@
       <!-- grid responsivo: 1 col em mobile, 2 em md, 3 em lg -->
       <div id="view-dtf" data-panel="dtf" class="view-container process-panel hidden">
         <div id="dtf-tasks-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+      </div>
+      <div id="view-historico-pedidos" data-panel="historico-pedidos" class="view-container process-panel hidden">
+        <div id="orders-history-container" class="space-y-4"></div>
       </div>
     </main>
 
