@@ -68,6 +68,10 @@ function toast(message, type = 'info') {
   }, 2600);
 }
 
+function isPermissionDenied(err) {
+  return String(err?.code || '').includes('permission-denied');
+}
+
 async function copyTextSafe(text) {
   try {
     await navigator.clipboard.writeText(text);
@@ -541,6 +545,8 @@ async function handleAction(target) {
   if (!action) return;
   const processId = target.dataset.id;
 
+  try {
+
   if (action === 'generate-link') {
     target.disabled = true;
     try {
@@ -598,14 +604,27 @@ async function handleAction(target) {
   if (action === 'export-history') {
     await exportHistory(processId);
   }
+  } catch (err) {
+    console.error(err);
+    if (isPermissionDenied(err)) {
+      toast('Sem permissão no Firestore para esta ação.', 'error');
+    } else {
+      toast('Falha ao executar ação.', 'error');
+    }
+  }
 }
 
 async function handleStatusChange(target) {
   if (!target.classList.contains('artx-status-select')) return;
-  await setDoc(doc(db, 'artRequests', target.dataset.id), {
-    status: target.value,
-    updatedAt: serverTimestamp()
-  }, { merge: true });
+  try {
+    await setDoc(doc(db, 'artRequests', target.dataset.id), {
+      status: target.value,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+  } catch (err) {
+    console.error(err);
+    toast(isPermissionDenied(err) ? 'Sem permissão para atualizar status.' : 'Erro ao atualizar status.', 'error');
+  }
 }
 
 function subscribeArtRequests() {
@@ -630,6 +649,9 @@ function subscribeArtRequests() {
     });
 
     renderCards();
+  }, (err) => {
+    console.error(err);
+    toast(isPermissionDenied(err) ? 'Sem permissão para listar artRequests.' : 'Erro ao carregar solicitações.', 'error');
   });
 }
 
@@ -650,6 +672,9 @@ function subscribeProcessOrders(uid) {
     });
 
     renderCards();
+  }, (err) => {
+    console.error(err);
+    toast(isPermissionDenied(err) ? 'Sem permissão para ler pedidos do usuário.' : 'Erro ao carregar pedidos.', 'error');
   });
 }
 

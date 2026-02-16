@@ -936,10 +936,6 @@ const init = () => {
     };
 
 
-    // Inicializa a aba selecionada (persistida) e renderiza conteúdo correspondente
-    setActiveTab(currentTab);
-
-
     const dragState = {
         card: null,
         pointerId: null,
@@ -2707,6 +2703,10 @@ const init = () => {
             return { success: false, error: e.message };
         }
     };
+
+    // Inicializa a aba selecionada (persistida) após registrar todos os renderizadores
+    // Evita erro de TDZ: "Cannot access 'renderArtTasks' before initialization"
+    setActiveTab(currentTab);
 
     // Inicializa o Chat (Sempre visível para facilitar configuração)
     createChatInterface();
