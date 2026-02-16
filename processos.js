@@ -684,7 +684,7 @@ const init = () => {
         // Adicionada a classe syt-process-card para o novo estilo
         const borderClass = order.isArtOnly ? 'border-l-4 border-purple-500' : 'border-l-4 border-cyan-500';
         card.className = `kanban-card syt-process-card ${borderClass}`;
-        card.setAttribute('draggable', true);
+        card.setAttribute('draggable', false);
         card.dataset.id = order.id;
 
         // --- Cálculos ---
@@ -836,144 +836,248 @@ const init = () => {
     setActiveTab(currentTab);
 
     const kanbanColumns = document.querySelectorAll('.kanban-column');
-    kanbanColumns.forEach(column => {
-        column.addEventListener('dragover', e => { e.preventDefault(); column.classList.add('bg-white/5'); });
-        column.addEventListener('dragleave', () => { column.classList.remove('bg-white/5'); });
-        column.addEventListener('drop', e => {
-            e.preventDefault();
-            column.classList.remove('bg-white/5');
-            const cardId = parseInt(e.dataTransfer.getData('text/plain'));
-            const newStatus = column.id.replace('column-', '');
-            const order = productionOrders.find(o => o.id === cardId);
-            if (order) {
-                order.status = newStatus;
-                saveOrders();
-                renderKanban();
-            }
-        });
-    });
 
-    document.addEventListener('dragstart', e => {
-        if (e.target.classList.contains('kanban-card')) {
-            e.dataTransfer.setData('text/plain', e.target.dataset.id);
-        }
-    });
-
-    // --- TOUCH DRAG & DROP (MOBILE) ---
-    let touchDragItem = null;
-    let touchGhost = null;
-    let longPressTimer = null;
-    let isDragging = false;
-    let touchStartCoords = null;
-
-    const handleTouchStart = (e) => {
-        const card = e.target.closest('.kanban-card');
-        if (!card) return;
-        if (e.target.closest('button') || e.target.closest('a') || e.target.closest('.btn-action')) return;
-
-        touchDragItem = card;
-        touchStartCoords = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        isDragging = false;
-
-        longPressTimer = setTimeout(() => {
-            isDragging = true;
-            if (navigator.vibrate) navigator.vibrate(50);
-            
-            const rect = card.getBoundingClientRect();
-            touchGhost = card.cloneNode(true);
-            touchGhost.style.position = 'fixed';
-            touchGhost.style.width = `${rect.width}px`;
-            touchGhost.style.height = `${rect.height}px`;
-            touchGhost.style.left = `${rect.left}px`;
-            touchGhost.style.top = `${rect.top}px`;
-            touchGhost.style.opacity = '0.9';
-            touchGhost.style.zIndex = '10000';
-            touchGhost.style.pointerEvents = 'none';
-            touchGhost.style.transform = 'scale(1.05) rotate(2deg)';
-            touchGhost.style.boxShadow = '0 15px 30px rgba(0,0,0,0.5)';
-            touchGhost.classList.add('glass-card'); 
-            document.body.appendChild(touchGhost);
-            
-            card.classList.add('opacity-30');
-        }, 400); 
+    const dragState = {
+        card: null,
+        pointerId: null,
+        pointerType: null,
+        originColumn: null,
+        ghost: null,
+        isDragging: false,
+        startX: 0,
+        startY: 0,
+        currentX: 0,
+        currentY: 0,
+        activeColumn: null,
+        autoScrollRaf: null,
+        autoScrollVelocity: 0,
+        hasBodyLock: false
     };
 
-    const handleTouchMove = (e) => {
-        if (!touchDragItem) return;
-        const touch = e.touches[0];
-        
-        if (!isDragging) {
-            const dx = Math.abs(touch.clientX - touchStartCoords.x);
-            const dy = Math.abs(touch.clientY - touchStartCoords.y);
-            if (dx > 10 || dy > 10) {
-                clearTimeout(longPressTimer);
-                touchDragItem = null;
-            }
+    const dragListeners = [];
+
+    const addDragListener = (target, eventName, handler, options) => {
+        target.addEventListener(eventName, handler, options);
+        dragListeners.push({ target, eventName, handler, options });
+    };
+
+    const removeDragListeners = () => {
+        while (dragListeners.length) {
+            const { target, eventName, handler, options } = dragListeners.pop();
+            target.removeEventListener(eventName, handler, options);
+        }
+    };
+
+    const clearColumnHighlights = () => {
+        document.querySelectorAll('.kanban-column').forEach((column) => {
+            column.classList.remove('drag-over', 'bg-white/5', 'bg-white/10');
+        });
+        dragState.activeColumn = null;
+    };
+
+    const stopAutoScroll = () => {
+        if (dragState.autoScrollRaf) {
+            cancelAnimationFrame(dragState.autoScrollRaf);
+            dragState.autoScrollRaf = null;
+        }
+        dragState.autoScrollVelocity = 0;
+    };
+
+    const runAutoScroll = () => {
+        if (!dragState.isDragging) {
+            stopAutoScroll();
             return;
         }
 
-        if (e.cancelable) e.preventDefault();
-
-        if (touchGhost) {
-            const w = touchGhost.offsetWidth;
-            const h = touchGhost.offsetHeight;
-            touchGhost.style.left = `${touch.clientX - w / 2}px`;
-            touchGhost.style.top = `${touch.clientY - h / 2}px`;
-        }
-
-        // Auto-scroll da tela no mobile durante drag (permite arrastar para baixo/subir)
-        const edgeThreshold = 90;
-        const maxScrollStep = 18;
         const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-        if (touch.clientY > viewportHeight - edgeThreshold) {
-            const intensity = (touch.clientY - (viewportHeight - edgeThreshold)) / edgeThreshold;
-            window.scrollBy(0, Math.ceil(maxScrollStep * Math.min(1, intensity)));
-        } else if (touch.clientY < edgeThreshold) {
-            const intensity = (edgeThreshold - touch.clientY) / edgeThreshold;
-            window.scrollBy(0, -Math.ceil(maxScrollStep * Math.min(1, intensity)));
+        const topZone = 80;
+        const bottomZone = 120;
+        const maxSpeed = 22;
+        let velocity = 0;
+
+        if (dragState.currentY <= topZone) {
+            const intensity = Math.min(1, (topZone - dragState.currentY) / topZone);
+            velocity = -Math.max(1, intensity * maxSpeed);
+        } else if (dragState.currentY >= viewportHeight - bottomZone) {
+            const intensity = Math.min(1, (dragState.currentY - (viewportHeight - bottomZone)) / bottomZone);
+            velocity = Math.max(1, intensity * maxSpeed);
         }
 
-        // Highlight columns
-        document.querySelectorAll('.kanban-column').forEach(col => col.classList.remove('bg-white/10'));
-        const target = document.elementFromPoint(touch.clientX, touch.clientY);
-        const col = target ? target.closest('.kanban-column') : null;
-        if (col) col.classList.add('bg-white/10');
+        dragState.autoScrollVelocity = velocity;
+        if (velocity !== 0) {
+            window.scrollBy(0, velocity);
+        }
+
+        dragState.autoScrollRaf = requestAnimationFrame(runAutoScroll);
     };
 
-    const handleTouchEnd = (e) => {
-        clearTimeout(longPressTimer);
-        document.querySelectorAll('.kanban-column').forEach(col => col.classList.remove('bg-white/10'));
-        
-        if (isDragging && touchDragItem) {
-            touchDragItem.classList.remove('opacity-30');
-            if (touchGhost) touchGhost.remove();
+    const updateColumnHighlight = (x, y) => {
+        clearColumnHighlights();
+        const target = document.elementFromPoint(x, y);
+        const column = target ? target.closest('.kanban-column') : null;
+        if (column) {
+            column.classList.add('drag-over');
+            dragState.activeColumn = column;
+        }
+    };
 
-            const touch = e.changedTouches[0];
-            const target = document.elementFromPoint(touch.clientX, touch.clientY);
-            const col = target ? target.closest('.kanban-column') : null;
-            
-            if (col) {
-                const newStatus = col.id.replace('column-', '');
-                const orderId = parseInt(touchDragItem.dataset.id);
-                const order = productionOrders.find(o => o.id === orderId);
-                
+    const moveGhost = (x, y) => {
+        if (!dragState.ghost) return;
+        dragState.ghost.style.left = `${x - (dragState.ghost.offsetWidth / 2)}px`;
+        dragState.ghost.style.top = `${y - (dragState.ghost.offsetHeight / 2)}px`;
+    };
+
+    const cleanupDrag = ({ shouldDrop = false } = {}) => {
+        const card = dragState.card;
+
+        if (shouldDrop && dragState.isDragging && card) {
+            const dropTarget = document.elementFromPoint(dragState.currentX, dragState.currentY);
+            const dropColumn = dropTarget ? dropTarget.closest('.kanban-column') : null;
+
+            if (dropColumn) {
+                const newStatus = dropColumn.id.replace('column-', '');
+                const orderId = Number(card.dataset.id);
+                const order = productionOrders.find((item) => item.id === orderId);
                 if (order && order.status !== newStatus) {
                     order.status = newStatus;
                     saveOrders();
                     renderKanban();
-                    if (navigator.vibrate) navigator.vibrate([50]);
+                    if (navigator.vibrate) navigator.vibrate([40]);
                 }
             }
         }
-        touchDragItem = null;
-        touchGhost = null;
-        isDragging = false;
+
+        stopAutoScroll();
+        removeDragListeners();
+        clearColumnHighlights();
+
+        if (dragState.ghost) {
+            dragState.ghost.remove();
+            dragState.ghost = null;
+        }
+
+        if (card) {
+            card.classList.remove('kanban-card-dragging', 'opacity-30');
+            card.style.userSelect = '';
+            card.style.touchAction = '';
+            if (dragState.pointerId !== null && card.hasPointerCapture?.(dragState.pointerId)) {
+                try { card.releasePointerCapture(dragState.pointerId); } catch (_) {}
+            }
+        }
+
+        if (dragState.hasBodyLock) {
+            document.body.classList.remove('is-dragging-kanban');
+            dragState.hasBodyLock = false;
+        }
+
+        document.body.style.userSelect = '';
+        document.body.style.webkitUserSelect = '';
+        document.body.style.cursor = '';
+
+        dragState.card = null;
+        dragState.pointerId = null;
+        dragState.pointerType = null;
+        dragState.originColumn = null;
+        dragState.isDragging = false;
+        dragState.startX = 0;
+        dragState.startY = 0;
+        dragState.currentX = 0;
+        dragState.currentY = 0;
     };
 
-    document.addEventListener('touchstart', handleTouchStart, { passive: false });
-    document.addEventListener('touchmove', handleTouchMove, { passive: false });
-    document.addEventListener('touchend', handleTouchEnd);
+    const startDragging = () => {
+        const card = dragState.card;
+        if (!card || dragState.isDragging) return;
 
+        dragState.isDragging = true;
+        if (navigator.vibrate && dragState.pointerType !== 'mouse') navigator.vibrate(25);
+
+        card.classList.add('kanban-card-dragging');
+        card.style.userSelect = 'none';
+        card.style.touchAction = 'none';
+
+        const rect = card.getBoundingClientRect();
+        const ghost = card.cloneNode(true);
+        ghost.classList.add('kanban-card-ghost');
+        ghost.style.width = `${rect.width}px`;
+        ghost.style.height = `${rect.height}px`;
+        document.body.appendChild(ghost);
+        dragState.ghost = ghost;
+
+        moveGhost(dragState.currentX, dragState.currentY);
+        document.body.classList.add('is-dragging-kanban');
+        dragState.hasBodyLock = true;
+        document.body.style.userSelect = 'none';
+        document.body.style.webkitUserSelect = 'none';
+        document.body.style.cursor = 'grabbing';
+
+        stopAutoScroll();
+        dragState.autoScrollRaf = requestAnimationFrame(runAutoScroll);
+        updateColumnHighlight(dragState.currentX, dragState.currentY);
+    };
+
+    const handlePointerMove = (event) => {
+        if (!dragState.card || event.pointerId !== dragState.pointerId) return;
+
+        dragState.currentX = event.clientX;
+        dragState.currentY = event.clientY;
+
+        if (!dragState.isDragging) {
+            const deltaX = Math.abs(event.clientX - dragState.startX);
+            const deltaY = Math.abs(event.clientY - dragState.startY);
+            const activationDistance = dragState.pointerType === 'mouse' ? 5 : 10;
+            if (deltaX >= activationDistance || deltaY >= activationDistance) {
+                startDragging();
+            }
+        }
+
+        if (!dragState.isDragging) return;
+        if (event.cancelable) event.preventDefault();
+
+        moveGhost(event.clientX, event.clientY);
+        updateColumnHighlight(event.clientX, event.clientY);
+    };
+
+    const handlePointerEnd = (event) => {
+        if (!dragState.card || event.pointerId !== dragState.pointerId) return;
+        dragState.currentX = event.clientX;
+        dragState.currentY = event.clientY;
+        cleanupDrag({ shouldDrop: true });
+    };
+
+    const handlePointerCancel = (event) => {
+        if (!dragState.card || event.pointerId !== dragState.pointerId) return;
+        cleanupDrag({ shouldDrop: false });
+    };
+
+    const handlePointerDown = (event) => {
+        const card = event.target.closest('.kanban-card');
+        if (!card) return;
+        if (event.button !== 0 && event.pointerType === 'mouse') return;
+        if (event.target.closest('button, a, input, textarea, select, label, .btn-action')) return;
+
+        cleanupDrag({ shouldDrop: false });
+
+        dragState.card = card;
+        dragState.pointerId = event.pointerId;
+        dragState.pointerType = event.pointerType || 'mouse';
+        dragState.originColumn = card.closest('.kanban-column');
+        dragState.startX = event.clientX;
+        dragState.startY = event.clientY;
+        dragState.currentX = event.clientX;
+        dragState.currentY = event.clientY;
+
+        card.setPointerCapture?.(event.pointerId);
+
+        addDragListener(window, 'pointermove', handlePointerMove, { passive: false });
+        addDragListener(window, 'pointerup', handlePointerEnd, { passive: false });
+        addDragListener(window, 'pointercancel', handlePointerCancel, { passive: false });
+        addDragListener(window, 'blur', () => cleanupDrag({ shouldDrop: false }));
+        addDragListener(window, 'pagehide', () => cleanupDrag({ shouldDrop: false }));
+        addDragListener(card, 'lostpointercapture', () => cleanupDrag({ shouldDrop: false }));
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown, { passive: true });
     // Duplicate checkPrefillData function removed to fix redeclaration error.
 
     const renderTasks = () => {
