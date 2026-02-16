@@ -1986,6 +1986,29 @@ body.is-dragging-kanban {
     margin-top: 2px;
 }
 
+.syt-card-title-block .syt-card-deadline {
+    font-size: 0.7rem;
+    color: #93c5fd;
+    margin-top: 0.3rem;
+    font-weight: 700;
+}
+
+.syt-card-body {
+    display: block;
+}
+
+.kanban-card.syt-process-card.is-collapsed .syt-card-body {
+    display: none;
+}
+
+.kanban-card.syt-process-card.is-collapsed .syt-card-header {
+    padding: 1rem;
+}
+
+.kanban-card.syt-process-card.is-collapsed:hover {
+    transform: none;
+}
+
 .syt-badges-row {
     display: flex;
     flex-wrap: wrap;
@@ -2034,6 +2057,28 @@ body.is-dragging-kanban {
     display: flex;
     align-items: center;
     gap: 0.45rem;
+}
+
+.syt-collapse-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 184, 0.45);
+    background: rgba(15, 23, 42, 0.4);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+}
+
+.syt-collapse-btn svg {
+    width: 17px;
+    height: 17px;
+    color: #cbd5e1;
+    transition: transform 0.2s ease;
+}
+
+.kanban-card.syt-process-card:not(.is-collapsed) .syt-collapse-btn svg {
+    transform: rotate(180deg);
 }
 
 .syt-edit-btn {
@@ -2135,13 +2180,13 @@ body.is-dragging-kanban {
     gap: 0.75rem;
 }
 .syt-payment-details {
-    /* Otimizado para grid para melhor controle de espaçamento */
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.6rem;
-    align-items: baseline;
 }
-.syt-payment-details > div {
+
+.syt-payment-chip {
+    min-width: 0;
     display: flex;
     flex-direction: column;
     text-align: left;
@@ -2163,11 +2208,6 @@ body.is-dragging-kanban {
 .syt-payment-details .due { color: #facc15; } /* text-yellow-400 */
 
 
-@media (max-width: 420px) {
-    .syt-payment-details {
-        grid-template-columns: 1fr;
-    }
-}
 
 .syt-payment-progress { display: flex; align-items: center; gap: 0.75rem; }
 .syt-progress-bar-bg { flex: 1; height: 10px; background: rgba(255,255,255,0.06); border-radius: 99px; overflow: hidden; }
