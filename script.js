@@ -54,8 +54,6 @@ const init = () => {
     const modalTitle = modal.querySelector('h2');
     const addTransactionBtn = document.getElementById('add-transaction-btn');
     const cancelBtn = document.getElementById('cancel-btn');
-    const toggleMetricsBtn = document.getElementById('toggle-metrics-btn');
-    const secondaryMetrics = document.getElementById('secondary-metrics');
     const submitBtn = form.querySelector('button[type="submit"]');
     const linkClientCheckbox = document.getElementById('link-client-checkbox');
     const clientSelectionContainer = document.getElementById('client-selection-container');
@@ -950,16 +948,6 @@ const init = () => {
         });
     }
 
-    // Accordion Logic for "Ver mais métricas"
-    if (toggleMetricsBtn && secondaryMetrics) {
-        toggleMetricsBtn.addEventListener('click', () => {
-            secondaryMetrics.classList.toggle('open');
-            const isOpen = secondaryMetrics.classList.contains('open');
-            toggleMetricsBtn.querySelector('span').textContent = isOpen ? 'Ocultar métricas' : 'Ver mais métricas';
-            toggleMetricsBtn.querySelector('svg').style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
-        });
-    }
-    
     // --- INICIALIZAÇÃO ---
     updateUI();
     setTimeout(checkDeadlinesAndNotify, 2000);

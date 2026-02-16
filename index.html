@@ -259,22 +259,14 @@
           <h2>📌 Métricas</h2>
           <span class="section-pill">Mês</span>
         </div>
-        <div class="section-body grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          <div class="glass-card metric-tile p-4 md:p-6"><div class="icon-label-container"><span class="text-2xl">💰</span><span class="info-tooltip" data-tooltip="Saldo Atual">?</span></div><p id="balance" class="text-2xl md:text-4xl font-bold mt-2">R$ 0,00</p></div>
-          <div class="glass-card metric-tile p-4 md:p-6"><div class="icon-label-container"><span class="text-2xl">📈</span><span class="info-tooltip" data-tooltip="Receitas (Mês)">?</span></div><p id="total-income" class="text-2xl md:text-4xl font-bold mt-2 text-green-400">R$ 0,00</p></div>
-          <div class="glass-card metric-tile p-4 md:p-6"><div class="icon-label-container"><span class="text-2xl">📉</span><span class="info-tooltip" data-tooltip="Despesas (Mês)">?</span></div><p id="total-expense" class="text-2xl md:text-4xl font-bold mt-2 text-red-400">R$ 0,00</p></div>
-        
-        <!-- Secondary Metrics (Hidden on Mobile by default) -->
-          <div id="secondary-metrics" class="md:contents">
-              <div class="glass-card metric-tile p-4 md:p-6"><div class="icon-label-container"><span class="text-2xl">💎</span><span class="info-tooltip" data-tooltip="Lucro (Mês)">?</span></div><p id="profit" class="text-2xl md:text-4xl font-bold mt-2">R$ 0,00</p></div>
-              <div class="glass-card metric-tile p-4 md:p-6 lg:col-span-3"><h3 class="text-gray-400 text-base md:text-lg">Custo por Peça (Mês Atual) 🏭</h3><p id="cost-per-piece-dashboard" class="text-2xl md:text-4xl font-bold mt-2 text-yellow-400">R$ 0,00</p></div>
-          </div>
+        <div class="section-body grid grid-cols-2 gap-4 md:gap-6">
+          <div class="glass-card metric-tile p-4 md:p-6"><div class="icon-label-container"><span class="text-2xl">💰</span><span class="text-xs md:text-sm font-semibold text-gray-300">Saldo Atual</span></div><p id="balance" class="text-2xl md:text-4xl font-bold mt-2">R$ 0,00</p></div>
+          <div class="glass-card metric-tile p-4 md:p-6"><div class="icon-label-container"><span class="text-2xl">📈</span><span class="text-xs md:text-sm font-semibold text-gray-300">Receitas (Mês)</span></div><p id="total-income" class="text-2xl md:text-4xl font-bold mt-2 text-green-400">R$ 0,00</p></div>
+          <div class="glass-card metric-tile p-4 md:p-6"><div class="icon-label-container"><span class="text-2xl">📉</span><span class="text-xs md:text-sm font-semibold text-gray-300">Despesas (Mês)</span></div><p id="total-expense" class="text-2xl md:text-4xl font-bold mt-2 text-red-400">R$ 0,00</p></div>
+          <div class="glass-card metric-tile p-4 md:p-6"><div class="icon-label-container"><span class="text-2xl">💎</span><span class="text-xs md:text-sm font-semibold text-gray-300">Lucro (Mês)</span></div><p id="profit" class="text-2xl md:text-4xl font-bold mt-2">R$ 0,00</p></div>
+          <div class="glass-card metric-tile p-4 md:p-6 col-span-2"><h3 class="text-gray-400 text-base md:text-lg">Custo por Peça (Mês Atual) 🏭</h3><p id="cost-per-piece-dashboard" class="text-2xl md:text-4xl font-bold mt-2 text-yellow-400">R$ 0,00</p></div>
         </div>
       </section>
-      <button id="toggle-metrics-btn" class="md:hidden w-full py-3 mb-8 text-sm font-semibold text-gray-400 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-colors flex items-center justify-center gap-2">
-        <span>Ver mais métricas</span>
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-      </button>
       
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <div class="lg:col-span-1 glass-card dashboard-section-card p-6">
@@ -469,7 +461,7 @@
   <!-- Barra de Navegação Inferior (Mobile) -->
 
   <footer class="version-footer">
-    <a href="versoes.html" class="version-footer-link">Versão 1.5.5</a>
+    <a href="versoes.html" class="version-footer-link">Versão 1.5.6</a>
   </footer>
 
   <nav class="bottom-nav">
