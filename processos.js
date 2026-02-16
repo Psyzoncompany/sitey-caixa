@@ -648,6 +648,7 @@ const init = () => {
             }
             saveOrders();
             renderKanban();
+            renderArtTasks();
             closeModal();
         });
     }
@@ -1288,11 +1289,16 @@ const init = () => {
     const renderArtTasks = () => {
         artTasksContainer.innerHTML = '';
         
-        // Filtra pedidos que precisam de arte (seja ArtOnly ou Produção com arte pendente)
-        // Mostra todos que não estão 'done' para permitir gerenciar versões mesmo após aprovação inicial
-        const artOrders = productionOrders.filter(order => 
-            order.status !== 'done' && (order.isArtOnly || (order.checklist && order.checklist.art))
-        );
+        // Mostra apenas pedidos que ainda possuem arte pendente
+        const artOrders = productionOrders.filter(order => {
+            if (order.status === 'done') return false;
+
+            const artChecklist = order.checklist && order.checklist.art;
+            const artCompleted = artChecklist && artChecklist.completed === true;
+            const hasArtStep = Boolean(order.isArtOnly || artChecklist);
+
+            return hasArtStep && !artCompleted;
+        });
 
         if (artOrders.length === 0) {
             artTasksContainer.innerHTML = '<div class="glass-card p-6 text-center text-gray-400">Nenhum pedido pendente para arte. ✨</div>';
