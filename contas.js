@@ -66,7 +66,11 @@ const initContas = () => {
     // Import/Export
     const exportBtn = el('export-btn');
     const importBtn = el('import-btn');
+    const importBtnMobile = el('import-btn-mobile');
+    const exportBtnMobile = el('export-btn-mobile');
     const importFileInput = el('import-file-input');
+    const mobileMonthTitle = el('mobile-month-title');
+    const mobileFabBtn = el('mobile-add-bill-fab');
 
     // --- STATE ---
     const DB_KEY = 'psyzon_accounts_db_v1';
@@ -109,6 +113,13 @@ const initContas = () => {
             ${actionIcon[action]}
         </button>
     `;
+
+    const getStatusConfig = (status) => ({
+        pending: { className: 'status-pending', label: 'Pendente' },
+        paid: { className: 'status-paid', label: 'Pago' },
+        overdue: { className: 'status-overdue', label: 'Atrasado' }
+    }[status] || { className: 'status-pending', label: 'Pendente' });
+
 
     // --- DATABASE ---
     const saveDb = () => localStorage.setItem(DB_KEY, JSON.stringify(db));
@@ -199,7 +210,11 @@ const initContas = () => {
         const monthKey = `${year}-${String(month).padStart(2, '0')}`;
 
         monthSelector.value = monthKey;
-        currentMonthLabel.textContent = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+        const monthLabel = date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+        currentMonthLabel.textContent = monthLabel;
+        if (mobileMonthTitle) {
+            mobileMonthTitle.textContent = `Contas de ${monthLabel}`;
+        }
 
         const bills = getBillsForMonth(year, month);
         renderSummary(bills);
@@ -237,15 +252,15 @@ const initContas = () => {
 
         bills.forEach(bill => {
             const priorityColors = { 1: '🔴', 2: '🟠', 3: '🟡', 4: '🟢' };
-            const statusClasses = { pending: 'status-pending', paid: 'status-paid', overdue: 'status-overdue' };
-            const statusLabels = { pending: 'Pendente', paid: 'Pago', overdue: 'Atrasado' };
+            const statusConfig = getStatusConfig(bill.status);
             const installmentText = bill.type === 'installment' ? `(${bill.current_installment}/${bill.total_installments})` : '';
             const payButton = bill.status !== 'paid' ? createActionButton('pay', bill.id, 'Marcar como pago', 'action-btn-pay') : '';
             const commonButtons = `
-                ${createActionButton('details', bill.id, 'Visualizar detalhes', 'action-btn-details')}
+                ${createActionButton('details', bill.id, 'Ver detalhes', 'action-btn-details')}
                 ${createActionButton('edit', bill.id, 'Editar conta', 'action-btn-edit')}
                 ${createActionButton('delete', bill.id, 'Excluir conta', 'action-btn-delete')}
             `;
+            const categoryMeta = [bill.category, installmentText].filter(Boolean).join(' ').trim();
 
             const row = document.createElement('tr');
             row.className = 'bill-row';
@@ -254,7 +269,7 @@ const initContas = () => {
                 <td class="p-2 font-bold">${escapeHtml(bill.name)} <span class="text-xs text-gray-400">${installmentText}</span></td>
                 <td class="p-2">${formatCurrency(bill.amount)}</td>
                 <td class="p-2 text-center">${String(bill.due_day).padStart(2, '0')}</td>
-                <td class="p-2"><span class="status-badge ${statusClasses[bill.status]}">${statusLabels[bill.status]}</span></td>
+                <td class="p-2"><span class="status-badge ${statusConfig.className}">${statusConfig.label}</span></td>
                 <td class="p-2">
                     <div class="actions-group" data-month-key="${monthKey}">
                         ${payButton}
@@ -267,18 +282,15 @@ const initContas = () => {
             const card = document.createElement('div');
             card.className = 'bill-card';
             card.innerHTML = `
-                <div class="bill-card-priority" style="background-color: ${ {1:'#ef4444', 2:'#f97316', 3:'#facc15', 4:'#22c55e'}[bill.priority] || '#4b5563' }"></div>
-                <div class="bill-card-main">
-                    <div class="bill-card-name">${escapeHtml(bill.name)}</div>
-                    <div class="bill-card-meta">${escapeHtml(bill.category)} ${installmentText}</div>
+                <div class="bill-card-head">
+                    <h3 class="bill-card-name" title="${escapeHtml(bill.name)}">${escapeHtml(bill.name)}</h3>
+                    <span class="status-badge ${statusConfig.className}">${statusConfig.label}</span>
                 </div>
-                <div class="bill-card-details">
+                <div class="bill-card-value-line">
                     <div class="bill-card-amount">${formatCurrency(bill.amount)}</div>
                     <div class="bill-card-due">Vence dia ${String(bill.due_day).padStart(2, '0')}</div>
                 </div>
-                <div class="bill-card-status">
-                    <span class="status-badge ${statusClasses[bill.status]}">${statusLabels[bill.status]}</span>
-                </div>
+                ${categoryMeta ? `<div class="bill-card-meta" title="${escapeHtml(categoryMeta)}">${escapeHtml(categoryMeta)}</div>` : ''}
                 <div class="bill-card-actions actions-group" data-month-key="${monthKey}">
                     ${payButton}
                     ${commonButtons}
@@ -591,6 +603,7 @@ const initContas = () => {
 
     // --- EVENT LISTENERS ---
     addBillBtn.addEventListener('click', () => openBillModal());
+    if (mobileFabBtn) mobileFabBtn.addEventListener('click', () => openBillModal());
     cancelBillBtn.addEventListener('click', closeBillModal);
     billForm.addEventListener('submit', saveBill);
     billTypeInput.addEventListener('change', toggleInstallmentFields);
@@ -654,7 +667,9 @@ const initContas = () => {
     });
     
     exportBtn.addEventListener('click', exportDb);
+    if (exportBtnMobile) exportBtnMobile.addEventListener('click', exportDb);
     importBtn.addEventListener('click', () => importFileInput.click());
+    if (importBtnMobile) importBtnMobile.addEventListener('click', () => importFileInput.click());
     importFileInput.addEventListener('change', (e) => importDb(e.target.files[0]));
 
     // --- INITIALIZATION ---
