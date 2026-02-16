@@ -73,3 +73,30 @@ input:focus, textarea:focus, button:focus { outline: 2px solid #60a5fa; outline-
 .arto-upload-progress-track { flex:1; height:8px; border-radius:999px; background:rgba(148,163,184,.25); overflow:hidden; border:1px solid var(--line); }
 .arto-upload-progress-track span { display:block; width:0%; height:100%; background:linear-gradient(90deg,#22d3ee,#2563eb); transition:width .2s ease; }
 #arto-progress-label { color:#cbd5e1; font-size:.75rem; min-width:2.5rem; text-align:right; }
+
+.artx-toast {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 120;
+  min-width: 220px;
+  max-width: min(92vw, 360px);
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.25);
+  background: rgba(15,23,42,.9);
+  color: #e2e8f0;
+  padding: .75rem .85rem;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: .2s ease;
+}
+.artx-toast.show { opacity: 1; transform: translateY(0); }
+.artx-toast-ok { border-color: rgba(34,197,94,.5); }
+.artx-toast-error { border-color: rgba(248,113,113,.5); }
+.artx-toast-warning { border-color: rgba(251,191,36,.55); }
+
+.arto-rule-note {
+  margin: .3rem 0 .6rem;
+  font-size: .82rem;
+  color: #bae6fd;
+}

@@ -32,16 +32,16 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 
 const qs = new URLSearchParams(window.location.search);
-const rid = qs.get('rid');
-const sessionKey = `artPortalSession:${rid}`;
+const id4 = (qs.get('id') || '').trim();
+const ridLegacy = (qs.get('rid') || '').trim();
+const requestId = id4 || ridLegacy;
 const MAX_FILES = 6;
 const MAX_SIZE = 5 * 1024 * 1024;
 
 const el = (id) => document.getElementById(id);
-const codeInput = el('arto-code');
-const validateBtn = el('arto-validate-btn');
-const accessFeedback = el('arto-access-feedback');
 const accessCard = el('arto-access-card');
+const accessTitle = el('arto-access-title');
+const accessFeedback = el('arto-access-feedback');
 const portalCard = el('arto-portal-card');
 const filesInput = el('arto-files');
 const filesPreview = el('arto-files-preview');
@@ -49,13 +49,14 @@ const form = el('arto-form');
 const submitBtn = el('arto-submit');
 
 let requestData = null;
+let localSubmitLockedUntil = 0;
 
 function money(v = 0) { return `R$ ${Number(v || 0).toFixed(2).replace('.', ',')}`; }
 function setFeedback(text, type = 'info', target = accessFeedback) {
   target.textContent = text;
   target.style.color = type === 'error' ? '#fca5a5' : type === 'ok' ? '#86efac' : '#93c5fd';
 }
-function maskCode(v) { return String(v || '').replace(/\D/g, '').slice(0, 4); }
+
 function normalizeVersionNumber(value, fallback = 0) {
   if (typeof value === 'number' && Number.isFinite(value)) return value;
   if (typeof value === 'string') {
@@ -65,37 +66,13 @@ function normalizeVersionNumber(value, fallback = 0) {
   return fallback;
 }
 
-if (!rid) {
-  setFeedback('Link inválido. Solicite um novo link.', 'error');
-  if (validateBtn) validateBtn.disabled = true;
+if (!requestId) {
+  accessTitle.textContent = 'Link inválido';
+  setFeedback('Use o link completo com ?id=1234.', 'error');
 }
-
-codeInput?.addEventListener('input', (e) => {
-  e.target.value = maskCode(e.target.value);
-});
-
-function hasValidSession() {
-  const raw = localStorage.getItem(sessionKey);
-  if (!raw) return false;
-  try {
-    const parsed = JSON.parse(raw);
-    return parsed.validated && parsed.expiresAt > Date.now();
-  } catch {
-    return false;
-  }
-}
-
-function saveSession() {
-  localStorage.setItem(sessionKey, JSON.stringify({
-    validated: true,
-    expiresAt: Date.now() + (24 * 60 * 60 * 1000)
-  }));
-}
-
-function clearSession() { localStorage.removeItem(sessionKey); }
 
 async function loadRequest() {
-  const snap = await getDoc(doc(db, 'artRequests', rid));
+  const snap = await getDoc(doc(db, 'artRequests', requestId));
   if (!snap.exists()) throw new Error('Link inválido: pedido não encontrado.');
   requestData = { id: snap.id, ...snap.data() };
   renderStats();
@@ -105,7 +82,7 @@ function renderStats() {
   const used = Number(requestData.changesUsed || 0);
   const freeMax = Number(requestData.freeChangesMax || 2);
   const freeLeft = Math.max(0, freeMax - used);
-  el('arto-request-title').textContent = `Pedido #${requestData.id}`;
+  el('arto-request-title').textContent = `Pedido #${requestData.id4 || requestData.id}`;
   el('arto-stats').innerHTML = `
     <div class="arto-stat"><span>Alterações grátis restantes</span><b>${freeLeft}</b></div>
     <div class="arto-stat"><span>Taxa adicional</span><b>${money(requestData.extraCostPerChange || 10)}</b></div>
@@ -121,25 +98,7 @@ function showPortal() {
   subscribeHistory();
 }
 
-validateBtn?.addEventListener('click', async () => {
-  try {
-    setFeedback('Validando...');
-    await loadRequest();
-    const code = maskCode(codeInput.value);
-    if (code.length !== 4) throw new Error('Digite 4 dígitos');
-    if (String(requestData.code || '') !== code) throw new Error('Código inválido');
-    saveSession();
-    setFeedback('Acesso liberado.', 'ok');
-    showPortal();
-  } catch (e) {
-    setFeedback(e.message || 'Falha ao validar', 'error');
-  }
-});
-
-el('arto-logout')?.addEventListener('click', () => {
-  clearSession();
-  window.location.reload();
-});
+el('arto-logout')?.addEventListener('click', () => window.location.reload());
 
 filesInput?.addEventListener('change', () => {
   const selected = Array.from(filesInput.files || []);
@@ -172,7 +131,7 @@ async function uploadImages(versionId, files) {
   for (let index = 0; index < files.length; index += 1) {
     const file = files[index];
     const ext = file.name.split('.').pop() || 'jpg';
-    const path = `artRequests/${rid}/versions/${versionId}/img_${index + 1}.${ext}`;
+    const path = `artRequests/${requestId}/versions/${versionId}/img_${index + 1}.${ext}`;
     const storageRef = ref(storage, path);
 
     await new Promise((resolve, reject) => {
@@ -196,6 +155,13 @@ async function uploadImages(versionId, files) {
 
 form?.addEventListener('submit', async (e) => {
   e.preventDefault();
+
+  const now = Date.now();
+  if (now < localSubmitLockedUntil) {
+    setFeedback('Aguarde alguns segundos antes de enviar novamente.', 'error', el('arto-submit-feedback'));
+    return;
+  }
+
   const text = el('arto-text').value.trim();
   const files = Array.from(filesInput.files || []).filter((f) => /image\/(jpeg|png|webp)/.test(f.type) && f.size <= MAX_SIZE).slice(0, MAX_FILES);
   if (!text && !files.length) {
@@ -205,17 +171,23 @@ form?.addEventListener('submit', async (e) => {
 
   submitBtn.disabled = true;
   submitBtn.textContent = 'Enviando...';
+  localSubmitLockedUntil = now + 5000;
   setFeedback('Subindo arquivos...', 'info', el('arto-submit-feedback'));
 
   try {
-    const versionRef = doc(collection(db, 'artRequests', rid, 'versions'));
+    const versionRef = doc(collection(db, 'artRequests', requestId, 'versions'));
     const images = await uploadImages(versionRef.id, files);
 
     await runTransaction(db, async (tx) => {
-      const requestRef = doc(db, 'artRequests', rid);
+      const requestRef = doc(db, 'artRequests', requestId);
       const reqSnap = await tx.get(requestRef);
       if (!reqSnap.exists()) throw new Error('Solicitação não encontrada');
       const req = reqSnap.data();
+
+      const lastSubmitAt = req.lastSubmitAt?.toMillis ? req.lastSubmitAt.toMillis() : new Date(req.lastSubmitAt || 0).getTime();
+      if (Number.isFinite(lastSubmitAt) && lastSubmitAt > 0 && (Date.now() - lastSubmitAt) < 5000) {
+        throw new Error('Envio duplicado detectado. Aguarde 5 segundos.');
+      }
 
       const newChangesUsed = Number(req.changesUsed || 0) + 1;
       const freeMax = Number(req.freeChangesMax || 2);
@@ -246,7 +218,9 @@ form?.addEventListener('submit', async (e) => {
         paymentStatus,
         lastClientMessage: text,
         lastVersionNumber: versionNumber,
+        lastSubmitAt: serverTimestamp(),
         status: 'Cliente enviou',
+        needsDesignerAction: true,
         updatedAt: serverTimestamp()
       });
     });
@@ -258,7 +232,7 @@ form?.addEventListener('submit', async (e) => {
     setFeedback('Alteração enviada com sucesso! ✅', 'ok', el('arto-submit-feedback'));
   } catch (err) {
     console.error(err);
-    setFeedback('Falha no envio. Tente novamente.', 'error', el('arto-submit-feedback'));
+    setFeedback(err?.message || 'Falha no envio. Tente novamente.', 'error', el('arto-submit-feedback'));
   } finally {
     submitBtn.disabled = false;
     submitBtn.textContent = 'ENVIAR ALTERAÇÃO';
@@ -266,9 +240,10 @@ form?.addEventListener('submit', async (e) => {
 });
 
 function subscribeRequest() {
-  onSnapshot(doc(db, 'artRequests', rid), (snap) => {
+  onSnapshot(doc(db, 'artRequests', requestId), (snap) => {
     if (!snap.exists()) {
-      setFeedback('Link inválido: pedido removido.', 'error');
+      accessTitle.textContent = 'Link inválido';
+      setFeedback('Pedido removido ou inexistente.', 'error');
       portalCard.classList.add('arto-hidden');
       accessCard.classList.remove('arto-hidden');
       return;
@@ -279,7 +254,7 @@ function subscribeRequest() {
 }
 
 function subscribeHistory() {
-  const q = query(collection(db, 'artRequests', rid, 'versions'), orderBy('createdAt', 'desc'));
+  const q = query(collection(db, 'artRequests', requestId, 'versions'), orderBy('createdAt', 'desc'));
   onSnapshot(q, (snap) => {
     const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
       .filter((v) => (v.source || (v.fromClient ? 'client' : 'internal')) === 'client');
@@ -304,13 +279,13 @@ function subscribeHistory() {
 }
 
 (async function bootstrap() {
-  if (!rid) return;
-  if (hasValidSession()) {
-    try {
-      await loadRequest();
-      showPortal();
-    } catch {
-      clearSession();
-    }
+  if (!requestId) return;
+  try {
+    await loadRequest();
+    setFeedback('Link validado. Carregando pedido...', 'ok');
+    showPortal();
+  } catch (err) {
+    accessTitle.textContent = 'Link inválido';
+    setFeedback(err?.message || 'Não foi possível abrir o pedido.', 'error');
   }
 })();
