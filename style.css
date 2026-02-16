@@ -640,69 +640,123 @@ html[data-theme="light"] .white-text, html[data-theme="light"] .text-white {
 
 /* fim - ajustes de contraste para modo claro */
 
-/* --- BARRA DE NAVEGAÇÃO MOBILE (Estilo App) --- */
+/* --- BARRA DE NAVEGAÇÃO MOBILE (Liquid Glass Padronizada) --- */
+:root {
+    --bottom-nav-height: 78px;
+    --bottom-nav-safe-gap: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom));
+}
+
 .bottom-nav {
     display: none;
     position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 65px;
-    background: rgba(15, 23, 42, 0.95); /* Cor escura do tema */
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    left: max(10px, env(safe-area-inset-left));
+    right: max(10px, env(safe-area-inset-right));
+    bottom: max(10px, env(safe-area-inset-bottom));
+    height: var(--bottom-nav-height);
+    border-radius: 24px;
+    background: linear-gradient(150deg, rgba(15, 23, 42, 0.86), rgba(20, 32, 58, 0.64));
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    box-shadow: 0 18px 40px rgba(2, 6, 23, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(22px) saturate(160%);
+    -webkit-backdrop-filter: blur(22px) saturate(160%);
     z-index: 9990;
-    justify-content: space-around;
+    padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+    gap: 8px;
     align-items: center;
-    padding-bottom: env(safe-area-inset-bottom); /* Respeita a área segura do iPhone */
+    justify-content: space-between;
 }
 
 .bottom-nav-item {
+    position: relative;
+    flex: 1 1 0;
+    min-height: 44px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: #94a3b8;
-    font-size: 0.7rem;
+    gap: 2px;
+    color: #9fb0c8;
     text-decoration: none;
-    width: 20%;
-    height: 100%;
-    transition: color 0.2s;
+    border-radius: 14px;
+    transition: color 0.2s ease, transform 0.2s ease, background-color 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
 }
 
-.bottom-nav-item.active {
-    color: #3b82f6; /* Cor de destaque (azul) */
+.bottom-nav-item span {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
 }
 
 .bottom-nav-item svg {
-    width: 24px;
-    height: 24px;
-    margin-bottom: 4px;
+    width: 21px;
+    height: 21px;
 }
 
-/* Ajustes específicos para Mobile */
+.bottom-nav-item.active {
+    color: #4ea6ff;
+    background: linear-gradient(180deg, rgba(78, 166, 255, 0.18), rgba(78, 166, 255, 0.03));
+    box-shadow: inset 0 0 0 1px rgba(78, 166, 255, 0.22);
+}
+
+.bottom-nav-item:active {
+    transform: scale(0.98);
+}
+
 @media (max-width: 768px) {
+    body {
+        padding-bottom: max(var(--bottom-nav-safe-gap), 102px);
+    }
+
     .bottom-nav {
         display: flex;
     }
 
-    /* Posiciona o botão de salvar no meio da barra inferior */
     #floating-save-btn {
-        bottom: 25px !important; /* Levanta um pouco para ficar sobre a barra */
+        bottom: calc(var(--bottom-nav-safe-gap) + 14px) !important;
         left: 50% !important;
         right: auto !important;
         transform: translateX(-50%) !important;
         width: 56px !important;
         height: 56px !important;
-        border: 4px solid #0f172a !important; /* Borda da cor do fundo para efeito de recorte */
+        border: 4px solid #0f172a !important;
         box-shadow: 0 -4px 10px rgba(0,0,0,0.3) !important;
     }
-    
-    /* Ajuste de estado quando não salvo (vermelho e pulsando) */
+
     #floating-save-btn.unsaved {
         transform: translateX(-50%) scale(1.1) !important;
     }
+}
+
+/* --- Drag & drop visual states --- */
+.kanban-card {
+    touch-action: manipulation;
+}
+
+.kanban-card-dragging {
+    opacity: 0.28;
+    transform: scale(0.98);
+    transition: opacity 0.15s ease;
+}
+
+.kanban-card-ghost {
+    position: fixed;
+    pointer-events: none;
+    z-index: 12000;
+    opacity: 0.94;
+    transform: rotate(1.6deg) scale(1.03);
+    box-shadow: 0 18px 36px rgba(2, 6, 23, 0.56);
+    will-change: left, top;
+}
+
+.kanban-column.drag-over {
+    outline: 1px solid rgba(56, 189, 248, 0.7);
+    background: rgba(56, 189, 248, 0.12) !important;
+}
+
+body.is-dragging-kanban {
+    cursor: grabbing;
+    overscroll-behavior: contain;
 }
 
 /* --- Animação do Menu Mobile (Slide Down) --- */
@@ -2269,4 +2323,33 @@ body.neo-dashboard {
         border-top-left-radius: 16px;
         border-top-right-radius: 16px;
     }
+}
+
+/* --- Bottom Nav Final Overrides (padronização global) --- */
+@media (max-width: 768px) {
+  .bottom-nav {
+    left: max(10px, env(safe-area-inset-left)) !important;
+    right: max(10px, env(safe-area-inset-right)) !important;
+    bottom: max(10px, env(safe-area-inset-bottom)) !important;
+    width: auto !important;
+    max-width: none !important;
+    transform: none !important;
+    height: var(--bottom-nav-height) !important;
+    background: linear-gradient(150deg, rgba(15, 23, 42, 0.86), rgba(20, 32, 58, 0.64)) !important;
+    backdrop-filter: blur(22px) saturate(160%) !important;
+    -webkit-backdrop-filter: blur(22px) saturate(160%) !important;
+    border-radius: 24px !important;
+    border: 1px solid rgba(148, 163, 184, 0.28) !important;
+  }
+
+  .bottom-nav-item svg {
+    width: 21px !important;
+    height: 21px !important;
+    margin-bottom: 0 !important;
+  }
+
+  .bottom-nav-item span {
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+  }
 }
