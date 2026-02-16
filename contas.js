@@ -483,7 +483,7 @@ const initContas = () => {
 
     // --- PAYMENT FLOW ---
     const openPayModal = (accountId, monthKey) => {
-        const bill = db.accounts.find(b => b.id == accountId);
+        const bill = db.accounts.find(b => normalizeId(b.id) === normalizeId(accountId));
         if (!bill) return;
         currentPaying = { accountId, monthKey };
         payModalName.textContent = bill.name;
