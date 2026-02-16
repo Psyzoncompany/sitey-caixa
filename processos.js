@@ -85,6 +85,29 @@ const init = () => {
     // make sure block reflects initial state
     togglePrintingBlock();
 
+
+    const copyTextSafe = async (textToCopy) => {
+        try {
+            await navigator.clipboard.writeText(textToCopy);
+            return true;
+        } catch (_) {
+            try {
+                const temp = document.createElement('textarea');
+                temp.value = textToCopy;
+                temp.setAttribute('readonly', '');
+                temp.style.position = 'fixed';
+                temp.style.opacity = '0';
+                document.body.appendChild(temp);
+                temp.select();
+                const ok = document.execCommand('copy');
+                temp.remove();
+                return ok;
+            } catch (__){
+                return false;
+            }
+        }
+    };
+
     // Toggle Art Only Mode
     const toggleArtOnlyMode = () => {
         if (!isArtOnlyCheckbox) return;
@@ -563,7 +586,7 @@ const init = () => {
     if (copyNamesBtn) {
         copyNamesBtn.addEventListener('click', () => {
             if (personalizationNamesInput) {
-                navigator.clipboard.writeText(personalizationNamesInput.value).then(() => alert('Lista copiada!'));
+                copyTextSafe(personalizationNamesInput.value).then((ok) => alert(ok ? 'Lista copiada!' : 'Não foi possível copiar a lista.'));
             }
         });
     }
@@ -1602,7 +1625,9 @@ const init = () => {
 
             // Handlers
             card.querySelector('.btn-copy-link').onclick = (e) => {
-                navigator.clipboard.writeText(e.target.dataset.link).then(() => alert('Link copiado! Envie para o cliente.'));
+                copyTextSafe(e.target.dataset.link).then((ok) => {
+                    alert(ok ? 'Link copiado! Envie para o cliente.' : 'Não foi possível copiar automaticamente.');
+                });
             };
             const approveBtn = card.querySelector('.btn-approve-manual');
             if (approveBtn) {
@@ -1670,13 +1695,15 @@ const init = () => {
                 if (!lastVersion || !lastVersion.token) return;
 
                 const approvalLink = `${window.location.origin}/aprovacao.html?uid=${uid}&oid=${order.id}&token=${lastVersion.token}`;
-                navigator.clipboard.writeText(approvalLink).then(() => {
+                copyTextSafe(approvalLink).then((ok) => {
+                    if (!ok) {
+                        alert('Não foi possível copiar o link automaticamente.');
+                        return;
+                    }
                     e.target.textContent = 'Copiado!';
                     setTimeout(() => {
                         e.target.textContent = 'Copiar Link';
                     }, 1500);
-                }).catch(() => {
-                    alert('Não foi possível copiar o link automaticamente.');
                 });
             }
         });
