@@ -2226,11 +2226,27 @@ const init = () => {
 
     // --- INTEGRAÇÃO GOOGLE GEMINI AI (ASSISTENTE PSYZON) ---
     
-    // Configuração da API (Substitua pela sua chave real ou use um proxy)
-    // .trim() remove espaços acidentais antes ou depois da chave
-    const GEMINI_API_KEY = "AIzaSyBVog4tmzmTpLReuyhSD5OnXmobF0rLrow".trim(); 
-    
-    console.log("🔑 Chave Gemini Carregada:", GEMINI_API_KEY.substring(0, 8) + "..."); // Verifica no console se a chave nova carregou
+    // Configuração da API via endpoint seguro no servidor (Vercel API)
+    const GEMINI_PROXY_ENDPOINT = (window.location.protocol === "http:" || window.location.protocol === "https:")
+        ? `${window.location.origin}/api/gemini`
+        : null;
+
+    console.log("🔒 Gemini configurado via endpoint seguro:", GEMINI_PROXY_ENDPOINT);
+
+    const getPageContext = () => {
+        const title = document.title || 'Sem título';
+        const heading = document.querySelector('h1')?.textContent?.trim() || '';
+        const visibleText = (document.body?.innerText || '')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .slice(0, 4000);
+        return `Página atual: ${window.location.pathname}\nTítulo: ${title}\nCabeçalho: ${heading}\nConteúdo visível (resumo): ${visibleText}`;
+    };
+
+    const ensureGeminiEndpoint = () => {
+        if (GEMINI_PROXY_ENDPOINT) return;
+        throw new Error('Ambiente inválido para IA. Abra o site por URL HTTP/HTTPS (ex: Vercel), não por arquivo local.');
+    };
 
     // Estado do Chat
     let chatHistory = [];
@@ -2529,10 +2545,12 @@ const init = () => {
             chatHistory.push(fnMsg);
         }
 
+        const pageContext = getPageContext();
+
         const payload = {
             contents: contents,
             tools: [{ functionDeclarations: aiTools }],
-            systemInstruction: { parts: [{ text: systemInstruction }] }
+            systemInstruction: { parts: [{ text: `${systemInstruction}\n\n${pageContext}` }] }
         };
 
         // Lista de modelos para tentar (Fallback automático)
@@ -2550,13 +2568,14 @@ const init = () => {
         let successData = null;
         let lastError = null;
 
+        ensureGeminiEndpoint();
+
         for (const model of modelsToTry) {
             try {
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`;
-                const res = await fetch(url, {
+                const res = await fetch(GEMINI_PROXY_ENDPOINT, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({ model, payload })
                 });
                 const data = await res.json();
 
@@ -2575,7 +2594,7 @@ const init = () => {
 
         if (!successData) {
             // Se o erro for 404, dá a dica exata
-            if (lastError && lastError.message.includes('404')) throw new Error("⚠️ <b>Erro de Permissão (404)</b><br>Sua chave de API é válida, mas não tem acesso à IA.<br><br>👉 Crie uma nova chave em <b>aistudio.google.com</b> e substitua no código.");
+            if (lastError && lastError.message.includes('404')) throw new Error("⚠️ <b>Erro de Permissão (404)</b><br>Sua chave de API pode estar sem acesso ao modelo.<br><br>👉 Verifique a chave <code>GEMINI_API_KEY</code> no ambiente da Vercel e as permissões no <b>aistudio.google.com</b>.");
             throw lastError || new Error("Não foi possível conectar com nenhum modelo da IA.");
         }
 
@@ -2795,13 +2814,13 @@ const init = () => {
     // Inicializa o Chat (Sempre visível para facilitar configuração)
     createChatInterface();
 
-    if (!GEMINI_API_KEY || GEMINI_API_KEY === "YOUR_GEMINI_API_KEY_HERE") {
+    if (!GEMINI_PROXY_ENDPOINT) {
         const msgsArea = document.getElementById('ai-chat-messages');
         if (msgsArea) {
             const warning = document.createElement('div');
             warning.className = 'chat-msg ai';
             warning.style.cssText = 'border: 1px solid rgba(239, 68, 68, 0.5); background: rgba(239, 68, 68, 0.1); color: #fca5a5;';
-            warning.innerHTML = "⚠️ <b>Configuração Necessária</b><br>Edite o arquivo <code>processos.js</code> e adicione sua API Key do Google Gemini para ativar a inteligência.";
+            warning.innerHTML = "⚠️ <b>Configuração Necessária</b><br>Configure o endpoint <code>/api/gemini</code> com a variável <code>GEMINI_API_KEY</code> no ambiente da Vercel.";
             msgsArea.appendChild(warning);
         }
     }

@@ -1,10 +1,27 @@
 // c:\Users\AAAA\Desktop\sitey-caixa\cerebro_ia.js
 
 const initAI = () => {
-    // Configuração da API
-    const GEMINI_API_KEY = "AIzaSyBVog4tmzmTpLReuyhSD5OnXmobF0rLrow".trim(); 
-    
+    // Configuração da API via endpoint seguro no servidor
+    const GEMINI_PROXY_ENDPOINT = (window.location.protocol === "http:" || window.location.protocol === "https:")
+        ? `${window.location.origin}/api/gemini`
+        : null;
+
     console.log("🤖 Cerebro IA Iniciado");
+
+    const getPageContext = () => {
+        const title = document.title || 'Sem título';
+        const heading = document.querySelector('h1')?.textContent?.trim() || '';
+        const visibleText = (document.body?.innerText || '')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .slice(0, 4000);
+        return `Página atual: ${window.location.pathname}\nTítulo: ${title}\nCabeçalho: ${heading}\nConteúdo visível (resumo): ${visibleText}`;
+    };
+
+    const ensureGeminiEndpoint = () => {
+        if (GEMINI_PROXY_ENDPOINT) return;
+        throw new Error('Ambiente inválido para IA. Abra o site por URL HTTP/HTTPS (ex: Vercel), não por arquivo local.');
+    };
 
     let chatHistory = [];
     let isAiProcessing = false;
@@ -222,21 +239,25 @@ const initAI = () => {
             chatHistory.push(fnMsg);
         }
 
+        const pageContext = getPageContext();
+
         const payload = {
             contents: contents,
             tools: [{ functionDeclarations: aiTools }],
-            systemInstruction: { parts: [{ text: systemInstruction }] }
+            systemInstruction: { parts: [{ text: `${systemInstruction}\n\n${pageContext}` }] }
         };
 
         const models = ['gemini-2.0-flash-exp', 'gemini-1.5-flash', 'gemini-pro'];
         let successData = null;
 
+        ensureGeminiEndpoint();
+
         for (const model of models) {
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/:generateContent?key=`, {
+                const res = await fetch(GEMINI_PROXY_ENDPOINT, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({ model, payload })
                 });
                 const data = await res.json();
                 if (res.ok && data.candidates) {

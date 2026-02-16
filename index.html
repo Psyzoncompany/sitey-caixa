@@ -324,19 +324,23 @@
           </div>
       </div>
       
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <div class="glass-card p-6">
-          <h3 class="text-xl font-bold mb-4">VISÃO GERAL ANUAL</h3>
-          <div class="relative h-56 md:h-72">
-            <canvas id="incomeExpenseChart"></canvas>
+      <div class="mb-8">
+        <div class="relative overflow-hidden glass-card p-0">
+          <div id="charts-carousel" class="flex transition-transform duration-300 ease-in-out">
+            <div class="w-full flex-shrink-0 p-6">
+              <h3 class="text-xl font-bold mb-4">VISÃO GERAL ANUAL</h3>
+              <div class="relative h-56 md:h-72">
+                <canvas id="incomeExpenseChart"></canvas>
+              </div>
+            </div>
+            <div class="w-full flex-shrink-0 p-6">
+              <h3 class="text-xl font-bold mb-4">COMPRAS DE MALHA (MÊS ATUAL)</h3>
+              <div class="relative h-56 md:h-72">
+                <canvas id="fabricChart"></canvas>
+              </div>
+            </div>
           </div>
-        </div>
-        <div class="glass-card p-6">
-          <h3 class="text-xl font-bold mb-4">COMPRAS DE MALHA (MÊS ATUAL)</h3>
-          
-          <div class="relative h-56 md:h-72">
-            <canvas id="fabricChart"></canvas>
-          </div>
+          <div id="charts-carousel-dots" class="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2"></div>
         </div>
       </div>
       
@@ -555,5 +559,6 @@
       }, 100);
     })();
   </script>
+  <script src="cerebro_ia.js"></script>
 </body>
 </html>
