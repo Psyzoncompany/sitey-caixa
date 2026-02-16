@@ -132,14 +132,14 @@ const init = () => {
         });
     };
 
-    // --- Budget Carousel Logic ---
-    const setupBudgetCarousel = () => {
-        const budgetCarousel = document.getElementById('budget-carousel');
-        const budgetCarouselDots = document.getElementById('budget-carousel-dots');
+    // --- Generic Carousel Logic ---
+    const setupCarousel = (trackId, dotsId, intervalMs = 5000) => {
+        const carousel = document.getElementById(trackId);
+        const carouselDots = document.getElementById(dotsId);
 
-        if (!budgetCarousel || !budgetCarouselDots) return;
+        if (!carousel || !carouselDots) return;
 
-        const slides = Array.from(budgetCarousel.children);
+        const slides = Array.from(carousel.children);
         if (slides.length <= 1) return;
 
         let currentIndex = 0;
@@ -147,8 +147,8 @@ const init = () => {
 
         const goToSlide = (index) => {
             currentIndex = index;
-            budgetCarousel.style.transform = `translateX(-${currentIndex * 100}%)`;
-            const dots = budgetCarouselDots.querySelectorAll('button');
+            carousel.style.transform = `translateX(-${currentIndex * 100}%)`;
+            const dots = carouselDots.querySelectorAll('button');
             dots.forEach((dot, i) => {
                 dot.classList.toggle('bg-white', i === currentIndex);
                 dot.classList.toggle('bg-white/30', i !== currentIndex);
@@ -160,17 +160,20 @@ const init = () => {
             goToSlide(nextIndex);
         };
 
-        // Create dots
-        budgetCarouselDots.innerHTML = '';
+        carouselDots.innerHTML = '';
         slides.forEach((_, index) => {
             const dot = document.createElement('button');
             dot.className = 'w-2 h-2 rounded-full bg-white/30 transition-colors duration-300';
             if (index === 0) dot.classList.replace('bg-white/30', 'bg-white');
-            dot.addEventListener('click', () => { goToSlide(index); clearInterval(carouselInterval); carouselInterval = setInterval(autoSlide, 5000); });
-            budgetCarouselDots.appendChild(dot);
+            dot.addEventListener('click', () => {
+                goToSlide(index);
+                clearInterval(carouselInterval);
+                carouselInterval = setInterval(autoSlide, intervalMs);
+            });
+            carouselDots.appendChild(dot);
         });
 
-        carouselInterval = setInterval(autoSlide, 5000); // Slide every 5 seconds
+        carouselInterval = setInterval(autoSlide, intervalMs);
     };
 
     const toggleQuantityField = () => {
@@ -951,7 +954,8 @@ const init = () => {
     // --- INICIALIZAÇÃO ---
     updateUI();
     setTimeout(checkDeadlinesAndNotify, 2000);
-    setupBudgetCarousel();
+    setupCarousel('budget-carousel', 'budget-carousel-dots');
+    setupCarousel('charts-carousel', 'charts-carousel-dots');
 };
 
 if (document.readyState === 'loading') {

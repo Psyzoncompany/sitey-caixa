@@ -2227,9 +2227,26 @@ const init = () => {
     // --- INTEGRAÇÃO GOOGLE GEMINI AI (ASSISTENTE PSYZON) ---
     
     // Configuração da API via endpoint seguro no servidor (Vercel API)
-    const GEMINI_PROXY_ENDPOINT = "/api/gemini";
+    const GEMINI_PROXY_ENDPOINT = (window.location.protocol === "http:" || window.location.protocol === "https:")
+        ? `${window.location.origin}/api/gemini`
+        : null;
 
     console.log("🔒 Gemini configurado via endpoint seguro:", GEMINI_PROXY_ENDPOINT);
+
+    const getPageContext = () => {
+        const title = document.title || 'Sem título';
+        const heading = document.querySelector('h1')?.textContent?.trim() || '';
+        const visibleText = (document.body?.innerText || '')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .slice(0, 4000);
+        return `Página atual: ${window.location.pathname}\nTítulo: ${title}\nCabeçalho: ${heading}\nConteúdo visível (resumo): ${visibleText}`;
+    };
+
+    const ensureGeminiEndpoint = () => {
+        if (GEMINI_PROXY_ENDPOINT) return;
+        throw new Error('Ambiente inválido para IA. Abra o site por URL HTTP/HTTPS (ex: Vercel), não por arquivo local.');
+    };
 
     // Estado do Chat
     let chatHistory = [];
@@ -2528,10 +2545,12 @@ const init = () => {
             chatHistory.push(fnMsg);
         }
 
+        const pageContext = getPageContext();
+
         const payload = {
             contents: contents,
             tools: [{ functionDeclarations: aiTools }],
-            systemInstruction: { parts: [{ text: systemInstruction }] }
+            systemInstruction: { parts: [{ text: `${systemInstruction}\n\n${pageContext}` }] }
         };
 
         // Lista de modelos para tentar (Fallback automático)
@@ -2548,6 +2567,8 @@ const init = () => {
 
         let successData = null;
         let lastError = null;
+
+        ensureGeminiEndpoint();
 
         for (const model of modelsToTry) {
             try {

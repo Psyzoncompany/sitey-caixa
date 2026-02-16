@@ -1,6 +1,11 @@
 export default async function handler(req, res) {
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Allow', 'POST, OPTIONS');
+    return res.status(204).end();
+  }
+
   if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
+    res.setHeader('Allow', 'POST, OPTIONS');
     return res.status(405).json({ error: 'Método não permitido.' });
   }
 
@@ -11,10 +16,26 @@ export default async function handler(req, res) {
     });
   }
 
-  const { model, payload } = req.body || {};
+  const parsedBody = typeof req.body === 'string'
+    ? (() => {
+        try {
+          return JSON.parse(req.body);
+        } catch {
+          return null;
+        }
+      })()
+    : req.body;
+
+  const { model, payload } = parsedBody || {};
   if (!model || !payload) {
     return res.status(400).json({
       error: 'Parâmetros obrigatórios ausentes: model e payload.'
+    });
+  }
+
+  if (!/^[a-zA-Z0-9.-]+$/.test(String(model))) {
+    return res.status(400).json({
+      error: 'Model inválido. Use somente letras, números, ponto e hífen.'
     });
   }
 
