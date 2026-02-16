@@ -6,7 +6,7 @@ const init = () => {
     const addOrderBtn = document.getElementById('add-order-btn');
     const processTabButtons = Array.from(document.querySelectorAll('.process-tab-btn[data-tab]'));
     const processPanels = Array.from(document.querySelectorAll('.process-panel[data-panel]'));
-    let currentTab = localStorage.getItem('processos_tab') || 'quadro';
+    let currentTab = 'quadro';
 
     const columns = { 
         todo: document.getElementById('column-todo'), 
@@ -780,9 +780,14 @@ const init = () => {
                     <h3 class="syt-card-title">${order.description}</h3>
                     <p class="syt-card-client">${client ? client.name : 'Sem cliente'}</p>
                 </div>
-                <button onclick="event.stopPropagation(); window.openOrderModal(${order.id})" class="syt-edit-btn" title="Editar Pedido">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
-                </button>
+                <div class="syt-header-actions">
+                    <button onclick="event.stopPropagation(); window.openOrderModal(${order.id})" class="syt-edit-btn" title="Editar Pedido">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
+                    </button>
+                    <button onclick="event.stopPropagation(); window.removeOrder(${order.id})" class="syt-edit-btn syt-delete-btn" title="Deletar Card">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 6h18M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2m-9 0v14a1 1 0 001 1h8a1 1 0 001-1V6"/><path stroke-linecap="round" stroke-linejoin="round" d="M10 11v6M14 11v6"/></svg>
+                    </button>
+                </div>
             </div>
 
             <div class="syt-badges-row">
@@ -836,7 +841,7 @@ const init = () => {
     };
 
     window.removeOrder = (orderId) => {
-        if (confirm('Tem certeza que deseja excluir permanentemente este pedido concluído?')) {
+        if (confirm('Tem certeza que deseja excluir permanentemente este card/pedido?')) {
             productionOrders = productionOrders.filter(o => o.id !== orderId);
             saveOrders();
             renderKanban();

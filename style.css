@@ -2030,6 +2030,12 @@ body.is-dragging-kanban {
     background: rgba(148, 163, 184, 0.08);
 }
 
+.syt-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
 .syt-edit-btn {
     width: 40px;
     height: 40px;
@@ -2044,6 +2050,11 @@ body.is-dragging-kanban {
 }
 .syt-edit-btn:hover { background: rgba(255,255,255,0.1); }
 .syt-edit-btn svg { width: 18px; height: 18px; color: var(--muted, #98a2b3); }
+.syt-delete-btn {
+    border-color: rgba(248, 113, 113, 0.35);
+    background: rgba(127, 29, 29, 0.18);
+}
+.syt-delete-btn svg { color: #fca5a5; }
 
 /* Meta Grid */
 .syt-card-meta-grid {
@@ -2116,8 +2127,23 @@ body.is-dragging-kanban {
     padding: 0.7rem 0.75rem;
 }
 .syt-payment-details span { color: var(--muted, #98a2b3); font-size: 0.68rem; font-weight: 700; }
-.syt-payment-details strong { font-size: 0.9rem; font-weight: 800; color: #f8fafc; }
+.syt-payment-details strong {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: #f8fafc;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    line-height: 1.2;
+}
 .syt-payment-details .due { color: #facc15; } /* text-yellow-400 */
+
+
+@media (max-width: 420px) {
+    .syt-payment-details {
+        grid-template-columns: 1fr;
+    }
+}
 
 .syt-payment-progress { display: flex; align-items: center; gap: 0.75rem; }
 .syt-progress-bar-bg { flex: 1; height: 10px; background: rgba(255,255,255,0.06); border-radius: 99px; overflow: hidden; }
