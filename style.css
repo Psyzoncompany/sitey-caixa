@@ -2672,13 +2672,6 @@ body.neo-dashboard {
     font-weight: 600;
 }
 
-@media (max-width: 767px) {
-    .bill-card-actions .action-btn {
-        width: 2rem;
-        height: 2rem;
-    }
-}
-
 /* ===== Contas: redesign mobile-first ===== */
 .contas-main {
     background: radial-gradient(circle at 10% 0%, rgba(56, 189, 248, 0.16), transparent 45%),
@@ -2823,7 +2816,9 @@ body.neo-dashboard {
 
 .bill-card__actions .action-btn {
     width: 44px;
+    min-width: 44px;
     height: 44px;
+    min-height: 44px;
     border-radius: 12px;
 }
 
