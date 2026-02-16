@@ -47,8 +47,34 @@
     </style>
 </head>
 <body class="bg-gray-900 text-gray-200 neo-dashboard">
-    <!-- Loader -->
-    <div id="initial-loader" style="position:fixed;inset:0;z-index:99999;background:#111827;display:flex;justify-content:center;align-items:center;color:#d1d5db;">Carregando...</div>
+    <!-- Skeleton Inicial Imediato -->
+    <div id="initial-loader" class="initial-skeleton" role="status" aria-live="polite" aria-label="Carregando conteúdo">
+        <div class="initial-skeleton-shell" aria-hidden="true">
+            <div class="initial-skeleton-topbar">
+                <div class="initial-skeleton-block initial-skeleton-logo"></div>
+                <div class="initial-skeleton-nav">
+                    <div class="initial-skeleton-block initial-skeleton-chip"></div>
+                    <div class="initial-skeleton-block initial-skeleton-chip"></div>
+                    <div class="initial-skeleton-block initial-skeleton-chip"></div>
+                    <div class="initial-skeleton-block initial-skeleton-chip initial-skeleton-chip--short"></div>
+                </div>
+            </div>
+            <div class="initial-skeleton-main">
+                <div class="initial-skeleton-block initial-skeleton-title"></div>
+                <div class="initial-skeleton-block initial-skeleton-subtitle"></div>
+
+                <div class="initial-skeleton-kpi-grid">
+                    <div class="initial-skeleton-block initial-skeleton-kpi"></div>
+                    <div class="initial-skeleton-block initial-skeleton-kpi"></div>
+                    <div class="initial-skeleton-block initial-skeleton-kpi"></div>
+                </div>
+
+                <div class="initial-skeleton-block initial-skeleton-panel"></div>
+                <div class="initial-skeleton-block initial-skeleton-panel initial-skeleton-panel--sm"></div>
+            </div>
+        </div>
+        <span class="initial-skeleton-text">Conectando ao servidor…</span>
+    </div>
 
     <main class="flex-1 p-4 md:p-6 lg:p-8" style="padding-bottom: 80px;">
         <!-- Header -->
