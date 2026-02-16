@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portal de Arte • Sitey Caixa</title>
+  <link rel="icon" type="image/png" href="img/logo.png" />
+  <link rel="stylesheet" href="arte-online.css" />
+</head>
+<body class="arto-body">
+  <main class="arto-wrap">
+    <section class="arto-card" id="arto-access-card">
+      <p class="arto-kicker">Sitey Caixa · Controle de Artes 1.5.0</p>
+      <h1>Digite seu código de 4 dígitos</h1>
+      <p class="arto-muted">Seu link já identifica o pedido. Falta só validar o código.</p>
+      <label for="arto-code">Código</label>
+      <input id="arto-code" inputmode="numeric" maxlength="4" placeholder="0000" autocomplete="one-time-code" />
+      <button id="arto-validate-btn" class="arto-primary">Acessar pedido</button>
+      <p id="arto-access-feedback" class="arto-feedback"></p>
+    </section>
+
+    <section class="arto-card arto-hidden" id="arto-portal-card">
+      <header class="arto-header">
+        <div>
+          <p class="arto-kicker">Envio de Alterações da Arte</p>
+          <h2 id="arto-request-title">Pedido</h2>
+        </div>
+        <button id="arto-logout" class="arto-ghost">Trocar código</button>
+      </header>
+
+      <div class="arto-stats" id="arto-stats"></div>
+
+      <form id="arto-form" class="arto-form">
+        <label for="arto-files">Imagens (até 6 arquivos · JPG/PNG/WEBP · 5MB cada)</label>
+        <input id="arto-files" type="file" accept="image/png,image/jpeg,image/webp" multiple />
+        <div id="arto-files-preview" class="arto-files-preview"></div>
+
+        <label for="arto-text">Descreva o que deseja mudar</label>
+        <textarea id="arto-text" rows="4" placeholder="Ex.: Ajustar tamanho da logo, trocar cor e mover para a manga."></textarea>
+
+        <button id="arto-submit" class="arto-primary" type="submit">ENVIAR ALTERAÇÃO</button>
+        <p id="arto-submit-feedback" class="arto-feedback"></p>
+      </form>
+
+      <section>
+        <h3>Histórico do que você já pediu</h3>
+        <div id="arto-history" class="arto-history"></div>
+      </section>
+    </section>
+  </main>
+
+  <script type="module" src="arte-online.js"></script>
+</body>
+</html>

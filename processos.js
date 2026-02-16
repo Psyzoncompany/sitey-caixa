@@ -1387,6 +1387,10 @@ const init = () => {
     };
 
     const renderArtTasks = () => {
+        if (window.ArteControl && typeof window.ArteControl.render === 'function') {
+            window.ArteControl.render();
+            return;
+        }
         artTasksContainer.innerHTML = '';
         
         // Mostra apenas pedidos que ainda possuem arte pendente
@@ -1640,7 +1644,7 @@ const init = () => {
     // Remove listeners antigos de artImageInput e artReferencesContainer pois a UI mudou completamente
     // Mantemos apenas o listener de abrir o modal
 
-    if (artTasksContainer) {
+    if (artTasksContainer && !(window.ArteControl && window.ArteControl.enabled)) {
         artTasksContainer.addEventListener('click', (e) => {
             if (e.target.classList.contains('open-art-modal-btn')) {
                 openArtControlModal(parseInt(e.target.dataset.orderId));
