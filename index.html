@@ -132,9 +132,25 @@
     }
     .neo-dashboard .pill-row {
       display: flex;
-      gap: 10px;
+      gap: 8px;
       flex-wrap: wrap;
       align-items: center;
+    }
+    .neo-dashboard .filters-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 10px;
+      border-radius: 12px;
+      background: rgba(15, 23, 42, 0.35);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+    }
+    .neo-dashboard .filters-label {
+      font-size: 0.68rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(148, 163, 184, 0.95);
+      font-weight: 700;
     }
     .neo-dashboard .chartbox {
       min-height: 130px;
@@ -339,18 +355,24 @@
         </div>
         <div class="launch-body">
           <div id="syt-filters-container" class="space-y-2">
-            <div class="pill-row">
-              <button data-filter-period="today" class="syt-filter-btn active">HOJE</button>
-              <button data-filter-period="yesterday" class="syt-filter-btn">ONTEM</button>
-              <button data-filter-period="7days" class="syt-filter-btn">7D</button>
-              <button data-filter-period="30days" class="syt-filter-btn">30D</button>
-              <button data-filter-period="this_month" class="syt-filter-btn">ESTE MÊS</button>
-              <button data-filter-period="last_month" class="syt-filter-btn">MÊS PASSADO</button>
+            <div class="filters-group">
+              <span class="filters-label">Período</span>
+              <div class="pill-row">
+                <button data-filter-period="today" class="syt-filter-btn">HOJE</button>
+                <button data-filter-period="yesterday" class="syt-filter-btn">ONTEM</button>
+                <button data-filter-period="7days" class="syt-filter-btn">7D</button>
+                <button data-filter-period="30days" class="syt-filter-btn">30D</button>
+                <button data-filter-period="this_month" class="syt-filter-btn active">ESTE MÊS</button>
+                <button data-filter-period="last_month" class="syt-filter-btn">MÊS PASSADO</button>
+              </div>
             </div>
-            <div class="pill-row">
-              <button data-filter-type="all" class="syt-type-filter-btn active">TODOS</button>
-              <button data-filter-type="income" class="syt-type-filter-btn">ENTRADAS</button>
-              <button data-filter-type="expense" class="syt-type-filter-btn">SAÍDAS</button>
+            <div class="filters-group">
+              <span class="filters-label">Tipo</span>
+              <div class="pill-row">
+                <button data-filter-type="all" class="syt-type-filter-btn active">TODOS</button>
+                <button data-filter-type="income" class="syt-type-filter-btn">ENTRADAS</button>
+                <button data-filter-type="expense" class="syt-type-filter-btn">SAÍDAS</button>
+              </div>
             </div>
           </div>
 

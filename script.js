@@ -84,7 +84,7 @@ const init = () => {
     let currentStep = 1;
 
     let transactionFilters = {
-        period: 'today', // 'today', 'yesterday', '7days', '30days', 'this_month', 'last_month'
+        period: 'this_month', // 'today', 'yesterday', '7days', '30days', 'this_month', 'last_month'
         type: 'all' // 'all', 'income', 'expense'
     };
 

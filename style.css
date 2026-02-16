@@ -823,7 +823,7 @@ html[data-theme="light"] .white-text, html[data-theme="light"] .text-white {
     }
 
     .version-footer {
-        padding-bottom: calc(var(--bottom-nav-safe-gap) + 0.8rem);
+        padding-bottom: calc(var(--bottom-nav-safe-gap) + 4.2rem);
     }
 
     .bottom-nav {
@@ -1810,26 +1810,27 @@ body.is-dragging-kanban {
 
 /* --- FILTROS DE LANÇAMENTOS RECENTES --- */
 .syt-filter-btn, .syt-type-filter-btn {
-    padding: 0.3rem 0.8rem;
+    padding: 0.36rem 0.78rem;
     border-radius: 999px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    background-color: rgba(255, 255, 255, 0.05);
-    color: #a0aec0;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.76rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    background-color: rgba(15, 23, 42, 0.46);
+    color: #cbd5e1;
+    border: 1px solid rgba(148, 163, 184, 0.22);
     transition: all 0.2s ease;
     white-space: nowrap;
     flex-shrink: 0;
 }
 .syt-filter-btn:hover, .syt-type-filter-btn:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: #e2e8f0;
+    background-color: rgba(30, 41, 59, 0.78);
+    color: #f8fafc;
 }
 .syt-filter-btn.active, .syt-type-filter-btn.active {
-    background-color: #06b6d4; /* cyan-500 */
+    background: linear-gradient(90deg, #06b6d4, #3b82f6);
     color: white;
-    border-color: transparent;
-    box-shadow: 0 2px 8px rgba(6, 182, 212, 0.3);
+    border-color: rgba(103, 232, 249, 0.42);
+    box-shadow: 0 8px 22px rgba(6, 182, 212, 0.34);
 }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
