@@ -2056,6 +2056,30 @@ body.is-dragging-kanban {
 }
 .syt-delete-btn svg { color: #fca5a5; }
 
+
+.syt-card-carousel {
+    padding: 0.35rem 1rem 0.75rem;
+}
+
+.syt-card-carousel-track {
+    display: flex;
+    gap: 0.75rem;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+.syt-card-carousel-track::-webkit-scrollbar {
+    display: none;
+}
+
+.syt-carousel-slide {
+    flex: 0 0 100%;
+    min-width: 100%;
+    scroll-snap-align: start;
+}
+
 /* Meta Grid */
 .syt-card-meta-grid {
     display: grid;
@@ -2103,8 +2127,8 @@ body.is-dragging-kanban {
 /* Payment Block */
 .syt-payment-block {
     background: linear-gradient(180deg, rgba(11, 18, 32, 0.2), rgba(13, 20, 34, 0.35));
-    border-top: 1px solid rgba(148, 163, 184, 0.15);
-    border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+    border: 1px solid rgba(148, 163, 184, 0.15);
+    border-radius: 10px;
     padding: 0.75rem 1rem 0.85rem;
     display: flex;
     flex-direction: column;
@@ -2151,7 +2175,7 @@ body.is-dragging-kanban {
 .syt-progress-percent { font-size: 0.8rem; font-weight: 700; color: #e6eef6; }
 
 .syt-payment-status {
-    margin: 0.85rem 1rem 0;
+    margin: 0.65rem 0 0;
     padding: 0.85rem 1rem;
     border-radius: 14px;
     border: 1px solid rgba(244, 63, 94, 0.5);
