@@ -36,11 +36,11 @@
           <span class="text-xs text-gray-400">Atual</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Integração em tempo real entre <strong>Quadro de Processos</strong> e <strong>Controle de Artes</strong> com vínculo 1:1 por ID do pedido.</li>
-          <li>Fluxo automático para pendências de arte: pedido sem aprovação de arte aparece para geração de link e código.</li>
-          <li>Portal do cliente reforçado com validação por <code>?rid</code>, código de 4 dígitos, upload com progresso e limite de 6 imagens.</li>
-          <li>Histórico completo de versões preservado e organizado em grupos colapsáveis por major (<strong>1.x, 2.x, 3.x...</strong>).</li>
-          <li>Ajustes de schema legado (fallbacks de campos) e correções de status/pagamento em tempo real no Firestore.</li>
+          <li>Hotfix de inicialização Firebase unificada para eliminar erro <code>app/duplicate-app</code>.</li>
+          <li>Correção da página de aprovação com funções globais <code>approveArt</code> e <code>toggleChangesInput</code> estáveis.</li>
+          <li>Padronização de link absoluto <code>Arte-Online.html?id=...</code> e fallback de cópia para navegadores sem clipboard moderno.</li>
+          <li>Portal e controle de artes alinhados para usar o mesmo app/config Firebase.</li>
+          <li>Documentação de regra MVP do Firestore/Storage e aviso de domínio OAuth no preview da Vercel.</li>
         </ul>
       </article>
     </section>
