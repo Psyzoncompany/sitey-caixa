@@ -58,12 +58,20 @@ const playSuccessSound = () => {
 let hasUnsavedChanges = false;
 let initialSnapshot = "{}"; // Armazena o estado inicial para comparação
 
+// Chaves de UI/estado temporário que NÃO devem marcar o botão como "não salvo"
+// Ex.: aba ativa da tela de processos.
+const NON_PERSISTENT_DIRTY_KEYS = new Set([
+    'processos_tab',
+    'prefill_order_form'
+]);
+
 // Helper para criar um snapshot determinístico (ordena chaves para garantir comparação correta)
 const getSnapshot = (data) => {
     const sortObj = (obj) => {
         if (obj === null || typeof obj !== 'object') return obj;
         if (Array.isArray(obj)) return obj.map(sortObj);
         return Object.keys(obj).sort().reduce((acc, key) => {
+            if (NON_PERSISTENT_DIRTY_KEYS.has(key)) return acc;
             acc[key] = sortObj(obj[key]);
             return acc;
         }, {});

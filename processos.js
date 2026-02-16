@@ -648,6 +648,7 @@ const init = () => {
             }
             saveOrders();
             renderKanban();
+            renderArtTasks();
             closeModal();
         });
     }
@@ -1288,11 +1289,16 @@ const init = () => {
     const renderArtTasks = () => {
         artTasksContainer.innerHTML = '';
         
-        // Filtra pedidos que precisam de arte (seja ArtOnly ou Produção com arte pendente)
-        // Mostra todos que não estão 'done' para permitir gerenciar versões mesmo após aprovação inicial
-        const artOrders = productionOrders.filter(order => 
-            order.status !== 'done' && (order.isArtOnly || (order.checklist && order.checklist.art))
-        );
+        // Mostra apenas pedidos que ainda possuem arte pendente
+        const artOrders = productionOrders.filter(order => {
+            if (order.status === 'done') return false;
+
+            const artChecklist = order.checklist && order.checklist.art;
+            const artCompleted = artChecklist && artChecklist.completed === true;
+            const hasArtStep = Boolean(order.isArtOnly || artChecklist);
+
+            return hasArtStep && !artCompleted;
+        });
 
         if (artOrders.length === 0) {
             artTasksContainer.innerHTML = '<div class="glass-card p-6 text-center text-gray-400">Nenhum pedido pendente para arte. ✨</div>';
@@ -1326,7 +1332,13 @@ const init = () => {
             }
 
             // Thumb logic
-            const thumbSrc = (lastVersion && lastVersion.images[0]) ? lastVersion.images[0] : (order.art?.images?.[0] || 'img/placeholder-art.png');
+            const thumbSrc = (lastVersion && lastVersion.images[0]) ? lastVersion.images[0] : (order.art?.images?.[0] || '');
+            const deadlineDate = order.deadline ? new Date(order.deadline) : null;
+            const deadlineLabel = deadlineDate && !Number.isNaN(deadlineDate.getTime())
+                ? deadlineDate.toLocaleDateString('pt-BR').slice(0, 5)
+                : 'Sem prazo';
+            const isLate = deadlineDate && deadlineDate < new Date() && (!lastVersion || lastVersion.status !== 'approved');
+            const hasApprovalLink = Boolean(lastVersion && lastVersion.token);
 
             // New Compact Card HTML
             const card = document.createElement('div');
@@ -1341,11 +1353,13 @@ const init = () => {
                 </div>
                 
                 <div class="art-card-body">
-                    <img src="${thumbSrc}" class="art-thumb" onerror="this.style.display='none'">
+                    <div class="art-thumb-wrap">
+                        ${thumbSrc ? `<img src="${thumbSrc}" class="art-thumb" onerror="this.remove(); this.nextElementSibling.style.display='flex';">` : ''}<span class="art-thumb-placeholder" ${thumbSrc ? 'style="display:none"' : ''}>Sem prévia</span>
+                    </div>
                     <div class="art-info-grid">
-                        <div class="art-info-item">
+                        <div class="art-info-item ${isLate ? 'is-late' : ''}">
                             <span class="text-gray-500">Prazo:</span>
-                            <span class="text-white font-medium">${new Date(order.deadline).toLocaleDateString('pt-BR').slice(0,5)}</span>
+                            <span class="text-white font-medium">${deadlineLabel}</span>
                         </div>
                         <div class="art-info-item">
                             <span class="text-gray-500">Versões:</span>
@@ -1356,7 +1370,9 @@ const init = () => {
 
                 <div class="art-card-actions">
                     <button data-order-id="${order.id}" class="open-art-modal-btn art-btn-action primary">Gerenciar</button>
-                    <button class="art-btn-action" onclick="alert('Link copiado!')">Link</button>
+                    <button class="art-btn-action copy-art-link-btn" data-order-id="${order.id}" ${hasApprovalLink ? '' : 'disabled'}>
+                        ${hasApprovalLink ? 'Copiar Link' : 'Sem Link'}
+                    </button>
                 </div>
             `;
             return card;
@@ -1528,6 +1544,27 @@ const init = () => {
         artTasksContainer.addEventListener('click', (e) => {
             if (e.target.classList.contains('open-art-modal-btn')) {
                 openArtControlModal(parseInt(e.target.dataset.orderId));
+            }
+
+            if (e.target.classList.contains('copy-art-link-btn')) {
+                const orderId = parseInt(e.target.dataset.orderId);
+                const order = productionOrders.find(o => o.id === orderId);
+                const lastVersion = order?.artControl?.versions?.length
+                    ? order.artControl.versions[order.artControl.versions.length - 1]
+                    : null;
+                const uid = auth.currentUser ? auth.currentUser.uid : '';
+
+                if (!lastVersion || !lastVersion.token) return;
+
+                const approvalLink = `${window.location.origin}/aprovacao.html?uid=${uid}&oid=${order.id}&token=${lastVersion.token}`;
+                navigator.clipboard.writeText(approvalLink).then(() => {
+                    e.target.textContent = 'Copiado!';
+                    setTimeout(() => {
+                        e.target.textContent = 'Copiar Link';
+                    }, 1500);
+                }).catch(() => {
+                    alert('Não foi possível copiar o link automaticamente.');
+                });
             }
         });
     }
