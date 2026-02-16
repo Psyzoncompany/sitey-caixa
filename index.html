@@ -37,8 +37,142 @@
   <style>
       @keyframes pulse-logo { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.8; } 100% { transform: scale(1); opacity: 1; } }
   </style>
+
+  <style>
+    body.neo-dashboard {
+      background: radial-gradient(1200px 650px at 10% 0%, rgba(8,145,178,.25), transparent 40%),
+                  radial-gradient(900px 500px at 90% 10%, rgba(59,130,246,.2), transparent 45%),
+                  #050816;
+    }
+    .neo-bg {
+      position: fixed;
+      inset: -30px;
+      z-index: -2;
+      background: radial-gradient(50% 40% at 20% 20%, rgba(24,211,230,.24), transparent 60%),
+                  radial-gradient(45% 35% at 85% 15%, rgba(96,165,250,.22), transparent 65%),
+                  linear-gradient(160deg, #050816, #081127 45%, #0a1021);
+      transition: transform .3s ease-out;
+      will-change: transform;
+    }
+    .neo-lens {
+      position: fixed;
+      width: 240px;
+      height: 240px;
+      border-radius: 999px;
+      pointer-events: none;
+      z-index: -1;
+      opacity: 0;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.15), rgba(24,211,230,.05) 45%, transparent 70%);
+      border: 1px solid rgba(255,255,255,.08);
+      backdrop-filter: blur(10px);
+      transition: opacity .25s ease;
+    }
+    .neo-dashboard .glass-card {
+      border: 1px solid rgba(148,163,184,.28);
+      border-radius: 18px;
+      background: linear-gradient(160deg, rgba(15,23,42,.8), rgba(15,23,42,.48));
+      box-shadow: 0 10px 35px rgba(2,6,23,.55);
+    }
+    .neo-dashboard main h1,
+    .neo-dashboard main h2,
+    .neo-dashboard main h3,
+    .neo-dashboard header nav a,
+    .neo-dashboard #mobile-menu a,
+    .neo-dashboard .bottom-nav-item span {
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+    .neo-dashboard #syt-filters-container button {
+      border-radius: 999px;
+    }
+    .neo-dashboard .bottom-nav {
+      backdrop-filter: blur(14px);
+      background: rgba(5, 8, 22, .88);
+      border-top: 1px solid rgba(148,163,184,.2);
+    }
+    .neo-dashboard .bottom-nav-item.active {
+      color: #4ade80;
+    }
+    .neo-dashboard .btn-shine {
+      border-radius: 14px;
+      box-shadow: 0 12px 28px rgba(6,182,212,.28);
+    }
+    .neo-dashboard #transaction-list > * {
+      border-radius: 14px;
+    }
+    .neo-dashboard .launch-panel {
+      padding: 0;
+      overflow: hidden;
+    }
+    .neo-dashboard .launch-panel .head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px;
+      border-bottom: 1px solid rgba(148,163,184,.2);
+      background: linear-gradient(180deg, rgba(15,23,42,.8), rgba(15,23,42,.45));
+    }
+    .neo-dashboard .launch-panel .head strong {
+      font-size: .95rem;
+      letter-spacing: .08em;
+    }
+    .neo-dashboard .pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: .76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      border: 1px solid rgba(148,163,184,.28);
+      color: #dbeafe;
+      background: rgba(30,41,59,.5);
+    }
+    .neo-dashboard .pill.teal {
+      border-color: rgba(24,211,230,.25);
+      background: rgba(24,211,230,.10);
+      color: #67e8f9;
+    }
+    .neo-dashboard .launch-body {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .neo-dashboard .pill-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .neo-dashboard .chartbox {
+      min-height: 130px;
+      border-radius: 14px;
+      border: 1px solid rgba(148,163,184,.2);
+      background: rgba(2,6,23,.38);
+      padding: 12px;
+    }
+    .neo-dashboard .launch-actions {
+      display: flex;
+      gap: 10px;
+    }
+    .neo-dashboard .launch-actions .btn {
+      flex: 1;
+      text-align: center;
+      text-decoration: none;
+      border: 1px solid rgba(148,163,184,.25);
+      padding: .75rem 1rem;
+    }
+    .neo-dashboard .launch-actions .btn.primary {
+      background: linear-gradient(90deg, #06b6d4, #2563eb);
+      color: #fff;
+    }
+  </style>
 </head>
-<body class="bg-gray-900 text-gray-200">
+<body class="bg-gray-900 text-gray-200 neo-dashboard">
+  <div id="bg" class="neo-bg" aria-hidden="true"></div>
+  <div id="lens" class="neo-lens" aria-hidden="true"></div>
   <!-- Loader Inicial Imediato -->
   <div id="initial-loader" style="position:fixed;inset:0;z-index:99999;background:#111827;display:flex;justify-content:center;align-items:center;flex-direction:column;gap:1rem;transition:opacity 0.5s ease;">
     <img src="img/logo.png" alt="Logo" style="width: 100px; height: auto; animation: pulse-logo 2s infinite ease-in-out;">
@@ -57,9 +191,9 @@
           </div>
           <div class="hidden md:block">
             <nav class="ml-10 flex items-baseline space-x-4 lg:space-x-8">
-              <a href="index.html" class="bg-cyan-500/20 text-cyan-300 px-3 py-2 rounded-md text-sm font-bold">Dashboard</a>
-              <a href="clientes.html" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium">Clientes</a>
-              <a href="processos.html" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium">Processos</a>
+              <a href="index.html" class="bg-cyan-500/20 text-cyan-300 px-3 py-2 rounded-md text-sm font-bold">DASHBOARD</a>
+              <a href="clientes.html" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium">CLIENTES</a>
+              <a href="processos.html" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium">PROCESSOS</a>
               <a href="contas.html" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium">Contas Mensais</a>
               <a href="bloco_de_notas.html" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-bold">Bloco de Notas</a>
               <a href="historico.html" class="text-gray-300 hover:bg-white/10 px-3 py-2 rounded-md text-sm font-medium">Histórico</a>
@@ -73,9 +207,9 @@
     </header>
     <div id="mobile-menu" class="md:hidden hidden bg-gray-900 border-b border-white/10">
         <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-          <a href="index.html" class="bg-cyan-500/20 text-cyan-300 block px-3 py-2 rounded-md text-base font-bold">Dashboard</a>
-          <a href="clientes.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Clientes</a>
-          <a href="processos.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Processos</a>
+          <a href="index.html" class="bg-cyan-500/20 text-cyan-300 block px-3 py-2 rounded-md text-base font-bold">DASHBOARD</a>
+          <a href="clientes.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">CLIENTES</a>
+          <a href="processos.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">PROCESSOS</a>
           <a href="contas.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Contas Mensais</a>
           <a href="afazeres.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Afazeres</a>
           <a href="historico.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Histórico</a>
@@ -87,7 +221,7 @@
 
     <main class="flex-1 p-4 md:p-6 lg:p-8">
       <div class="flex justify-between items-center mb-8">
-          <h1 class="text-2xl md:text-3xl font-bold">Dashboard</h1>
+          <h1 class="text-2xl md:text-3xl font-bold">DASHBOARD</h1>
           <button id="add-transaction-btn" class="btn-shine py-2 px-4 md:py-3 md:px-6 text-sm md:text-base font-bold rounded-lg shadow-lg hover:shadow-cyan-500/40 hover:-translate-y-1 transition-all duration-200 bg-gradient-to-br from-cyan-500 to-cyan-600">+ Lançamento</button>
       </div>
 
@@ -109,16 +243,16 @@
       
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <div class="lg:col-span-1 glass-card p-6">
-            <h3 class="text-xl font-bold mb-4">🗓️ Próximos Prazos</h3>
+            <h3 class="text-xl font-bold mb-4">🗓️ PRÓXIMOS PRAZOS</h3>
             <div id="deadlines-list" class="space-y-3"></div>
           </div>
           <!-- BÔNUS: Card de Contas a Pagar -->
           <div class="lg:col-span-1 glass-card p-6">
-            <h3 class="text-xl font-bold mb-4">📌 Contas do Mês</h3>
+            <h3 class="text-xl font-bold mb-4">📌 CONTAS DO MÊS</h3>
             <div id="dashboard-bills-summary" class="space-y-3"></div>
           </div>
           <div class="lg:col-span-1 glass-card p-6">
-            <h3 class="text-xl font-bold mb-4">💰 A Receber</h3>
+            <h3 class="text-xl font-bold mb-4">💰 A RECEBER</h3>
             <div id="total-receivables" class="text-2xl font-bold text-yellow-400">R$ 0,00</div>
           </div>
           <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -127,7 +261,7 @@
               <div id="budget-carousel" class="flex transition-transform duration-300 ease-in-out">
                 <!-- Slide 1: Business -->
                 <div class="w-full flex-shrink-0 p-6">
-                  <h3 class="text-lg font-bold mb-2">🏢 Orçamento Empresarial</h3>
+                  <h3 class="text-lg font-bold mb-2">🏢 ORÇAMENTO EMPRESARIAL</h3>
                   <div class="flex justify-between items-baseline mb-2">
                     <span id="business-spent" class="text-xl font-bold text-red-400">R$ 0,00</span>
                     <span id="business-limit-text" class="text-sm text-gray-400">de R$ 0,00</span>
@@ -136,7 +270,7 @@
                 </div>
                 <!-- Slide 2: Personal -->
                 <div class="w-full flex-shrink-0 p-6">
-                  <h3 class="text-lg font-bold mb-2">👤 Limite Pessoal</h3>
+                  <h3 class="text-lg font-bold mb-2">👤 LIMITE PESSOAL</h3>
                   <div class="flex justify-between items-baseline mb-2">
                     <span id="personal-spent" class="text-xl font-bold text-yellow-400">R$ 0,00</span>
                     <span id="personal-limit-text" class="text-sm text-gray-400">de R$ 0,00</span>
@@ -150,7 +284,7 @@
               </div>
             </div>
             <div class="glass-card p-6">
-              <h3 class="text-lg font-bold mb-2">🎯 Ponto de Equilíbrio (Mês)</h3>
+              <h3 class="text-lg font-bold mb-2">🎯 PONTO DE EQUILÍBRIO (MÊS)</h3>
                <div class="flex justify-between items-baseline mb-2 text-xs sm:text-sm">
                 <span id="break-even-revenue" class="font-bold text-green-400">Receita: R$ 0,00</span>
                 <span id="break-even-target" class="font-bold text-red-400">Custos: R$ 0,00</span>
@@ -165,13 +299,13 @@
       
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div class="glass-card p-6">
-          <h3 class="text-xl font-bold mb-4">Visão Geral Anual</h3>
+          <h3 class="text-xl font-bold mb-4">VISÃO GERAL ANUAL</h3>
           <div class="relative h-80 md:h-96">
             <canvas id="incomeExpenseChart"></canvas>
           </div>
         </div>
         <div class="glass-card p-6">
-          <h3 class="text-xl font-bold mb-4">Compras de Malha (Mês Atual)</h3>
+          <h3 class="text-xl font-bold mb-4">COMPRAS DE MALHA (MÊS ATUAL)</h3>
           
           <div class="relative h-80 md:h-96">
             <canvas id="fabricChart"></canvas>
@@ -179,45 +313,56 @@
         </div>
       </div>
       
-      <div class="glass-card p-4 md:p-6">
-        <h3 class="text-xl font-bold mb-4">Lançamentos Recentes</h3>
-        <!-- Filter Section -->
-        <div id="syt-filters-container" class="mb-4">
-            <div class="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
-                <div class="flex-shrink-0 font-bold text-sm text-gray-400 pr-2">Filtrar:</div>
-                <button data-filter-period="today" class="syt-filter-btn active">Hoje</button>
-                <button data-filter-period="yesterday" class="syt-filter-btn">Ontem</button>
-                <button data-filter-period="7days" class="syt-filter-btn">7 dias</button>
-                <button data-filter-period="30days" class="syt-filter-btn">30 dias</button>
-                <button data-filter-period="this_month" class="syt-filter-btn">Este Mês</button>
-                <button data-filter-period="last_month" class="syt-filter-btn">Mês Passado</button>
+      <section class="glass-card launch-panel">
+        <div class="head">
+          <strong>🧾 LANÇAMENTOS</strong>
+          <span class="pill teal">FILTRO</span>
+        </div>
+        <div class="launch-body">
+          <div id="syt-filters-container" class="space-y-2">
+            <div class="pill-row">
+              <button data-filter-period="today" class="syt-filter-btn active">HOJE</button>
+              <button data-filter-period="yesterday" class="syt-filter-btn">ONTEM</button>
+              <button data-filter-period="7days" class="syt-filter-btn">7D</button>
+              <button data-filter-period="30days" class="syt-filter-btn">30D</button>
+              <button data-filter-period="this_month" class="syt-filter-btn">ESTE MÊS</button>
+              <button data-filter-period="last_month" class="syt-filter-btn">MÊS PASSADO</button>
             </div>
-            <div class="flex items-center gap-2 mt-2">
-                <button data-filter-type="all" class="syt-type-filter-btn active">Todos</button>
-                <button data-filter-type="income" class="syt-type-filter-btn">Entradas</button>
-                <button data-filter-type="expense" class="syt-type-filter-btn">Saídas</button>
+            <div class="pill-row">
+              <button data-filter-type="all" class="syt-type-filter-btn active">TODOS</button>
+              <button data-filter-type="income" class="syt-type-filter-btn">ENTRADAS</button>
+              <button data-filter-type="expense" class="syt-type-filter-btn">SAÍDAS</button>
             </div>
+          </div>
+
+          <div class="chartbox">
+            <!-- Cabeçalho da Tabela (Apenas Desktop) -->
+            <div class="hidden md:grid md:grid-cols-[2fr,3fr,1.5fr,1.5fr,1.5fr,1fr,auto] gap-4 text-sm font-bold text-gray-400 border-b border-white/10 pb-2 mb-4">
+                <span>NOME</span>
+                <span>DESCRIÇÃO</span>
+                <span class="text-left">VALOR</span>
+                <span>ESCOPO</span>
+                <span>CATEGORIA</span>
+                <span>DATA</span>
+                <span class="text-right">AÇÃO</span>
+            </div>
+            <div id="transaction-list" class="space-y-3 md:space-y-0">
+                <!-- Transactions will be rendered here by JS -->
+            </div>
+          </div>
+
+          <div class="launch-actions">
+            <a class="btn" href="historico.html">IMPORTAR</a>
+            <button id="add-transaction-btn-bottom" class="btn primary" type="button">ADICIONAR</button>
+          </div>
         </div>
-        <!-- Cabeçalho da Tabela (Apenas Desktop) -->
-        <div class="hidden md:grid md:grid-cols-[2fr,3fr,1.5fr,1.5fr,1.5fr,1fr,auto] gap-4 text-sm font-bold text-gray-400 border-b border-white/10 pb-2 mb-4">
-            <span>Nome</span>
-            <span>Descrição</span>
-            <span class="text-left">Valor</span>
-            <span>Escopo</span>
-            <span>Categoria</span>
-            <span>Data</span>
-            <span class="text-right">Ação</span>
-        </div>
-        <div id="transaction-list" class="space-y-3 md:space-y-0">
-            <!-- Transactions will be rendered here by JS -->
-        </div>
-      </div>
+      </section>
     </main>
     
     <div id="modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-0 md:p-4">
       <div class="glass-card w-full max-w-2xl h-[95vh] md:h-auto md:max-h-[90vh] rounded-t-2xl md:rounded-xl flex flex-col">
           <form id="form" class="p-6 md:p-8 flex-1 overflow-y-auto">
-              <h2 class="text-2xl font-bold mb-6">Novo Lançamento</h2>
+              <h2 class="text-2xl font-bold mb-6">NOVO LANÇAMENTO</h2>
               <!-- Step Indicators (Mobile Only) -->
               <div class="md:hidden flex justify-center items-center gap-2 mb-6">
                   <div data-step="1" class="step-indicator active h-2 w-8 bg-cyan-500 rounded-full transition-all"></div>
@@ -284,26 +429,63 @@
   <nav class="bottom-nav">
     <a href="index.html" class="bottom-nav-item active">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
-      <span>Início</span>
+      <span>INÍCIO</span>
     </a>
     <a href="processos.html" class="bottom-nav-item">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
-      <span>Processos</span>
+      <span>PROCESSOS</span>
     </a>
     <a href="contas.html" class="bottom-nav-item">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H4a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
-        <span>Contas</span>
+        <span>CONTAS</span>
     </a>
     <a href="clientes.html" class="bottom-nav-item">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-      <span>Clientes</span>
+      <span>CLIENTES</span>
     </a>
     <button id="mobile-menu-button" class="bottom-nav-item">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
-      <span>Menu</span>
+      <span>MENU</span>
     </button>
   </nav>
 
+
+  <script>
+    const bg = document.getElementById('bg');
+    const lens = document.getElementById('lens');
+    const glassEls = Array.from(document.querySelectorAll('.glass-card'));
+
+    function setXY(x, y) {
+      if (!bg || !lens) return;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const px = Math.max(0, Math.min(1, x / w));
+      const py = Math.max(0, Math.min(1, y / h));
+      const dx = (px - 0.5) * 18;
+      const dy = (py - 0.5) * 14;
+      bg.style.transform = `translate3d(${dx}px, ${dy}px, 0)`;
+      const lx = `${Math.round(px * 100)}%`;
+      const ly = `${Math.round(py * 100)}%`;
+      glassEls.forEach((el) => {
+        el.style.setProperty('--lx', lx);
+        el.style.setProperty('--ly', ly);
+      });
+      lens.style.opacity = '1';
+      lens.style.transform = `translate3d(${x - 120}px, ${y - 120}px, 0) scale(1.02)`;
+    }
+
+    window.addEventListener('mousemove', (e) => setXY(e.clientX, e.clientY), { passive: true });
+    window.addEventListener('mouseleave', () => { if (lens) lens.style.opacity = '0'; }, { passive: true });
+    window.addEventListener('touchstart', (e) => { const t = e.touches[0]; if (t) setXY(t.clientX, t.clientY); }, { passive: true });
+    window.addEventListener('touchmove', (e) => { const t = e.touches[0]; if (t) setXY(t.clientX, t.clientY); }, { passive: true });
+    window.addEventListener('touchend', () => { if (lens) lens.style.opacity = '0'; }, { passive: true });
+
+    const addTransactionBtnBottom = document.getElementById('add-transaction-btn-bottom');
+    const addTransactionBtnTop = document.getElementById('add-transaction-btn');
+    if (addTransactionBtnBottom && addTransactionBtnTop) {
+      addTransactionBtnBottom.addEventListener('click', () => addTransactionBtnTop.click());
+    }
+  </script>
   <script>
     (function () {
       let loaded = false;
