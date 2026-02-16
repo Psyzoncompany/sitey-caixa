@@ -672,15 +672,15 @@ const init = () => {
         const paid = order.amountPaid || 0;
         const due = Math.max(0, total - paid);
         const paidPercent = total > 0 ? Math.min(100, (paid / total) * 100) : 0;
-        const paymentStatusText = total > 0 && due <= 0.01 ? '✅ Quitado' : '💰 Em aberto';
-        const paymentStatusColor = total > 0 && due <= 0.01 ? 'text-green-400' : 'text-yellow-400';
+        const isPaymentDone = total > 0 && due <= 0.01;
+        const paymentStatusText = isPaymentDone ? 'Pagamento concluído' : 'Pagamento pendente';
+        const paymentStatusClass = isPaymentDone ? 'is-paid' : 'is-pending';
 
         // --- Badges e Textos ---
-        let deadlineBadge = `<span class="text-xs text-gray-400 bg-white/5 px-2 py-1 rounded">${diffDays} dias</span>`;
-        if (diffDays < 0) { deadlineBadge = `<span class="text-xs text-white bg-red-500 px-2 py-1 rounded font-bold">-${Math.abs(diffDays)}d</span>`; }
-        else if (diffDays === 0) { deadlineBadge = `<span class="text-xs text-white bg-red-500 px-2 py-1 rounded font-bold">Hoje</span>`; }
-        else if (diffDays === 1) { deadlineBadge = `<span class="text-xs text-gray-900 bg-yellow-400 px-2 py-1 rounded font-bold">Amanhã</span>`; }
-        else if (diffDays <= 3) { deadlineBadge = `<span class="text-xs text-gray-900 bg-yellow-400 px-2 py-1 rounded font-bold">${diffDays}d</span>`; }
+        let deadlineText = `${diffDays} dias`;
+        if (diffDays < 0) { deadlineText = `${Math.abs(diffDays)}d atrasado`; }
+        else if (diffDays === 0) { deadlineText = `Hoje`; }
+        else if (diffDays === 1) { deadlineText = `Amanhã`; }
 
         // --- Estrutura HTML do Novo Card ---
         card.innerHTML = `
@@ -694,18 +694,16 @@ const init = () => {
                 </button>
             </div>
 
+            <div class="syt-badges-row">
+                <span class="syt-pill syt-pill-tech">${order.printType ? order.printType.toUpperCase() : 'N/A'}</span>
+                <span class="syt-pill syt-pill-pay ${paymentStatusClass}">${paymentStatusText.toUpperCase()}</span>
+                <span class="syt-pill syt-pill-deadline">${deadlineText}</span>
+            </div>
+
             <div class="syt-card-meta-grid">
-                <div class="syt-meta-item">
-                    <span class="label">Técnica</span>
-                    <span class="value">${order.printType ? order.printType.toUpperCase() : 'N/A'}</span>
-                </div>
-                <div class="syt-meta-item">
-                    <span class="label">Prazo</span>
-                    <span class="value">${deadlineBadge}</span>
-                </div>
                 <div class="syt-meta-item syt-meta-progress">
-                    <div class="flex justify-between">
-                        <span class="label">Progresso</span>
+                    <div class="syt-block-header">
+                        <span class="label">🛠️ Produção</span>
                         <span class="value">${Math.round(progress)}%</span>
                     </div>
                     <div class="syt-progress-bar-sm-bg">
@@ -715,23 +713,26 @@ const init = () => {
             </div>
 
             <div class="syt-payment-block">
+                <div class="syt-block-header">
+                    <span class="label">💰 Financeiro</span>
+                    <span class="value">${paidPercent.toFixed(0)}%</span>
+                </div>
                 <div class="syt-payment-details">
                     <div><span>Total</span> <strong>${total > 0 ? formatCurrency(total) : '—'}</strong></div>
                     <div><span>Pago</span> <strong>${formatCurrency(paid)}</strong></div>
                     <div><span>Falta</span> <strong class="due">${formatCurrency(due)}</strong></div>
                 </div>
-                <div class="syt-payment-progress">
-                    <div class="syt-progress-bar-bg">
-                        <div class="syt-progress-bar-fg" style="width: ${paidPercent}%"></div>
-                    </div>
-                    <span class="syt-progress-percent">${paidPercent.toFixed(0)}%</span>
-                </div>
-                <div class="syt-payment-status ${paymentStatusColor}">${paymentStatusText}</div>
+                <div class="syt-payment-progress"><div class="syt-progress-bar-bg"><div class="syt-progress-bar-fg" style="width: ${paidPercent}%"></div></div></div>
             </div>
 
-            <div class="syt-card-footer" onclick="window.openOrderModal(${order.id})">
-                <span>Ver detalhes</span>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
+            <div class="syt-payment-status ${paymentStatusClass}">
+                <span class="syt-status-dot"></span>
+                <span>${paymentStatusText}</span>
+            </div>
+
+            <div class="syt-card-footer">
+                <button class="syt-action-btn primary" onclick="event.stopPropagation(); window.openOrderModal(${order.id})">Receber pagamento</button>
+                <button class="syt-action-btn secondary" onclick="event.stopPropagation(); window.openOrderModal(${order.id})">Ver detalhes <span aria-hidden="true">→</span></button>
             </div>
         `;
         return card;
