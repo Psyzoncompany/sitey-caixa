@@ -34,8 +34,21 @@
       
                   <article class="glass-card p-5 border border-cyan-500/20">
         <div class="flex items-center justify-between gap-3 mb-2">
-          <h2 class="text-xl font-bold text-cyan-200">Versão 1.5.11</h2>
+          <h2 class="text-xl font-bold text-cyan-200">Versão 1.5.12</h2>
           <span class="text-xs text-gray-400">Atual</span>
+        </div>
+        <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
+          <li>Integração Gemini migrada para endpoint seguro em <code>/api/gemini</code>, evitando exposição de chave no front-end.</li>
+          <li>Adicionado handler server-side que lê <code>GEMINI_API_KEY</code> por variável de ambiente.</li>
+          <li>Projeto preparado com <code>.env</code> local ignorado no Git e <code>.env.example</code> para facilitar configuração.</li>
+          <li>Histórico de versões atualizado em continuidade da versão anterior.</li>
+        </ul>
+      </article>
+
+<article class="glass-card p-5 border border-cyan-500/20">
+        <div class="flex items-center justify-between gap-3 mb-2">
+          <h2 class="text-xl font-bold text-cyan-200">Versão 1.5.11</h2>
+          <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
           <li>Corrigido o loop de autenticação que retornava para a tela de login após clicar em <strong>Entrar</strong>.</li>

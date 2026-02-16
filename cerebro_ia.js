@@ -1,9 +1,9 @@
 // c:\Users\AAAA\Desktop\sitey-caixa\cerebro_ia.js
 
 const initAI = () => {
-    // Configuração da API
-    const GEMINI_API_KEY = "AIzaSyBVog4tmzmTpLReuyhSD5OnXmobF0rLrow".trim(); 
-    
+    // Configuração da API via endpoint seguro no servidor
+    const GEMINI_PROXY_ENDPOINT = "/api/gemini";
+
     console.log("🤖 Cerebro IA Iniciado");
 
     let chatHistory = [];
@@ -233,10 +233,10 @@ const initAI = () => {
 
         for (const model of models) {
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/:generateContent?key=`, {
+                const res = await fetch(GEMINI_PROXY_ENDPOINT, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({ model, payload })
                 });
                 const data = await res.json();
                 if (res.ok && data.candidates) {
