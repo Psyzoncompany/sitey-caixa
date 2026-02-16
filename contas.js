@@ -270,22 +270,14 @@ const initContas = () => {
             `;
             billsTableBody.appendChild(row);
 
-            const card = document.createElement('article');
-            card.className = 'bill-card';
-            card.innerHTML = `
-                <header class="bill-card__header">
-                    <h3 class="bill-card__name" title="${escapeHtml(bill.name)}">${escapeHtml(bill.name)}</h3>
+
                     <span class="status-badge ${statusClasses[bill.status]}">${statusLabels[bill.status]}</span>
                 </header>
                 <div class="bill-card__amount-row">
                     <p class="bill-card__amount">${formatCurrency(bill.amount)}</p>
                     <p class="bill-card__due">Vence dia ${String(bill.due_day).padStart(2, '0')}</p>
                 </div>
-                ${bill.category ? `<p class="bill-card__meta" title="${escapeHtml(bill.category)}">${escapeHtml(bill.category)}</p>` : ''}
-                <footer class="bill-card__actions actions-group" data-month-key="${monthKey}">
-                    ${payButton}
-                    ${commonButtons}
-                </footer>
+
             `;
             billsCardContainer.appendChild(card);
         });
