@@ -85,6 +85,30 @@ const init = () => {
     // make sure block reflects initial state
     togglePrintingBlock();
 
+
+    const copyTextSafe = async (text) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            return true;
+        } catch (_) {
+            try {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.setAttribute('readonly', '');
+                ta.style.position = 'fixed';
+                ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.focus();
+                ta.select();
+                const copied = document.execCommand('copy');
+                ta.remove();
+                return copied;
+            } catch {
+                return false;
+            }
+        }
+    };
+
     // Toggle Art Only Mode
     const toggleArtOnlyMode = () => {
         if (!isArtOnlyCheckbox) return;
@@ -1602,7 +1626,7 @@ const init = () => {
 
             // Handlers
             card.querySelector('.btn-copy-link').onclick = (e) => {
-                navigator.clipboard.writeText(e.target.dataset.link).then(() => alert('Link copiado! Envie para o cliente.'));
+                copyTextSafe(e.target.dataset.link).then((ok) => alert(ok ? 'Link copiado! Envie para o cliente.' : 'Não foi possível copiar o link automaticamente.'));
             };
             const approveBtn = card.querySelector('.btn-approve-manual');
             if (approveBtn) {
@@ -1669,14 +1693,16 @@ const init = () => {
 
                 if (!lastVersion || !lastVersion.token) return;
 
-                const approvalLink = `${window.location.origin}/aprovacao.html?uid=${uid}&oid=${order.id}&token=${lastVersion.token}`;
-                navigator.clipboard.writeText(approvalLink).then(() => {
+                const approvalLink = `${window.location.origin}/aprovacao.html?uid=${encodeURIComponent(uid)}&oid=${encodeURIComponent(order.id)}&token=${encodeURIComponent(lastVersion.token)}`;
+                copyTextSafe(approvalLink).then((ok) => {
+                    if (!ok) {
+                        alert('Não foi possível copiar o link automaticamente.');
+                        return;
+                    }
                     e.target.textContent = 'Copiado!';
                     setTimeout(() => {
                         e.target.textContent = 'Copiar Link';
                     }, 1500);
-                }).catch(() => {
-                    alert('Não foi possível copiar o link automaticamente.');
                 });
             }
         });

@@ -1,7 +1,5 @@
-import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import {
-  getFirestore,
   collection,
   query,
   orderBy,
@@ -15,19 +13,7 @@ import {
   addDoc
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyCJVYTzakEJdJ2lODZRjVx4V7r220-iWIQ",
-  authDomain: "sitey-caixa.firebaseapp.com",
-  projectId: "sitey-caixa",
-  storageBucket: "sitey-caixa.firebasestorage.app",
-  messagingSenderId: "995209588095",
-  appId: "1:995209588095:web:d7fdc0e218f7a69f08fe4a",
-  measurementId: "G-F0CJN6MTFE"
-};
-
-const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+import { auth, db } from "./js/firebase-init.js";
 
 const statusOptions = [
   'Aguardando envio do cliente',
