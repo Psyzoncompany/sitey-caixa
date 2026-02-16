@@ -1989,3 +1989,78 @@ html[data-theme="light"] .white-text, html[data-theme="light"] .text-white {
         grid-column: span 2 / span 2;
     }
 }
+
+
+/* --- iPhone-like typography + full-width mobile layout --- */
+:root {
+  --font-app: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", "Inter", "Segoe UI", sans-serif;
+  --mobile-gutter: clamp(6px, 2.2vw, 14px);
+}
+
+body,
+button,
+input,
+textarea,
+select {
+  font-family: var(--font-app);
+}
+
+body {
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+h1, h2, h3, h4 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* Shared visual system used by index + internal pages */
+body.neo-dashboard {
+  background:
+    radial-gradient(1200px 650px at 10% 0%, rgba(8,145,178,.25), transparent 40%),
+    radial-gradient(900px 500px at 90% 10%, rgba(59,130,246,.2), transparent 45%),
+    #050816;
+}
+
+.neo-dashboard .glass-card {
+  border: 1px solid rgba(148,163,184,.28);
+  border-radius: 18px;
+  background: linear-gradient(160deg, rgba(15,23,42,.8), rgba(15,23,42,.48));
+  box-shadow: 0 10px 35px rgba(2,6,23,.55);
+}
+
+.neo-dashboard .btn-shine {
+  border-radius: 14px;
+  box-shadow: 0 12px 28px rgba(6,182,212,.28);
+}
+
+@media (max-width: 768px) {
+  body {
+    padding-left: max(var(--mobile-gutter), env(safe-area-inset-left));
+    padding-right: max(var(--mobile-gutter), env(safe-area-inset-right));
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+
+  .neo-dashboard main {
+    padding-left: 0.35rem !important;
+    padding-right: 0.35rem !important;
+  }
+
+  .neo-dashboard .max-w-7xl,
+  .neo-dashboard .max-w-6xl,
+  .neo-dashboard .max-w-5xl,
+  .neo-dashboard .max-w-4xl,
+  .neo-dashboard .max-w-3xl,
+  .neo-dashboard .max-w-2xl,
+  .neo-dashboard .max-w-xl,
+  .neo-dashboard .max-w-lg,
+  .neo-dashboard .max-w-md {
+    max-width: 100% !important;
+  }
+
+  .neo-dashboard .px-4 {
+    padding-left: 0.35rem !important;
+    padding-right: 0.35rem !important;
+  }
+}
