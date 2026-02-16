@@ -249,6 +249,7 @@ const initAI = () => {
 
         const models = ['gemini-2.0-flash-exp', 'gemini-1.5-flash', 'gemini-pro'];
         let successData = null;
+        let lastError = null;
 
         ensureGeminiEndpoint();
 
@@ -260,14 +261,21 @@ const initAI = () => {
                     body: JSON.stringify({ model, payload })
                 });
                 const data = await res.json();
-                if (res.ok && data.candidates) {
+                if (res.ok && Array.isArray(data?.candidates) && data.candidates.length > 0) {
                     successData = data;
                     break;
                 }
-            } catch (e) {}
+
+                const errorMsg = data?.error?.message || data?.error || `Falha no modelo ${model} (${res.status})`;
+                lastError = new Error(errorMsg);
+            } catch (e) {
+                lastError = e;
+            }
         }
 
-        if (!successData) throw new Error("Falha na conexão com a IA.");
+        if (!successData) {
+            throw lastError || new Error('Falha na conexão com a IA. Verifique a configuração da GEMINI_API_KEY no servidor.');
+        }
 
         const content = successData.candidates[0].content;
         chatHistory.push({ role: "model", parts: content.parts });

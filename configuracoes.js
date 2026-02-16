@@ -13,6 +13,8 @@ const init = () => {
     const businessLimitInput = document.getElementById('business-limit');
     const personalLimitInput = document.getElementById('personal-limit');
     const saveLimitsBtn = document.getElementById('save-limits-btn');
+    const keysStatus = document.getElementById('keys-status');
+    const refreshKeysStatusBtn = document.getElementById('refresh-keys-status-btn');
 
     let incomeCategories = JSON.parse(localStorage.getItem('incomeCategories')) || ['Venda de Produto', 'Adiantamento', 'Serviços', 'Outros'];
     let expenseCategories = JSON.parse(localStorage.getItem('expenseCategories')) || ['Matéria-Prima (Custo Direto)', 'Aluguel', 'Contas (Água, Luz, Internet)', 'Marketing e Vendas', 'Salários e Pró-labore', 'Impostos', 'Software e Ferramentas', 'Manutenção', 'Despesas Pessoais', 'Outros'];
@@ -22,6 +24,62 @@ const init = () => {
         const personalLimit = localStorage.getItem('personalSpendingLimit');
         if (businessLimit) businessLimitInput.value = businessLimit;
         if (personalLimit) personalLimitInput.value = personalLimit;
+    };
+
+
+
+    const maskKey = (value) => {
+        if (!value || typeof value !== 'string') return 'não encontrada';
+        if (value.length <= 8) return '••••••••';
+        return `${value.slice(0, 4)}••••••••${value.slice(-4)}`;
+    };
+
+    const renderKeyCard = ({ title, value, status, hint }) => {
+        const color = status === 'ok' ? 'text-green-300 border-green-500/30 bg-green-500/5' : 'text-yellow-300 border-yellow-500/30 bg-yellow-500/5';
+        return `<div class="rounded-md p-3 border ${color}">
+            <div class="font-semibold">${title}</div>
+            <div class="mt-1 break-all">${value}</div>
+            <div class="text-xs opacity-80 mt-1">${hint}</div>
+        </div>`;
+    };
+
+    const loadKeysStatus = async () => {
+        if (!keysStatus) return;
+
+        const firebaseApiKey = window.firebasePublicConfig?.apiKey || '';
+        const cards = [];
+
+        cards.push(renderKeyCard({
+            title: 'Firebase (cliente web)',
+            value: maskKey(firebaseApiKey),
+            status: firebaseApiKey ? 'ok' : 'warn',
+            hint: firebaseApiKey
+                ? 'Chave pública visível no front-end por design do Firebase.'
+                : 'Configuração não carregada no cliente.'
+        }));
+
+        try {
+            const res = await fetch('/api/gemini?status=1', { method: 'GET' });
+            const data = await res.json();
+            const configured = Boolean(data?.configured);
+            cards.push(renderKeyCard({
+                title: 'Gemini (servidor)',
+                value: configured ? 'Configurada no servidor (oculta)' : 'Não configurada',
+                status: configured ? 'ok' : 'warn',
+                hint: configured
+                    ? 'A chave GEMINI_API_KEY está segura no backend e não é exibida.'
+                    : 'Defina GEMINI_API_KEY no ambiente (Vercel/servidor).'
+            }));
+        } catch (error) {
+            cards.push(renderKeyCard({
+                title: 'Gemini (servidor)',
+                value: 'Não foi possível consultar o endpoint /api/gemini',
+                status: 'warn',
+                hint: 'Verifique se o site está aberto por HTTP/HTTPS e com backend ativo.'
+            }));
+        }
+
+        keysStatus.innerHTML = cards.join('');
     };
 
     saveLimitsBtn.addEventListener('click', () => {
@@ -114,8 +172,11 @@ const init = () => {
         }
     });
 
+    if (refreshKeysStatusBtn) refreshKeysStatusBtn.addEventListener('click', loadKeysStatus);
+
     loadLimits();
     renderCategories();
+    loadKeysStatus();
 };
 
 if (document.readyState === 'loading') {

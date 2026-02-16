@@ -2579,7 +2579,7 @@ const init = () => {
                 });
                 const data = await res.json();
 
-                if (res.ok && data.candidates) {
+                if (res.ok && Array.isArray(data?.candidates) && data.candidates.length > 0) {
                     successData = data;
                     break; // Sucesso!
                 }
