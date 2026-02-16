@@ -741,7 +741,7 @@ const init = () => {
         const card = document.createElement('div');
         // Adicionada a classe syt-process-card para o novo estilo
         const borderClass = order.isArtOnly ? 'border-l-4 border-purple-500' : 'border-l-4 border-cyan-500';
-        card.className = `kanban-card syt-process-card ${borderClass}`;
+        card.className = `kanban-card syt-process-card is-collapsed ${borderClass}`;
         card.setAttribute('draggable', false);
         card.dataset.id = order.id;
 
@@ -779,8 +779,14 @@ const init = () => {
                 <div class="syt-card-title-block">
                     <h3 class="syt-card-title">${order.description}</h3>
                     <p class="syt-card-client">${client ? client.name : 'Sem cliente'}</p>
+                    <p class="syt-card-deadline">Entrega: ${deadlineText}</p>
                 </div>
                 <div class="syt-header-actions">
+                    <button class="syt-collapse-btn" title="Abrir/fechar card" aria-label="Abrir ou fechar detalhes" aria-expanded="false">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6" />
+                        </svg>
+                    </button>
                     <button onclick="event.stopPropagation(); window.openOrderModal(${order.id})" class="syt-edit-btn" title="Editar Pedido">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd" /></svg>
                     </button>
@@ -790,6 +796,7 @@ const init = () => {
                 </div>
             </div>
 
+            <div class="syt-card-body">
             <div class="syt-badges-row">
                 <span class="syt-pill syt-pill-tech">${order.printType ? order.printType.toUpperCase() : 'N/A'}</span>
                 <span class="syt-pill syt-pill-pay ${paymentStatusClass}">${paymentStatusText.toUpperCase()}</span>
@@ -817,9 +824,9 @@ const init = () => {
                                 <span class="value">${paidPercent.toFixed(0)}%</span>
                             </div>
                             <div class="syt-payment-details">
-                                <div><span>Total</span> <strong>${total > 0 ? formatCurrency(total) : '—'}</strong></div>
-                                <div><span>Pago</span> <strong>${formatCurrency(paid)}</strong></div>
-                                <div><span>Falta</span> <strong class="due">${formatCurrency(due)}</strong></div>
+                                <div class="syt-payment-chip"><span>Total</span> <strong>${total > 0 ? formatCurrency(total) : '—'}</strong></div>
+                                <div class="syt-payment-chip"><span>Pago</span> <strong>${formatCurrency(paid)}</strong></div>
+                                <div class="syt-payment-chip"><span>Falta</span> <strong class="due">${formatCurrency(due)}</strong></div>
                             </div>
                             <div class="syt-payment-progress"><div class="syt-progress-bar-bg"><div class="syt-progress-bar-fg" style="width: ${paidPercent}%"></div></div></div>
                         </div>
@@ -842,7 +849,37 @@ const init = () => {
                 <button class="syt-action-btn primary" onclick="event.stopPropagation(); window.openOrderModal(${order.id})">Receber pagamento</button>
                 <button class="syt-action-btn secondary" onclick="event.stopPropagation(); window.openOrderModal(${order.id})">Ver detalhes <span aria-hidden="true">→</span></button>
             </div>
+            </div>
         `;
+
+        const setCollapsedState = (collapsed) => {
+            card.classList.toggle('is-collapsed', collapsed);
+            const collapseBtn = card.querySelector('.syt-collapse-btn');
+            if (collapseBtn) {
+                collapseBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+            }
+        };
+
+        setCollapsedState(true);
+
+        const toggleCard = () => {
+            const isCollapsed = card.classList.contains('is-collapsed');
+            setCollapsedState(!isCollapsed);
+        };
+
+        card.addEventListener('click', (event) => {
+            if (event.target.closest('button,a,input,select,textarea,label')) return;
+            toggleCard();
+        });
+
+        const collapseBtn = card.querySelector('.syt-collapse-btn');
+        if (collapseBtn) {
+            collapseBtn.addEventListener('click', (event) => {
+                event.stopPropagation();
+                toggleCard();
+            });
+        }
+
         return card;
     };
 
