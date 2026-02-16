@@ -1287,6 +1287,50 @@ const init = () => {
 
     const renderArtTasks = () => {
         artTasksContainer.innerHTML = '';
+
+        const formatRelativeTime = (timestamp) => {
+            if (!timestamp) return 'Sem atualização';
+            const now = Date.now();
+            const diffMs = now - timestamp;
+            const diffMinutes = Math.floor(diffMs / (1000 * 60));
+            if (diffMinutes < 1) return 'agora';
+            if (diffMinutes < 60) return `há ${diffMinutes}min`;
+            const diffHours = Math.floor(diffMinutes / 60);
+            if (diffHours < 24) return `há ${diffHours}h`;
+            const diffDays = Math.floor(diffHours / 24);
+            if (diffDays < 30) return `há ${diffDays}d`;
+            return `em ${new Date(timestamp).toLocaleDateString('pt-BR')}`;
+        };
+
+        const getLastAction = (version) => {
+            if (!version || !version.history || version.history.length === 0) return 'Sem histórico ainda';
+            const lastEvent = version.history[version.history.length - 1];
+            const actionMap = {
+                created: 'Nova versão enviada',
+                sent: 'Versão enviada para aprovação',
+                approved: 'Arte aprovada pelo cliente',
+                changes_requested: 'Cliente pediu alteração'
+            };
+            return lastEvent.comment || actionMap[lastEvent.action] || 'Atualização registrada';
+        };
+
+        const getStatusMeta = (lastVersion) => {
+            if (!lastVersion) {
+                return {
+                    statusText: '🟡 Rascunho',
+                    statusClass: 'art-status-draft'
+                };
+            }
+
+            const statusMap = {
+                draft: { statusText: '🟡 Rascunho', statusClass: 'art-status-draft' },
+                sent: { statusText: '🔵 Em revisão', statusClass: 'art-status-review' },
+                approved: { statusText: '🟢 Aprovado', statusClass: 'art-status-approved' },
+                changes_requested: { statusText: '🔴 Alteração solicitada', statusClass: 'art-status-changes' }
+            };
+
+            return statusMap[lastVersion.status] || statusMap.draft;
+        };
         
         // Filtra pedidos que precisam de arte (seja ArtOnly ou Produção com arte pendente)
         // Mostra todos que não estão 'done' para permitir gerenciar versões mesmo após aprovação inicial
@@ -1299,64 +1343,51 @@ const init = () => {
             return;
         }
 
-        // Mobile Filter Header (Injected dynamically)
-        if (!document.getElementById('art-mobile-filters')) {
-            const filterHTML = `
-                <div id="art-mobile-filters" class="flex gap-2 overflow-x-auto pb-2 mb-4 md:hidden no-scrollbar">
-                    <button class="px-3 py-1 rounded-full bg-cyan-600 text-white text-xs font-bold whitespace-nowrap">Todos</button>
-                    <button class="px-3 py-1 rounded-full bg-white/10 text-gray-400 text-xs font-bold whitespace-nowrap">Pendentes</button>
-                    <button class="px-3 py-1 rounded-full bg-white/10 text-gray-400 text-xs font-bold whitespace-nowrap">Aprovados</button>
-                </div>`;
-            artTasksContainer.insertAdjacentHTML('beforebegin', filterHTML);
-        }
-
         const createArtCard = (order) => {
             const client = clients.find(c => c.id === order.clientId);
-            const artData = order.art || {};
             const artControl = order.artControl || { versions: [] };
             const lastVersion = artControl.versions.length > 0 ? artControl.versions[artControl.versions.length - 1] : null;
-            
-            let statusClass = 'bg-gray-700 text-gray-300';
-            let statusText = 'Rascunho';
-            
-            if (lastVersion) {
-                if (lastVersion.status === 'approved') { statusClass = 'bg-green-500/20 text-green-400 border border-green-500/30'; statusText = `Aprovada V${lastVersion.version}`; }
-                else if (lastVersion.status === 'sent') { statusClass = 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'; statusText = `Enviada V${lastVersion.version}`; }
-                else if (lastVersion.status === 'changes_requested') { statusClass = 'bg-red-500/20 text-red-400 border border-red-500/30'; statusText = `Ajustes V${lastVersion.version}`; }
-            }
+            const { statusText, statusClass } = getStatusMeta(lastVersion);
 
             // Thumb logic
             const thumbSrc = (lastVersion && lastVersion.images[0]) ? lastVersion.images[0] : (order.art?.images?.[0] || 'img/placeholder-art.png');
+            const uid = auth.currentUser ? auth.currentUser.uid : '';
+            const approvalLink = lastVersion ? `${window.location.origin}/aprovacao.html?uid=${uid}&oid=${order.id}&token=${lastVersion.token}` : '';
+            const lastUpdatedAt = lastVersion?.history?.length ? lastVersion.history[lastVersion.history.length - 1].date : lastVersion?.createdAt;
+            const rawDaysStopped = lastUpdatedAt ? Math.floor((Date.now() - lastUpdatedAt) / (1000 * 60 * 60 * 24)) : 0;
+            const daysStopped = Math.max(rawDaysStopped, 0);
+            const projectLabel = order.isArtOnly ? 'Projeto de arte' : 'Projeto de produção';
+            const deadlineLabel = order.deadline ? new Date(order.deadline + 'T03:00:00').toLocaleDateString('pt-BR') : 'Sem prazo';
+            const lastAction = getLastAction(lastVersion);
 
-            // New Compact Card HTML
             const card = document.createElement('div');
-            card.className = `art-card-compact`;
+            card.className = 'art-process-card';
             card.innerHTML = `
-                <div class="art-card-header">
-                    <div>
-                        <h3 class="art-card-title">${order.description}</h3>
-                        <p class="art-card-subtitle">${client ? client.name : 'Cliente'}</p>
+                <div class="art-process-header">
+                    <div class="art-process-title-wrap">
+                        <p class="art-process-client">${client ? client.name : 'Cliente não informado'}</p>
+                        <h3 class="art-process-title">${order.description}</h3>
+                        <p class="art-process-project">${projectLabel}</p>
                     </div>
-                    <span class="art-card-badge ${statusClass}">${statusText}</span>
+                    <span class="art-process-chip ${statusClass}">${statusText}</span>
                 </div>
                 
-                <div class="art-card-body">
-                    <img src="${thumbSrc}" class="art-thumb" onerror="this.style.display='none'">
-                    <div class="art-info-grid">
-                        <div class="art-info-item">
-                            <span class="text-gray-500">Prazo:</span>
-                            <span class="text-white font-medium">${new Date(order.deadline).toLocaleDateString('pt-BR').slice(0,5)}</span>
-                        </div>
-                        <div class="art-info-item">
-                            <span class="text-gray-500">Versões:</span>
-                            <span class="text-white font-medium">${artControl.versions.length}</span>
-                        </div>
+                <div class="art-process-body">
+                    <img src="${thumbSrc}" class="art-process-thumb" onerror="this.style.display='none'">
+                    <div class="art-process-grid">
+                        <div class="art-process-item"><span>📅 Prazo</span><strong>${deadlineLabel}</strong></div>
+                        <div class="art-process-item"><span>🔁 Versões</span><strong>${artControl.versions.length}</strong></div>
+                        <div class="art-process-item art-process-item-full"><span>💬 Última ação</span><strong>${lastAction}</strong></div>
+                        <div class="art-process-item"><span>🕒 Atualizado</span><strong>${formatRelativeTime(lastUpdatedAt)}</strong></div>
+                        ${daysStopped >= 3 ? `<div class="art-process-item art-process-item-alert"><span>⏳ Alerta</span><strong>Projeto parado há ${daysStopped} dias</strong></div>` : ''}
                     </div>
                 </div>
 
-                <div class="art-card-actions">
-                    <button data-order-id="${order.id}" class="open-art-modal-btn art-btn-action primary">Gerenciar</button>
-                    <button class="art-btn-action" onclick="alert('Link copiado!')">Link</button>
+                <div class="art-process-actions">
+                    <button data-order-id="${order.id}" class="open-art-modal-btn art-process-btn">✏️ Enviar nova versão</button>
+                    <button data-link="${approvalLink}" class="copy-art-link-btn art-process-btn" ${!approvalLink ? 'disabled' : ''}>🔗 Abrir link do cliente</button>
+                    <button data-order-id="${order.id}" class="open-art-modal-btn art-process-btn">👁️ Ver histórico</button>
+                    <button data-order-id="${order.id}" class="archive-art-order-btn art-process-btn danger">🗑️ Arquivar</button>
                 </div>
             `;
             return card;
@@ -1367,6 +1398,36 @@ const init = () => {
         container.className = 'flex flex-col md:grid md:grid-cols-2 xl:grid-cols-3 gap-3';
         artOrders.forEach(order => container.appendChild(createArtCard(order)));
         artTasksContainer.appendChild(container);
+
+        artTasksContainer.querySelectorAll('.copy-art-link-btn').forEach((btn) => {
+            btn.addEventListener('click', async (e) => {
+                const link = e.currentTarget.dataset.link;
+                if (!link) {
+                    alert('Envie uma versão primeiro para gerar o link do cliente.');
+                    return;
+                }
+                try {
+                    await navigator.clipboard.writeText(link);
+                    window.open(link, '_blank', 'noopener');
+                } catch (error) {
+                    console.error(error);
+                    alert('Não foi possível copiar o link automaticamente.');
+                }
+            });
+        });
+
+        artTasksContainer.querySelectorAll('.archive-art-order-btn').forEach((btn) => {
+            btn.addEventListener('click', (e) => {
+                const orderId = parseInt(e.currentTarget.dataset.orderId, 10);
+                const order = productionOrders.find(o => o.id === orderId);
+                if (!order) return;
+                if (!confirm('Arquivar este card de arte? O pedido será movido para concluído.')) return;
+                order.status = 'done';
+                saveOrders();
+                renderArtTasks();
+                renderKanban();
+            });
+        });
     };
 
     // --- NOVO CONTROLE DE ARTES (VERSÕES) ---
