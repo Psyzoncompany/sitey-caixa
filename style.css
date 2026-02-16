@@ -2180,23 +2180,13 @@ body.is-dragging-kanban {
     gap: 0.75rem;
 }
 .syt-payment-details {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 0.6rem;
-    overflow-x: auto;
-    scroll-snap-type: x proximity;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    padding-bottom: 0.2rem;
-}
-
-.syt-payment-details::-webkit-scrollbar {
-    display: none;
 }
 
 .syt-payment-chip {
-    min-width: 122px;
-    flex: 0 0 auto;
-    scroll-snap-align: start;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     text-align: left;
@@ -2218,11 +2208,6 @@ body.is-dragging-kanban {
 .syt-payment-details .due { color: #facc15; } /* text-yellow-400 */
 
 
-@media (max-width: 420px) {
-    .syt-payment-chip {
-        min-width: 112px;
-    }
-}
 
 .syt-payment-progress { display: flex; align-items: center; gap: 0.75rem; }
 .syt-progress-bar-bg { flex: 1; height: 10px; background: rgba(255,255,255,0.06); border-radius: 99px; overflow: hidden; }
