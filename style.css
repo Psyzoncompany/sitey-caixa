@@ -2878,7 +2878,7 @@ body.neo-dashboard {
     }
 }
 
-/* --- Skeleton de carregamento inicial --- */
+/* --- Skeleton de carregamento inicial (formato da página) --- */
 .initial-skeleton {
     position: fixed;
     inset: 0;
@@ -2888,55 +2888,100 @@ body.neo-dashboard {
     justify-content: center;
     align-items: center;
     gap: 1rem;
-    padding: 1.5rem;
+    padding: 1rem;
     background: #111827;
     transition: opacity 0.5s ease;
 }
 
-.initial-skeleton-card {
-    width: min(720px, 100%);
+.initial-skeleton-shell {
+    width: min(1180px, 100%);
+    min-height: min(760px, calc(100vh - 4.5rem));
     border-radius: 20px;
-    border: 1px solid rgba(148, 163, 184, 0.22);
-    background: linear-gradient(160deg, rgba(30, 41, 59, 0.72), rgba(15, 23, 42, 0.8));
-    padding: 1.5rem;
-    box-shadow: 0 24px 48px rgba(2, 6, 23, 0.45);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    background: radial-gradient(circle at 10% -20%, rgba(34, 211, 238, 0.12), transparent 38%),
+                radial-gradient(circle at 80% -45%, rgba(59, 130, 246, 0.12), transparent 45%),
+                linear-gradient(180deg, rgba(17, 24, 39, 0.95), rgba(15, 23, 42, 0.95));
+    box-shadow: 0 28px 54px rgba(2, 6, 23, 0.45);
+    overflow: hidden;
 }
 
-.initial-skeleton-line,
-.initial-skeleton-tile {
+.initial-skeleton-topbar {
+    height: 72px;
+    padding: 0 1rem;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    background: rgba(15, 23, 42, 0.72);
+}
+
+.initial-skeleton-main {
+    padding: 1rem;
+}
+
+.initial-skeleton-block {
     border-radius: 12px;
-    background: linear-gradient(90deg, rgba(71, 85, 105, 0.28) 25%, rgba(148, 163, 184, 0.38) 50%, rgba(71, 85, 105, 0.28) 75%);
-    background-size: 200% 100%;
+    background: linear-gradient(90deg, rgba(71, 85, 105, 0.22) 25%, rgba(148, 163, 184, 0.35) 50%, rgba(71, 85, 105, 0.22) 75%);
+    background-size: 220% 100%;
     animation: initial-skeleton-pulse 1.5s ease-in-out infinite;
 }
 
-.initial-skeleton-line {
+.initial-skeleton-logo {
+    width: 130px;
+    height: 40px;
+    border-radius: 14px;
+}
+
+.initial-skeleton-nav {
+    display: flex;
+    gap: 0.55rem;
+    width: min(640px, 62%);
+    justify-content: flex-end;
+}
+
+.initial-skeleton-chip {
+    height: 30px;
+    flex: 1;
+    min-width: 70px;
+    border-radius: 999px;
+}
+
+.initial-skeleton-chip--short {
+    max-width: 90px;
+}
+
+.initial-skeleton-title {
+    width: min(280px, 62%);
+    height: 24px;
+    margin-bottom: 0.75rem;
+}
+
+.initial-skeleton-subtitle {
+    width: min(190px, 42%);
     height: 14px;
+    margin-bottom: 1rem;
+}
+
+.initial-skeleton-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.85rem;
+    margin-bottom: 0.9rem;
+}
+
+.initial-skeleton-kpi {
+    height: 110px;
+}
+
+.initial-skeleton-panel {
+    height: 210px;
     margin-bottom: 0.85rem;
 }
 
-.initial-skeleton-line--lg {
-    width: min(260px, 82%);
-    height: 20px;
-}
-
-.initial-skeleton-line--md {
-    width: min(190px, 58%);
-}
-
-.initial-skeleton-line--full {
-    width: 100%;
-}
-
-.initial-skeleton-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 0.85rem;
-    margin: 1rem 0 1.1rem;
-}
-
-.initial-skeleton-tile {
-    height: 88px;
+.initial-skeleton-panel--sm {
+    height: 150px;
+    margin-bottom: 0;
 }
 
 .initial-skeleton-text {
@@ -2945,11 +2990,52 @@ body.neo-dashboard {
     letter-spacing: 0.02em;
 }
 
-@keyframes initial-skeleton-pulse {
-    0% {
-        background-position: 100% 50%;
+@media (max-width: 768px) {
+    .initial-skeleton {
+        padding: 0.75rem;
     }
-    100% {
-        background-position: 0 50%;
+
+    .initial-skeleton-shell {
+        min-height: min(720px, calc(100vh - 4rem));
+    }
+
+    .initial-skeleton-topbar {
+        height: 62px;
+        padding: 0 0.75rem;
+    }
+
+    .initial-skeleton-nav {
+        width: 65%;
+        gap: 0.4rem;
+    }
+
+    .initial-skeleton-chip:nth-child(n + 3) {
+        display: none;
+    }
+
+    .initial-skeleton-main {
+        padding: 0.75rem;
+    }
+
+    .initial-skeleton-kpi-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .initial-skeleton-kpi {
+        height: 90px;
+    }
+
+    .initial-skeleton-panel {
+        height: 160px;
+    }
+
+    .initial-skeleton-panel--sm {
+        height: 110px;
     }
 }
+
+@keyframes initial-skeleton-pulse {
+    0% { background-position: 100% 50%; }
+    100% { background-position: 0 50%; }
+}
+
