@@ -31,10 +31,49 @@
 
     <section class="space-y-4">
 
-      <article class="glass-card p-5 border border-cyan-500/20">
+      
+                  <article class="glass-card p-5 border border-cyan-500/20">
+        <div class="flex items-center justify-between gap-3 mb-2">
+          <h2 class="text-xl font-bold text-cyan-200">Versão 1.5.11</h2>
+          <span class="text-xs text-gray-400">Atual</span>
+        </div>
+        <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
+          <li>Corrigido o loop de autenticação que retornava para a tela de login após clicar em <strong>Entrar</strong>.</li>
+          <li>As chaves internas do Firebase Auth agora permanecem no <code>localStorage</code> nativo para manter sessão entre páginas.</li>
+          <li>Histórico de versões atualizado mantendo continuidade da versão anterior.</li>
+        </ul>
+      </article>
+
+<article class="glass-card p-5 border border-cyan-500/20">
+        <div class="flex items-center justify-between gap-3 mb-2">
+          <h2 class="text-xl font-bold text-cyan-200">Versão 1.5.10</h2>
+          <span class="text-xs text-gray-400">Anterior</span>
+        </div>
+        <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
+          <li>Cards de Processos voltaram a manter o bloco de resumo no estilo de <strong>carrossel interno</strong>.</li>
+          <li>No slide financeiro, os chips <strong>Total</strong>, <strong>Pago</strong> e <strong>Falta</strong> ficam lado a lado com <strong>arraste lateral</strong>.</li>
+          <li>Tela de login inicial recebeu redesign mais profissional com visual premium (glass + gradientes).</li>
+          <li>Login com Google reforçado com persistência local, fallback por redirect e mensagens mais claras em caso de erro de configuração no Firebase.</li>
+        </ul>
+      </article>
+
+<article class="glass-card p-5 border border-cyan-500/20">
+        <div class="flex items-center justify-between gap-3 mb-2">
+          <h2 class="text-xl font-bold text-cyan-200">Versão 1.5.9</h2>
+          <span class="text-xs text-gray-400">Anterior</span>
+        </div>
+        <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
+          <li>Cards de Processos voltaram ao layout padrão de resumo, sem carrossel interno.</li>
+          <li>Bloco financeiro mantém os chips <strong>Total</strong>, <strong>Pago</strong> e <strong>Falta</strong> fixos no mesmo card.</li>
+          <li>Comportamento de cards iniciando fechados e expandindo ao toque/clique foi mantido.</li>
+          <li>Tela de login ganhou botão funcional para autenticação com <strong>Google</strong> via Firebase Auth.</li>
+        </ul>
+      </article>
+
+<article class="glass-card p-5 border border-cyan-500/20">
         <div class="flex items-center justify-between gap-3 mb-2">
           <h2 class="text-xl font-bold text-cyan-200">Versão 1.5.8</h2>
-          <span class="text-xs text-gray-400">Atual</span>
+          <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
           <li>Bloco financeiro dos cards de Processos deixou de usar carrossel interno.</li>

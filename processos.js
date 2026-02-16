@@ -823,7 +823,7 @@ const init = () => {
                                 <span class="label">💰 Financeiro</span>
                                 <span class="value">${paidPercent.toFixed(0)}%</span>
                             </div>
-                            <div class="syt-payment-details">
+                            <div class="syt-payment-details syt-payment-details-scroll">
                                 <div class="syt-payment-chip"><span>Total</span> <strong>${total > 0 ? formatCurrency(total) : '—'}</strong></div>
                                 <div class="syt-payment-chip"><span>Pago</span> <strong>${formatCurrency(paid)}</strong></div>
                                 <div class="syt-payment-chip"><span>Falta</span> <strong class="due">${formatCurrency(due)}</strong></div>

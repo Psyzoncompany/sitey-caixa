@@ -1,10 +1,28 @@
 // c:\Users\AAAA\Desktop\sitey-caixa\firebase-config.js
 
 // Importa as funções do Firebase (versão compat para facilitar o uso com scripts existentes)
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { onAuthStateChanged, setPersistence, browserLocalPersistence, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteField } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 import { app, auth, db } from "./js/firebase-init.js";
+
+
+const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({
+    prompt: 'select_account'
+});
+googleProvider.addScope('email');
+googleProvider.addScope('profile');
+
+const ensureAuthPersistence = async () => {
+    try {
+        await setPersistence(auth, browserLocalPersistence);
+    } catch (error) {
+        console.warn('Não foi possível definir persistência local de auth:', error);
+    }
+};
+
+ensureAuthPersistence();
 
 // Som de sucesso sutil (Web Audio API)
 let audioCtx = null;
@@ -212,15 +230,31 @@ const checkDirtyState = () => {
 };
 
 // Interceptador do localStorage (Mágica para fazer o site funcionar com a nuvem)
+// IMPORTANTE: chaves internas do Firebase Auth devem continuar no localStorage nativo
+// para evitar perda de sessão entre páginas (loop voltando para login).
+const nativeLocalStorage = window.localStorage;
+const isFirebaseStorageKey = (key) => typeof key === 'string' && (
+    key.startsWith('firebase:') ||
+    key.startsWith('__firebase') ||
+    key.startsWith('firebaseLocalStorageDb') ||
+    key.includes('firebase')
+);
+
 Object.defineProperty(window, 'localStorage', {
     value: {
         getItem: (key) => {
+            if (isFirebaseStorageKey(key)) return nativeLocalStorage.getItem(key);
             const val = memoryStore[key];
             if (val === undefined) return null;
             // Se for objeto, retorna string JSON (comportamento padrão do localStorage)
             return typeof val === 'object' ? JSON.stringify(val) : val;
         },
         setItem: (key, value) => {
+            if (isFirebaseStorageKey(key)) {
+                nativeLocalStorage.setItem(key, value);
+                return;
+            }
+
             const stringValue = String(value);
             // Verifica se o valor realmente mudou para evitar "falsos positivos" de alterações não salvas
             const currentValue = memoryStore[key];
@@ -240,6 +274,11 @@ Object.defineProperty(window, 'localStorage', {
             checkDirtyState();
         },
         removeItem: (key) => {
+            if (isFirebaseStorageKey(key)) {
+                nativeLocalStorage.removeItem(key);
+                return;
+            }
+
             if (!(key in memoryStore)) return; // Se a chave não existe, não faz nada (evita ficar vermelho à toa)
             delete memoryStore[key];
             if (auth.currentUser) {
@@ -253,6 +292,14 @@ Object.defineProperty(window, 'localStorage', {
         clear: () => {
             memoryStore = {};
             checkDirtyState();
+            // Não limpa o storage nativo para preservar sessão Firebase
+        },
+        key: (index) => {
+            const keys = Object.keys(memoryStore);
+            return keys[index] || null;
+        },
+        get length() {
+            return Object.keys(memoryStore).length;
         }
     },
     writable: true
@@ -314,6 +361,21 @@ onAuthStateChanged(auth, async (user) => {
 // Expõe funções de auth globalmente para uso nos botões
 window.firebaseAuth = {
     login: (email, password) => signInWithEmailAndPassword(auth, email, password),
+    loginWithGoogle: async () => {
+        try {
+            return await signInWithPopup(auth, googleProvider);
+        } catch (error) {
+            const fallbackCodes = new Set([
+                'auth/popup-blocked',
+                'auth/cancelled-popup-request',
+                'auth/popup-closed-by-user'
+            ]);
+            if (fallbackCodes.has(error?.code)) {
+                return signInWithRedirect(auth, googleProvider);
+            }
+            throw error;
+        }
+    },
     logout: () => signOut(auth),
     currentUser: () => auth.currentUser
 };

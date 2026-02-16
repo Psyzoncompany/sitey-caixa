@@ -2185,6 +2185,26 @@ body.is-dragging-kanban {
     gap: 0.6rem;
 }
 
+.syt-payment-details-scroll {
+    display: flex;
+    gap: 0.6rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    padding-bottom: 0.15rem;
+}
+
+.syt-payment-details-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.syt-payment-details-scroll .syt-payment-chip {
+    flex: 0 0 min(150px, 46%);
+    scroll-snap-align: start;
+}
+
+
 .syt-payment-chip {
     min-width: 0;
     display: flex;
