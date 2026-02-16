@@ -333,5 +333,6 @@ onAuthStateChanged(auth, async (user) => {
 // Expõe funções de auth globalmente para uso nos botões
 window.firebaseAuth = {
     login: (email, password) => signInWithEmailAndPassword(auth, email, password),
-    logout: () => signOut(auth)
+    logout: () => signOut(auth),
+    currentUser: () => auth.currentUser
 };
