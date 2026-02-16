@@ -21,6 +21,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link href="style.css" rel="stylesheet">
+  <!-- Camada visual premium (Liquid Glass) isolada para não quebrar regras existentes -->
+  <link href="ui-liquid.css" rel="stylesheet">
   <!-- Firebase Config (Carrega Auth e Sync) -->
   <script type="module" src="firebase-config.js"></script>
   <!-- Force unregister any service workers from future versions -->
@@ -38,7 +40,11 @@
       @keyframes pulse-logo { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.8; } 100% { transform: scale(1); opacity: 1; } }
   </style>
 </head>
-<body class="bg-gray-900 text-gray-200">
+<body class="bg-gray-900 text-gray-200 liquid-dashboard" data-liquid-ui="enabled">
+  <!-- Camadas fixas de fundo: o JS apenas anima variáveis para efeito parallax -->
+  <div class="liquid-bg" aria-hidden="true"></div>
+  <div class="noise" aria-hidden="true"></div>
+  <div class="lens" aria-hidden="true"></div>
   <!-- Loader Inicial Imediato -->
   <div id="initial-loader" style="position:fixed;inset:0;z-index:99999;background:#111827;display:flex;justify-content:center;align-items:center;flex-direction:column;gap:1rem;transition:opacity 0.5s ease;">
     <img src="img/logo.png" alt="Logo" style="width: 100px; height: auto; animation: pulse-logo 2s infinite ease-in-out;">
@@ -85,13 +91,13 @@
         </div>
     </div>
 
-    <main class="flex-1 p-4 md:p-6 lg:p-8">
+    <main class="flex-1 p-4 md:p-6 lg:p-8 liquid-main">
       <div class="flex justify-between items-center mb-8">
           <h1 class="text-2xl md:text-3xl font-bold">Dashboard</h1>
           <button id="add-transaction-btn" class="btn-shine py-2 px-4 md:py-3 md:px-6 text-sm md:text-base font-bold rounded-lg shadow-lg hover:shadow-cyan-500/40 hover:-translate-y-1 transition-all duration-200 bg-gradient-to-br from-cyan-500 to-cyan-600">+ Lançamento</button>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8 kpi-grid-liquid">
         <div class="glass-card p-4 md:p-6"><div class="icon-label-container"><span class="text-2xl">💰</span><span class="info-tooltip" data-tooltip="Saldo Atual">?</span></div><p id="balance" class="text-2xl md:text-4xl font-bold mt-2">R$ 0,00</p></div>
         <div class="glass-card p-4 md:p-6"><div class="icon-label-container"><span class="text-2xl">📈</span><span class="info-tooltip" data-tooltip="Receitas (Mês)">?</span></div><p id="total-income" class="text-2xl md:text-4xl font-bold mt-2 text-green-400">R$ 0,00</p></div>
         <div class="glass-card p-4 md:p-6"><div class="icon-label-container"><span class="text-2xl">📉</span><span class="info-tooltip" data-tooltip="Despesas (Mês)">?</span></div><p id="total-expense" class="text-2xl md:text-4xl font-bold mt-2 text-red-400">R$ 0,00</p></div>
@@ -179,8 +185,12 @@
         </div>
       </div>
       
-      <div class="glass-card p-4 md:p-6">
-        <h3 class="text-xl font-bold mb-4">Lançamentos Recentes</h3>
+      <div class="glass-card p-4 md:p-6 launches-card">
+        <!-- Cabeçalho em estilo "app card" com título em maiúsculo e pill de filtro -->
+        <div class="launches-head mb-4">
+          <strong>🧾 LANÇAMENTOS</strong>
+          <span class="liquid-pill liquid-pill-accent">FILTRO</span>
+        </div>
         <!-- Filter Section -->
         <div id="syt-filters-container" class="mb-4">
             <div class="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
@@ -197,6 +207,11 @@
                 <button data-filter-type="income" class="syt-type-filter-btn">Entradas</button>
                 <button data-filter-type="expense" class="syt-type-filter-btn">Saídas</button>
             </div>
+        </div>
+        <!-- Ações rápidas somente de UI para reforçar o visual premium sem alterar fluxos atuais -->
+        <div class="launches-actions mb-4">
+            <button type="button" class="liquid-action-btn" aria-label="Importar lançamentos (UI)">Importar</button>
+            <button type="button" id="quick-add-transaction-btn" class="liquid-action-btn liquid-action-btn-primary" aria-label="Abrir modal de novo lançamento">Adicionar</button>
         </div>
         <!-- Cabeçalho da Tabela (Apenas Desktop) -->
         <div class="hidden md:grid md:grid-cols-[2fr,3fr,1.5fr,1.5fr,1.5fr,1fr,auto] gap-4 text-sm font-bold text-gray-400 border-b border-white/10 pb-2 mb-4">
@@ -303,6 +318,20 @@
       <span>Menu</span>
     </button>
   </nav>
+
+  <!-- FAB visual mobile: atalho para o mesmo fluxo de + lançamento -->
+  <button type="button" id="liquid-nav-fab" class="liquid-nav-fab md:hidden" aria-label="Novo lançamento rápido">✦</button>
+
+  <!-- Script visual isolado: parallax + lente sem tocar na lógica financeira -->
+  <script src="ui-liquid.js"></script>
+  <script>
+    // Bridge visual: botões novos reaproveitam o CTA existente para não duplicar regra de negócio.
+    (function () {
+      const triggerAdd = () => document.getElementById("add-transaction-btn")?.click();
+      document.getElementById("quick-add-transaction-btn")?.addEventListener("click", triggerAdd);
+      document.getElementById("liquid-nav-fab")?.addEventListener("click", triggerAdd);
+    })();
+  </script>
 
   <script>
     (function () {
