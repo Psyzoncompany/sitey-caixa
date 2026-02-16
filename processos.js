@@ -4,12 +4,9 @@ const init = () => {
     if (mobileMenuButton) { mobileMenuButton.addEventListener('click', () => mobileMenu.classList.toggle('open')); }
 
     const addOrderBtn = document.getElementById('add-order-btn');
-    const tabQuadro = document.getElementById('tab-quadro');
-    const tabAfazeres = document.getElementById('tab-afazeres');
-    const tabCortes = document.getElementById('tab-cortes');
-    const viewQuadro = document.getElementById('view-quadro');
-    const viewAfazeres = document.getElementById('view-afazeres');
-    const viewCortes = document.getElementById('view-cortes');
+    const processTabButtons = Array.from(document.querySelectorAll('.process-tab-btn[data-tab]'));
+    const processPanels = Array.from(document.querySelectorAll('.process-panel[data-panel]'));
+    let currentTab = localStorage.getItem('processos_tab') || 'quadro';
 
     const columns = { 
         todo: document.getElementById('column-todo'), 
@@ -232,24 +229,58 @@ const init = () => {
     const saveOrders = () => {
         localStorage.setItem('production_orders', JSON.stringify(productionOrders));
         // Mantém o quadro sincronizado quando alterações acontecem em outras abas (Cortes/Artes/DTF)
-        renderKanban();
-        if (viewAfazeres && !viewAfazeres.classList.contains('hidden')) renderTasks();
-        if (viewCortes && !viewCortes.classList.contains('hidden')) renderCuttingTasks();
-        if (viewArtes && !viewArtes.classList.contains('hidden')) renderArtTasks();
-        if (viewDTF && !viewDTF.classList.contains('hidden')) renderDTFTasks();
+        renderProcessBoard();
         applyDragScroll(); 
     };
     const formatCurrency = (amount) => amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-    const handleTabClick = (activeTab, activeView) => {
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active-tab'));
-        document.querySelectorAll('.view-container').forEach(view => view.classList.add('hidden'));
-        activeTab.classList.add('active-tab');
-        activeView.classList.remove('hidden');
+    const validTabs = new Set(['quadro', 'afazeres', 'artes', 'cortes', 'dtf']);
+    if (!validTabs.has(currentTab)) currentTab = 'quadro';
+
+    const renderProcessBoard = () => {
+        switch (currentTab) {
+            case 'afazeres':
+                renderTasks();
+                break;
+            case 'artes':
+                renderArtTasks();
+                break;
+            case 'cortes':
+                renderCuttingTasks();
+                break;
+            case 'dtf':
+                renderDTFTasks();
+                break;
+            case 'quadro':
+            default:
+                renderKanban();
+                break;
+        }
     };
-    tabQuadro.addEventListener('click', () => { handleTabClick(tabQuadro, viewQuadro); renderKanban(); });
-    tabAfazeres.addEventListener('click', () => { handleTabClick(tabAfazeres, viewAfazeres); renderTasks(); });
-    tabCortes.addEventListener('click', () => { handleTabClick(tabCortes, viewCortes); renderCuttingTasks(); });
+
+    const setActiveTab = (tabName) => {
+        if (!validTabs.has(tabName)) return;
+        currentTab = tabName;
+        localStorage.setItem('processos_tab', currentTab);
+
+        processTabButtons.forEach((btn) => {
+            const active = btn.dataset.tab === tabName;
+            btn.classList.toggle('active-tab', active);
+            btn.setAttribute('aria-selected', String(active));
+        });
+
+        processPanels.forEach((panel) => {
+            const active = panel.dataset.panel === tabName;
+            panel.classList.toggle('active', active);
+            panel.classList.toggle('hidden', !active);
+        });
+
+        renderProcessBoard();
+    };
+
+    processTabButtons.forEach((btn) => {
+        btn.addEventListener('click', () => setActiveTab(btn.dataset.tab));
+    });
 
     const populateClientSelect = () => {
         clients = JSON.parse(localStorage.getItem('clients')) || [];
@@ -799,6 +830,10 @@ const init = () => {
             tab.textContent = `${label} (${counts[target]})`;
         });
     };
+
+
+    // Inicializa a aba selecionada (persistida) e renderiza conteúdo correspondente
+    setActiveTab(currentTab);
 
     const kanbanColumns = document.querySelectorAll('.kanban-column');
     kanbanColumns.forEach(column => {
@@ -1394,10 +1429,6 @@ const init = () => {
     }
     // closeArtModalBtn agora é tratado dentro de openArtControlModal dinamicamente ou via delegate global
 
-    // Ativa renderização da aba de artes
-    const tabArtes = document.getElementById('tab-artes');
-    const viewArtes = document.getElementById('view-artes');
-    tabArtes.addEventListener('click', () => { handleTabClick(tabArtes, viewArtes); renderArtTasks(); });
 
     const checkPrefillData = () => {
         const urlParams = new URLSearchParams(window.location.search);
@@ -1413,14 +1444,9 @@ const init = () => {
         }
     };
 
-    renderKanban();
     checkPrefillData();
 
     const dtfTasksContainer = document.getElementById('dtf-tasks-container');
-    const tabDTF = document.getElementById('tab-dtf');
-    const viewDTF = document.getElementById('view-dtf');
-
-    tabDTF.addEventListener('click', () => { handleTabClick(tabDTF, viewDTF); renderDTFTasks(); });
 
     function renderDTFTasks() {
         dtfTasksContainer.innerHTML = '';

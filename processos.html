@@ -93,17 +93,17 @@
     🧠
 </button>
 
-      <div class="mb-8 border-b border-white/10 overflow-x-auto pb-1">
-        <nav class="-mb-px flex space-x-8 min-w-max px-1" aria-label="Tabs">
-          <button id="tab-quadro" class="tab-btn active-tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Quadro de Processos</button>
-          <button id="tab-afazeres" class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Afazeres</button>
-          <button id="tab-artes" class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Controle de Artes</button>
-          <button id="tab-cortes" class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Controle de Cortes</button>
-          <button id="tab-dtf" class="tab-btn whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">Controle de DTF</button>
+      <div class="process-tabs-wrap mb-8 border-b border-white/10 overflow-x-auto pb-1">
+        <nav class="process-tabs -mb-px flex space-x-3 min-w-max px-1" aria-label="Tabs de processos">
+          <button id="tab-quadro" data-tab="quadro" class="tab-btn process-tab-btn active-tab whitespace-nowrap py-3 px-3 border-b-2 font-medium text-sm" aria-selected="true">Quadro de Processos</button>
+          <button id="tab-afazeres" data-tab="afazeres" class="tab-btn process-tab-btn whitespace-nowrap py-3 px-3 border-b-2 font-medium text-sm" aria-selected="false">Afazeres</button>
+          <button id="tab-artes" data-tab="artes" class="tab-btn process-tab-btn whitespace-nowrap py-3 px-3 border-b-2 font-medium text-sm" aria-selected="false">Controle de Artes</button>
+          <button id="tab-cortes" data-tab="cortes" class="tab-btn process-tab-btn whitespace-nowrap py-3 px-3 border-b-2 font-medium text-sm" aria-selected="false">Controle de Cortes</button>
+          <button id="tab-dtf" data-tab="dtf" class="tab-btn process-tab-btn whitespace-nowrap py-3 px-3 border-b-2 font-medium text-sm" aria-selected="false">Controle de DTF</button>
         </nav>
       </div>
 
-      <div id="view-quadro" class="view-container">
+      <div id="view-quadro" data-panel="quadro" class="view-container process-panel active">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 min-h-[32vh]">
           <div class="glass-card p-4 flex flex-col">
               <h2 class="text-lg font-bold text-gray-300 border-b-2 border-gray-600 pb-2 mb-4">A FAZER</h2>
@@ -118,12 +118,13 @@
               <div id="column-done" class="kanban-column flex-1 space-y-4 p-2 -m-2 overflow-y-auto"></div>
           </div>
         </div>
+      </div>
 
-      <div id="view-afazeres" class="view-container hidden"><div id="tasks-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"></div></div>
-      <div id="view-artes" class="view-container hidden"><div id="art-tasks-container" class="space-y-6"></div></div>
-      <div id="view-cortes" class="view-container hidden"><div id="cutting-tasks-container" class="space-y-6"></div></div>
+      <div id="view-afazeres" data-panel="afazeres" class="view-container process-panel hidden"><div id="tasks-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"></div></div>
+      <div id="view-artes" data-panel="artes" class="view-container process-panel hidden"><div id="art-tasks-container" class="space-y-6"></div></div>
+      <div id="view-cortes" data-panel="cortes" class="view-container process-panel hidden"><div id="cutting-tasks-container" class="space-y-6"></div></div>
       <!-- grid responsivo: 1 col em mobile, 2 em md, 3 em lg -->
-      <div id="view-dtf" class="view-container hidden">
+      <div id="view-dtf" data-panel="dtf" class="view-container process-panel hidden">
         <div id="dtf-tasks-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
       </div>
     </main>
