@@ -2587,3 +2587,94 @@ body.neo-dashboard {
     font-weight: 600 !important;
   }
 }
+
+/* --- Contas mensais: ações com SVG inline --- */
+.actions-group {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+
+.action-btn {
+    width: 2.2rem;
+    height: 2.2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.8rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.05));
+    box-shadow: 0 8px 25px rgba(2, 6, 23, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: #dbeafe;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.action-btn:hover {
+    transform: translateY(-1px);
+    border-color: rgba(191, 219, 254, 0.6);
+    box-shadow: 0 12px 28px rgba(14, 116, 144, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.action-btn:active {
+    transform: scale(0.96);
+}
+
+.action-btn:focus-visible {
+    outline: 2px solid rgba(34, 211, 238, 0.85);
+    outline-offset: 2px;
+}
+
+.action-btn svg {
+    width: 1.05rem;
+    height: 1.05rem;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    pointer-events: none;
+}
+
+.action-btn-pay { color: #86efac; }
+.action-btn-edit { color: #93c5fd; }
+.action-btn-details { color: #c4b5fd; }
+.action-btn-delete { color: #fca5a5; }
+
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: 0.8rem;
+}
+
+.details-grid p {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding-bottom: 0.6rem;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.details-grid span {
+    color: #94a3b8;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.details-grid strong {
+    font-size: 0.97rem;
+    color: #f8fafc;
+    font-weight: 600;
+}
+
+@media (max-width: 767px) {
+    .bill-card-actions .action-btn {
+        width: 2rem;
+        height: 2rem;
+    }
+}
