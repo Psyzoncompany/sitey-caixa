@@ -2549,9 +2549,22 @@ const init = () => {
     }
 }; // end init
 
+const startWhenBackendIsReady = () => {
+    if (window.BackendInitialized) {
+        init();
+        return;
+    }
+
+    const checkSync = setInterval(() => {
+        if (!window.BackendInitialized) return;
+        clearInterval(checkSync);
+        init();
+    }, 100);
+};
+
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', startWhenBackendIsReady);
 } else {
-    init();
+    startWhenBackendIsReady();
 }
 //
