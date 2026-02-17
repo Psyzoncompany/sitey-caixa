@@ -811,40 +811,36 @@ const init = () => {
                 <span class="syt-pill syt-pill-deadline">${deadlineText}</span>
             </div>
 
-            <div class="syt-card-carousel" aria-label="Resumo do pedido">
-                <div class="syt-card-carousel-track">
-                    <section class="syt-carousel-slide">
-                        <div class="syt-meta-item syt-meta-progress">
-                            <div class="syt-block-header">
-                                <span class="label">🛠️ Produção</span>
-                                <span class="value">${Math.round(progress)}%</span>
-                            </div>
-                            <div class="syt-progress-bar-sm-bg">
-                                <div class="syt-progress-bar-sm-fg" style="width: ${progress}%"></div>
-                            </div>
+            <div class="syt-card-meta-grid" aria-label="Resumo do pedido">
+                <section>
+                    <div class="syt-payment-block">
+                        <div class="syt-block-header">
+                            <span class="label">💰 Financeiro</span>
+                            <span class="value">${paidPercent.toFixed(0)}%</span>
                         </div>
-                    </section>
+                        <div class="syt-payment-details">
+                            <div class="syt-payment-chip"><span>Total</span> <strong>${total > 0 ? formatCurrency(total) : '—'}</strong></div>
+                            <div class="syt-payment-chip"><span>Pago</span> <strong>${formatCurrency(paid)}</strong></div>
+                            <div class="syt-payment-chip"><span>Falta</span> <strong class="due">${formatCurrency(due)}</strong></div>
+                        </div>
+                        <div class="syt-payment-progress"><div class="syt-progress-bar-bg"><div class="syt-progress-bar-fg" style="width: ${paidPercent}%"></div></div></div>
+                    </div>
 
-                    <section class="syt-carousel-slide">
-                        <div class="syt-payment-block">
-                            <div class="syt-block-header">
-                                <span class="label">💰 Financeiro</span>
-                                <span class="value">${paidPercent.toFixed(0)}%</span>
-                            </div>
-                            <div class="syt-payment-details syt-payment-details-scroll">
-                                <div class="syt-payment-chip"><span>Total</span> <strong>${total > 0 ? formatCurrency(total) : '—'}</strong></div>
-                                <div class="syt-payment-chip"><span>Pago</span> <strong>${formatCurrency(paid)}</strong></div>
-                                <div class="syt-payment-chip"><span>Falta</span> <strong class="due">${formatCurrency(due)}</strong></div>
-                            </div>
-                            <div class="syt-payment-progress"><div class="syt-progress-bar-bg"><div class="syt-progress-bar-fg" style="width: ${paidPercent}%"></div></div></div>
-                        </div>
+                    <div class="syt-payment-status ${paymentStatusClass}">
+                        <span class="syt-status-dot"></span>
+                        <span>${paymentStatusText}</span>
+                    </div>
+                </section>
 
-                        <div class="syt-payment-status ${paymentStatusClass}">
-                            <span class="syt-status-dot"></span>
-                            <span>${paymentStatusText}</span>
-                        </div>
-                    </section>
-                </div>
+                <section class="syt-meta-item syt-meta-progress">
+                    <div class="syt-block-header">
+                        <span class="label">🛠️ Produção</span>
+                        <span class="value">${Math.round(progress)}%</span>
+                    </div>
+                    <div class="syt-progress-bar-sm-bg">
+                        <div class="syt-progress-bar-sm-fg" style="width: ${progress}%"></div>
+                    </div>
+                </section>
             </div>
 
             <div class="flex flex-wrap gap-2 mt-3">
@@ -1433,8 +1429,6 @@ const init = () => {
             `;
         }).join('') : '<div class="glass-card p-4 text-sm text-gray-300">Nenhum corte adicionado ainda.</div>';
 
-        const personalization = order?.checklist?.cutting?.personalization || { hasNames: false, names: '' };
-        const namesCount = (personalization.names || '').split('\n').filter(v => v.trim()).length;
         const totalPieces = getCuttingTotalPieces(subtasks);
 
         cuttingChecklistContainer.innerHTML = `
@@ -1503,21 +1497,8 @@ const init = () => {
             </section>
 
             <section class="cutting-section-card">
-                <div class="cutting-section-head"><h3>Personalização (nomes)</h3>${getCutSectionStatus(!personalization.hasNames || namesCount === totalPieces)}</div>
-                <label class="flex items-center gap-2 text-sm"><input id="cut-personalization-toggle" type="checkbox" ${personalization.hasNames ? 'checked' : ''}> Ativar nomes</label>
-                <textarea id="cut-personalization-names" class="cut-note-input mt-2 ${personalization.hasNames ? '' : 'hidden'}" rows="4" placeholder="Um nome por linha">${personalization.names || ''}</textarea>
-            </section>
-
-            <section class="cutting-section-card">
-                <div class="cutting-section-head"><h3>Estampa</h3>${getCutSectionStatus(Boolean(order.printType))}</div>
-                <p class="text-sm text-gray-300">Tipo: ${order.printType || 'Não definido'}</p>
-                <p class="text-sm text-gray-400">${(order.printing && order.printing.notes) ? order.printing.notes : 'Sem observações de estampa.'}</p>
-            </section>
-
-            <section class="cutting-section-card">
-                <div class="cutting-section-head"><h3>Acabamento / Embalagem</h3>${getCutSectionStatus(Boolean(order.checklist?.finishing?.completed))}</div>
-                <label class="flex items-center gap-2 text-sm"><input id="cut-finishing-check" type="checkbox" ${order.checklist?.finishing?.completed ? 'checked' : ''}> Finalizado</label>
-                <input id="cut-finishing-note" type="text" class="cut-note-input mt-2" placeholder="Observações" value="${order.checklist?.finishing?.note || ''}">
+                <div class="cutting-section-head"><h3>Controle de cortes</h3>${getCutSectionStatus(subtasks.length > 0 && totalPieces > 0)}</div>
+                <p class="text-sm text-gray-300">Este painel mostra apenas informações relacionadas aos cortes.</p>
             </section>
         `;
 
