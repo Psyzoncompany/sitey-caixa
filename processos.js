@@ -289,18 +289,22 @@ const init = () => {
     const renderProcessBoard = () => {
         switch (currentTab) {
             case 'afazeres':
+                if (!tasksContainer) break;
                 renderTasks();
                 break;
             case 'artes':
+                if (!artTasksContainer) break;
                 renderArtTasks();
                 break;
             case 'cortes':
                 if (window.CuttingSystem) window.CuttingSystem.renderCuttingTab(cuttingTasksContainer);
                 break;
             case 'dtf':
+                if (!document.getElementById('dtf-tasks-container')) break;
                 renderDTFTasks();
                 break;
             case 'historico-pedidos':
+                if (!ordersHistoryContainer) break;
                 renderOrdersHistory();
                 break;
             case 'quadro':
@@ -335,6 +339,7 @@ const init = () => {
     });
 
     const populateClientSelect = () => {
+        if (!orderClientSelect) return;
         clients = JSON.parse(localStorage.getItem('clients')) || [];
         orderClientSelect.innerHTML = '<option value="">Selecione um cliente</option>';
         if (orderClientSearchInput) orderClientSearchInput.value = '';
@@ -357,6 +362,7 @@ const init = () => {
     }
 
     const renderChecklist = (checklistData = {}) => {
+        if (!orderChecklistContainer) return;
         orderChecklistContainer.innerHTML = '';
         for (const key in checklistItems) {
             const task = checklistData[key] || { completed: false, deadline: '' };
@@ -367,6 +373,7 @@ const init = () => {
     };
 
     const openModal = (orderId = null) => {
+        if (!orderModal || !orderForm || !orderDescriptionInput || !orderDeadlineInput) return;
         editingOrderId = orderId;
         populateClientSelect();
         orderForm.reset();
@@ -481,7 +488,7 @@ const init = () => {
         });
     }
 
-    if (orderForm) {
+    if (orderForm && orderClientSelect && orderDescriptionInput && orderDeadlineInput) {
         orderForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const checklist = {};
