@@ -145,15 +145,18 @@ const init = () => {
 
     if (addArtOnlyImageBtn && artOnlyImageInput) {
         addArtOnlyImageBtn.addEventListener('click', () => artOnlyImageInput.click());
-        artOnlyImageInput.addEventListener('change', (e) => {
-            Array.from(e.target.files).forEach(file => {
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    activeArtOnlyImages.push(ev.target.result);
-                    renderArtOnlyPreviews();
-                };
-                reader.readAsDataURL(file);
-            });
+        artOnlyImageInput.addEventListener('change', async (e) => {
+            const files = Array.from(e.target.files || []);
+            for (const file of files) {
+                try {
+                    const compressed = await fileToCompressedDataURL(file);
+                    activeArtOnlyImages.push(compressed);
+                } catch (error) {
+                    console.error('Falha ao processar imagem de arte', error);
+                    alert('Não foi possível processar uma das imagens selecionadas.');
+                }
+            }
+            renderArtOnlyPreviews();
             e.target.value = '';
         });
     }
@@ -168,6 +171,137 @@ const init = () => {
     const artImageInput = document.getElementById('art-image-input');
     // saveArtBtn removido da lógica antiga, agora usamos o controle de versões
     const saveArtBtn = document.getElementById('save-art-btn');
+
+    const STORAGE_FULL_MESSAGE = 'Não foi possível salvar no dispositivo (armazenamento cheio). Remova imagens antigas/limpe histórico ou reduza tamanho das imagens.';
+    const ORDER_ASSET_KEY_PREFIX = 'order_assets_';
+    let hasShownStorageWarning = false;
+
+    const showStorageWarning = (message = STORAGE_FULL_MESSAGE) => {
+        if (hasShownStorageWarning) return;
+        hasShownStorageWarning = true;
+        alert(message);
+        setTimeout(() => {
+            hasShownStorageWarning = false;
+        }, 1000);
+    };
+
+    const isQuotaExceededError = (error) => {
+        if (!error) return false;
+        return error?.name === 'QuotaExceededError'
+            || error?.name === 'NS_ERROR_DOM_QUOTA_REACHED'
+            || error?.code === 22
+            || error?.code === 1014;
+    };
+
+    const safeSetStorage = (key, valueString) => {
+        try {
+            localStorage.setItem(key, valueString);
+            return true;
+        } catch (error) {
+            if (isQuotaExceededError(error)) {
+                showStorageWarning();
+                return false;
+            }
+            console.error(`Falha ao salvar "${key}" no localStorage`, error);
+            alert('Não foi possível salvar os dados no dispositivo.');
+            return false;
+        }
+    };
+
+    const getOrderAssetsKey = (orderId) => `${ORDER_ASSET_KEY_PREFIX}${orderId}`;
+
+    const getOrderAssets = (orderId) => {
+        if (!orderId) return { artImages: [], dtfImages: [], references: [] };
+        try {
+            const raw = localStorage.getItem(getOrderAssetsKey(orderId));
+            if (!raw) return { artImages: [], dtfImages: [], references: [] };
+            const parsed = JSON.parse(raw);
+            return {
+                artImages: Array.isArray(parsed?.artImages) ? parsed.artImages : [],
+                dtfImages: Array.isArray(parsed?.dtfImages) ? parsed.dtfImages : [],
+                references: Array.isArray(parsed?.references) ? parsed.references : []
+            };
+        } catch (error) {
+            console.error(`Falha ao ler assets do pedido ${orderId}`, error);
+            return { artImages: [], dtfImages: [], references: [] };
+        }
+    };
+
+    const saveOrderAssets = (orderId, payload) => {
+        if (!orderId) return false;
+        const normalized = {
+            artImages: Array.isArray(payload?.artImages) ? payload.artImages : [],
+            dtfImages: Array.isArray(payload?.dtfImages) ? payload.dtfImages : [],
+            references: Array.isArray(payload?.references) ? payload.references : [],
+            updatedAt: Date.now()
+        };
+        return safeSetStorage(getOrderAssetsKey(orderId), JSON.stringify(normalized));
+    };
+
+    const stripHeavyFieldsFromOrder = (order) => {
+        if (!order) return order;
+        const next = { ...order };
+        if (next.printing && Object.prototype.hasOwnProperty.call(next.printing, 'images')) {
+            const { images, ...printingRest } = next.printing;
+            next.printing = printingRest;
+        }
+        if (next.art && Object.prototype.hasOwnProperty.call(next.art, 'images')) {
+            const { images, ...artRest } = next.art;
+            next.art = artRest;
+        }
+        if (Object.prototype.hasOwnProperty.call(next, 'references')) {
+            delete next.references;
+        }
+        return next;
+    };
+
+    const migrateLegacyAssetsFromOrders = () => {
+        let touched = false;
+        productionOrders = productionOrders.map((order) => {
+            const legacyDtf = Array.isArray(order?.printing?.images) ? order.printing.images : [];
+            const legacyArt = Array.isArray(order?.art?.images) ? order.art.images : [];
+            const legacyReferences = Array.isArray(order?.references) ? order.references : [];
+            if (!legacyDtf.length && !legacyArt.length && !legacyReferences.length) return order;
+
+            const existingAssets = getOrderAssets(order.id);
+            const mergedAssets = {
+                artImages: existingAssets.artImages.length ? existingAssets.artImages : legacyArt,
+                dtfImages: existingAssets.dtfImages.length ? existingAssets.dtfImages : legacyDtf,
+                references: existingAssets.references.length ? existingAssets.references : legacyReferences
+            };
+            saveOrderAssets(order.id, mergedAssets);
+            touched = true;
+            return stripHeavyFieldsFromOrder(order);
+        });
+        return touched;
+    };
+
+    const fileToCompressedDataURL = (file, options = {}) => new Promise((resolve, reject) => {
+        const { maxWidth = 1280, quality = 0.72 } = options;
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error('Falha ao ler arquivo de imagem.'));
+        reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+                const ratio = img.width > maxWidth ? maxWidth / img.width : 1;
+                const width = Math.max(1, Math.round(img.width * ratio));
+                const height = Math.max(1, Math.round(img.height * ratio));
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    reject(new Error('Falha ao processar a imagem.'));
+                    return;
+                }
+                ctx.drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL('image/jpeg', quality));
+            };
+            img.onerror = () => reject(new Error('Arquivo de imagem inválido.'));
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
 
     let productionOrders = JSON.parse(localStorage.getItem('production_orders')) || [];
     const DONE_RETENTION_DAYS = 30;
@@ -260,11 +394,22 @@ const init = () => {
     };
 
     normalizeHistoryFlags();
-    localStorage.setItem('production_orders', JSON.stringify(productionOrders));
+    const hasMigratedLegacyAssets = migrateLegacyAssetsFromOrders();
+    safeSetStorage('production_orders', JSON.stringify(productionOrders));
+    if (hasMigratedLegacyAssets) {
+        console.info('Migração de assets antigos concluída.');
+    }
 
     const saveOrders = () => {
         normalizeHistoryFlags();
-        localStorage.setItem('production_orders', JSON.stringify(productionOrders));
+        const sanitizedOrders = productionOrders.map(stripHeavyFieldsFromOrder);
+        const ok = safeSetStorage('production_orders', JSON.stringify(sanitizedOrders));
+        if (ok) {
+            productionOrders = sanitizedOrders;
+            window.PsyzonApp.productionOrders = productionOrders;
+        } else {
+            showStorageWarning(`${STORAGE_FULL_MESSAGE}\n\nOs dados continuam na memória desta sessão, mas não foram persistidos.`);
+        }
         // Mantém o quadro sincronizado quando alterações acontecem em outras abas (Cortes/Artes/DTF)
         renderProcessBoard();
         applyDragScroll(); 
@@ -392,6 +537,7 @@ const init = () => {
 
         if (orderId) {
             const order = productionOrders.find(o => o.id === orderId);
+            const orderAssets = getOrderAssets(orderId);
             orderModalTitle.textContent = "Editar Pedido";
             orderDescriptionInput.value = order.description;
             orderClientSelect.value = order.clientId;
@@ -406,10 +552,8 @@ const init = () => {
             orderPrintTypeSelect.value = order.printType || 'dtf';
             renderColors(order.colors || []);
 
-            if (order.printing && Array.isArray(order.printing.images)) {
-                activeDtfImages = order.printing.images.slice();
-                renderOrderPrintingPreviews(activeDtfImages);
-            }
+            activeDtfImages = orderAssets.dtfImages.slice();
+            renderOrderPrintingPreviews(activeDtfImages);
             if (order.printing && typeof order.printing.total !== 'undefined') {
                 orderPrintQuantityInput.value = order.printing.total;
             }
@@ -419,7 +563,7 @@ const init = () => {
 
             if (order.isArtOnly) {
                 if (isArtOnlyCheckbox) isArtOnlyCheckbox.checked = true;
-                if (order.art && order.art.images) activeArtOnlyImages = order.art.images.slice();
+                activeArtOnlyImages = orderAssets.artImages.slice();
                 renderArtOnlyPreviews();
             }
 
@@ -469,15 +613,18 @@ const init = () => {
     // DTF Image Handlers (Order Modal)
     if (orderAddDtfImageBtn && orderDtfImageInput) {
         orderAddDtfImageBtn.addEventListener('click', () => orderDtfImageInput.click());
-        orderDtfImageInput.addEventListener('change', (e) => {
-            Array.from(e.target.files).forEach(file => {
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    activeDtfImages.push(ev.target.result);
-                    renderOrderPrintingPreviews(activeDtfImages);
-                };
-                reader.readAsDataURL(file);
-            });
+        orderDtfImageInput.addEventListener('change', async (e) => {
+            const files = Array.from(e.target.files || []);
+            for (const file of files) {
+                try {
+                    const compressed = await fileToCompressedDataURL(file);
+                    activeDtfImages.push(compressed);
+                } catch (error) {
+                    console.error('Falha ao processar imagem DTF', error);
+                    alert('Não foi possível processar uma das imagens DTF selecionadas.');
+                }
+            }
+            renderOrderPrintingPreviews(activeDtfImages);
             e.target.value = '';
         });
     }
@@ -529,7 +676,6 @@ const init = () => {
                 // shirtType removido conforme solicitado
                 colors: colors,
                 printing: {
-                    images: activeDtfImages.slice(),
                     total: parseInt(orderPrintQuantityInput?.value) || (checklist.printing && checklist.printing.total ? parseInt(checklist.printing.total) : 0),
                     notes: orderPrintingNotesInput ? (orderPrintingNotesInput.value || '').trim() : ''
                 },
@@ -544,16 +690,29 @@ const init = () => {
             };
             
             if (isArtOnly) {
-                orderData.art = {
-                    images: activeArtOnlyImages.slice()
+                orderData.art = {};
+            }
+
+            const persistAssetsForOrder = (orderId) => {
+                const existing = getOrderAssets(orderId);
+                const assetsOk = saveOrderAssets(orderId, {
+                    artImages: activeArtOnlyImages.slice(),
+                    dtfImages: activeDtfImages.slice(),
+                    references: existing.references
+                });
+                if (!assetsOk) {
+                    showStorageWarning(`${STORAGE_FULL_MESSAGE}\n\nAs imagens deste pedido podem não ter sido persistidas.`);
                 }
             };
+
             if (editingOrderId) {
                 const orderIndex = productionOrders.findIndex(o => o.id === editingOrderId);
                 productionOrders[orderIndex] = { ...productionOrders[orderIndex], ...orderData };
+                persistAssetsForOrder(editingOrderId);
             } else {
                 const newOrder = { id: Date.now(), status: 'todo', ...orderData };
                 productionOrders.push(newOrder);
+                persistAssetsForOrder(newOrder.id);
                 
                 // HOOK HIPOCAMPO: Pedido Criado
                 if (window.HipocampoIA) {
@@ -1221,6 +1380,7 @@ const init = () => {
             const client = clients.find(c => c.id === order.clientId);
             const artData = order.art || {};
             const artControl = order.artControl || { versions: [] };
+            const orderAssets = getOrderAssets(order.id);
             const lastVersion = artControl.versions.length > 0 ? artControl.versions[artControl.versions.length - 1] : null;
             
             let statusClass = 'bg-gray-700 text-gray-300';
@@ -1233,7 +1393,7 @@ const init = () => {
             }
 
             // Thumb logic
-            const thumbSrc = (lastVersion && lastVersion.images[0]) ? lastVersion.images[0] : (order.art?.images?.[0] || '');
+            const thumbSrc = (lastVersion && lastVersion.images[0]) ? lastVersion.images[0] : (orderAssets.artImages[0] || '');
             const deadlineDate = order.deadline ? new Date(order.deadline) : null;
             const deadlineLabel = deadlineDate && !Number.isNaN(deadlineDate.getTime())
                 ? deadlineDate.toLocaleDateString('pt-BR').slice(0, 5)
@@ -1421,12 +1581,11 @@ const init = () => {
         const file = e.target.files[0];
         if (!file) return;
 
-        const reader = new FileReader();
-        reader.onload = (ev) => {
+        fileToCompressedDataURL(file).then((compressedImage) => {
             const newVerNum = order.artControl.versions.length + 1;
             const newVersion = {
                 version: newVerNum,
-                images: [ev.target.result],
+                images: [compressedImage],
                 status: 'sent', // Já nasce como enviada/pronta
                 token: Math.random().toString(36).substring(2) + Date.now().toString(36),
                 createdAt: Date.now(),
@@ -1436,8 +1595,10 @@ const init = () => {
             saveOrders();
             renderArtVersionsList(order);
             renderArtTasks();
-        };
-        reader.readAsDataURL(file);
+        }).catch((error) => {
+            console.error('Falha ao processar versão da arte', error);
+            alert('Não foi possível processar a imagem da nova versão.');
+        });
     };
 
     // Remove listeners antigos de artImageInput e artReferencesContainer pois a UI mudou completamente
@@ -1513,7 +1674,8 @@ const init = () => {
         dtfOrders.forEach(order => {
             const client = clients.find(c => c.id === order.clientId);
             const deadline = order.deadline ? new Date(order.deadline + "T03:00:00").toLocaleDateString('pt-BR') : '';
-            const images = (order.printing && Array.isArray(order.printing.images) && order.printing.images.length) ? order.printing.images : ((order.art && order.art.images) || []);
+            const orderAssets = getOrderAssets(order.id);
+            const images = orderAssets.dtfImages.length ? orderAssets.dtfImages : orderAssets.artImages;
             const colors = order.colors || [];
             const printQty = (order.printing && order.printing.total) ? order.printing.total : (order.checklist && order.checklist.printing && order.checklist.printing.total) || '';
             const printNotes = (order.printing && order.printing.notes) ? order.printing.notes : '';
