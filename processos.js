@@ -536,9 +536,6 @@ const init = () => {
                 cutting: {
                     grid: cuttingPayload.grid,
                     personalization: cuttingPayload.personalization,
-                    finalNotes: (editingOrderId
-                        ? (productionOrders.find(o => o.id === editingOrderId)?.cutting?.finalNotes || '')
-                        : ''),
                     updatedAt: Date.now()
                 }
             };
