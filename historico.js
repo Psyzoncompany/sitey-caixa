@@ -206,8 +206,8 @@ const init = () => {
         <td class="p-3 align-top text-gray-400">${formatDate(tx.date)}</td>
         <td class="p-3 align-top">
           <div class="flex items-center gap-2">
-            <button class="text-gray-500 hover:text-cyan-400" title="Editar" data-edit="${tx.id}">✎</button>
-            <button class="text-gray-500 hover:text-red-400" title="Excluir" data-delete="${tx.id}">🗑</button>
+            <button class="text-gray-500 hover:text-cyan-400" title="Editar" aria-label="Editar" data-edit="${tx.id}">✎</button>
+            <button class="text-gray-500 hover:text-red-400" title="Excluir" aria-label="Excluir" data-delete="${tx.id}">🗑</button>
           </div>
         </td>
       `;
@@ -753,7 +753,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <td class="p-3 align-top">${scopeText}</td>
             <td class="p-3 align-top text-gray-400">${category}</td>
             <td class="p-3 align-top text-gray-400">${formatDate(date)}</td>
-            <td class="p-3 align-top"><div class="flex items-center gap-2"><button onclick="openEditModal(${id})" class="text-gray-500 hover:text-cyan-400" title="Editar"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg></button><button onclick="removeTransaction(${id})" class="text-gray-500 hover:text-red-400" title="Excluir"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg></button></div></td>
+            <td class="p-3 align-top"><div class="flex items-center gap-2"><button onclick="openEditModal(${id})" class="text-gray-500 hover:text-cyan-400" title="Editar" aria-label="Editar"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg></button><button onclick="removeTransaction(${id})" class="text-gray-500 hover:text-red-400" title="Excluir" aria-label="Excluir"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg></button></div></td>
         `;
         transactionListEl.appendChild(item);
     };

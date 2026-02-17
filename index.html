@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-br" class="scroll-smooth">
+<html lang="pt-br" class="app theme-dark scroll-smooth">
 <head>
   <!-- Script de Proteção de Login -->
 
@@ -17,9 +17,6 @@
   <title>PSYZON - Dashboard Financeiro</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link href="style.css" rel="stylesheet">
   <!-- Firebase Config (Carrega Auth e Sync) -->
   <script type="module" src="firebase-config.js"></script>
@@ -176,7 +173,7 @@
     }
   </style>
 </head>
-<body class="bg-gray-900 text-gray-200 neo-dashboard">
+<body data-page="index" class="bg-gray-900 text-gray-200 neo-dashboard app-body">
   <div id="bg" class="neo-bg" aria-hidden="true"></div>
   <div id="lens" class="neo-lens" aria-hidden="true"></div>
   <!-- Skeleton Inicial Imediato -->
@@ -208,9 +205,9 @@
     <span class="initial-skeleton-text">Conectando ao servidor…</span>
   </div>
 
-  <div class="flex flex-col min-h-screen">
+  <div class="app-shell flex flex-col min-h-screen">
     
-    <header class="hidden md:block desktop-topbar sticky top-0 z-40">
+    <header class="hidden md:block desktop-topbar topbar glass sticky top-0 z-40">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="desktop-topbar-inner flex items-center justify-between">
           <div class="flex items-center">
@@ -248,7 +245,7 @@
         </div>
     </div>
 
-    <main class="flex-1 p-4 md:p-6 lg:p-8 dashboard-main">
+    <main class="content flex-1 p-4 md:p-6 lg:p-8 dashboard-main">
       <div class="flex justify-between items-center mb-8 dashboard-hero">
           <h1 class="text-2xl md:text-3xl font-bold">DASHBOARD</h1>
           <button id="add-transaction-btn" class="btn-shine py-2 px-4 md:py-3 md:px-6 text-sm md:text-base font-bold rounded-lg shadow-lg hover:shadow-cyan-500/40 hover:-translate-y-1 transition-all duration-200 bg-gradient-to-br from-cyan-500 to-cyan-600 inline-flex items-center gap-2"><svg class="syt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14m-7-7h14"/></svg>Lançamento</button>
@@ -467,7 +464,7 @@
     <a href="versoes.html" class="version-footer-link">Versão 6.0.0</a>
   </footer>
 
-  <nav class="bottom-nav">
+  <nav class="bottom-nav tabbar glass" data-component="tabbar">
     <a href="index.html" class="bottom-nav-item active">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
       <span>Início</span>
@@ -558,5 +555,7 @@
       }, 100);
     })();
   </script>
+  <script src="ui-shell.js"></script>
+  <script src="ui-motion.js"></script>
 </body>
 </html>

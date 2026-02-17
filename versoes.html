@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-br" class="scroll-smooth">
+<html lang="pt-br" class="app theme-dark scroll-smooth">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -14,13 +14,11 @@
   <link rel="manifest" href="/manifest.webmanifest">
   <title>PSYZON - Versões</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link href="style.css" rel="stylesheet">
 </head>
-<body class="bg-gray-900 text-gray-200 neo-dashboard min-h-screen">
-  <main class="max-w-5xl mx-auto px-4 py-6 md:py-10">
+<body data-page="versoes" class="bg-gray-900 text-gray-200 neo-dashboard min-h-screen app-body">
+  <div class="app-shell">
+  <main class="content max-w-5xl mx-auto px-4 py-6 md:py-10">
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
       <div>
         <h1 class="text-2xl md:text-3xl font-bold">Notas de Atualização</h1>
@@ -47,7 +45,7 @@
 
 
 
-  <nav class="bottom-nav">
+  <nav class="bottom-nav tabbar glass" data-component="tabbar">
     <a href="index.html" class="bottom-nav-item">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
       <span>Início</span>
@@ -73,7 +71,10 @@
       <span>Menu</span>
     </button>
   </nav>
+  </div>
 
   <script src="theme-toggle.js"></script>
+  <script src="ui-shell.js"></script>
+  <script src="ui-motion.js"></script>
 </body>
 </html>
