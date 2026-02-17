@@ -622,6 +622,11 @@ const init = () => {
     if (orderForm) {
         orderForm.addEventListener('submit', (e) => {
             e.preventDefault();
+            const currentEditingOrder = editingOrderId
+                ? productionOrders.find(o => o.id === editingOrderId)
+                : null;
+            const currentEditingSubtasks = currentEditingOrder?.checklist?.cutting?.subtasks || [];
+
             const checklist = {};
             document.querySelectorAll('.checklist-item-status').forEach(item => {
                 const key = item.dataset.key;
@@ -633,7 +638,7 @@ const init = () => {
             cuttingSubtasksContainer.querySelectorAll('.cut-item-card').forEach(row => {
                 const totalInput = row.querySelector('.subtask-total');
                 if (totalInput && totalInput.value) {
-                    const existingSubtask = (editingOrderId && productionOrders.find(o => o.id === editingOrderId).checklist.cutting.subtasks.find(s => s.id == row.dataset.subtaskId));
+                    const existingSubtask = currentEditingSubtasks.find(s => s.id == row.dataset.subtaskId);
                     subtasks.push({
                         id: parseFloat(row.dataset.subtaskId) || Date.now() + Math.random(),
                         gender: row.querySelector('.subtask-gender').value,
