@@ -1,6 +1,8 @@
 (() => {
   const canUseHttp = window.location.protocol === 'http:' || window.location.protocol === 'https:';
-  const API_ENDPOINT = canUseHttp ? `${window.location.origin}/api/gemini` : null;
+  const API_ENDPOINTS = canUseHttp
+    ? [`${window.location.origin}/api/gemini`, `${window.location.origin}/api/chat`]
+    : [];
   const blockedPaths = new Set(['/login.html', '/Arte-Online.html', '/arteonline.html']);
   const modelFallbacks = ['gemini-2.0-flash-exp', 'gemini-1.5-flash', 'gemini-pro'];
 
@@ -50,6 +52,22 @@
       .trim();
   };
 
+  const getAnswerFromBackend = (endpoint, data) => {
+    if (endpoint.endsWith('/api/chat')) {
+      return typeof data?.reply === 'string' ? data.reply.trim() : '';
+    }
+    return getAnswerFromGemini(data);
+  };
+
+  const buildRequestBody = (endpoint, model, payload, text) => {
+    if (endpoint.endsWith('/api/chat')) {
+      return {
+        messages: [{ role: 'user', content: text }]
+      };
+    }
+    return { model, payload };
+  };
+
   const parseResponseSafe = async (res) => {
     const contentType = res.headers.get('content-type') || '';
     if (contentType.includes('application/json')) {
@@ -64,7 +82,7 @@
   };
 
   const askModel = async (text) => {
-    if (!API_ENDPOINT) throw new Error('A IA exige acesso por URL HTTP/HTTPS.');
+    if (!API_ENDPOINTS.length) throw new Error('A IA exige acesso por URL HTTP/HTTPS.');
 
     history.push({ role: 'user', parts: [{ text }] });
 
@@ -77,15 +95,16 @@
     let lastErr = 'Não foi possível responder agora.';
 
     for (const model of modelFallbacks) {
+      for (const endpoint of API_ENDPOINTS) {
       try {
-        const res = await fetch(API_ENDPOINT, {
+        const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model, payload })
+          body: JSON.stringify(buildRequestBody(endpoint, model, payload, text))
         });
 
         const data = await parseResponseSafe(res);
-        const answer = getAnswerFromGemini(data);
+        const answer = getAnswerFromBackend(endpoint, data);
 
         if (res.ok && answer) {
           history.push({ role: 'model', parts: [{ text: answer }] });
@@ -93,9 +112,14 @@
         }
 
         const serverError = data?.error?.message || data?.error || data?.details;
-        lastErr = typeof serverError === 'string' ? serverError : `Falha no modelo ${model}.`;
+        if (res.status === 404) {
+          lastErr = `Endpoint ${endpoint.replace(window.location.origin, '')} não encontrado (404).`;
+        } else {
+          lastErr = typeof serverError === 'string' ? serverError : `Falha no modelo ${model}.`;
+        }
       } catch (error) {
-        lastErr = error?.message || `Erro ao consultar o modelo ${model}.`;
+        lastErr = error?.message || `Erro ao consultar o endpoint ${endpoint}.`;
+      }
       }
     }
 
