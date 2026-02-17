@@ -3477,3 +3477,199 @@ button[title="Excluir"] {
 }
 
 .version-footer-link:hover { color: var(--text); }
+
+/* =============================
+   v6.0.0 Motion & Liquid Glass Pro
+   ============================= */
+:root {
+  --mx: .5;
+  --my: .5;
+  --scroll: 0;
+  --motion-fast: 220ms cubic-bezier(.22,.61,.36,1);
+  --motion-smooth: 260ms cubic-bezier(.2,.8,.2,1);
+}
+
+.glass,
+.glass-card {
+  position: relative;
+  overflow: hidden;
+  transform: translate3d(calc((var(--mx) - .5) * 2px), calc((var(--scroll) - .5) * 2px), 0);
+  transition: transform var(--motion-smooth), box-shadow var(--motion-smooth), border-color var(--motion-fast), background-color var(--motion-fast);
+}
+
+.glass::after,
+.glass-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(160deg, rgba(255,255,255,.18), rgba(255,255,255,0) 38%),
+    radial-gradient(120% 70% at calc(var(--mx) * 100%) calc(var(--my) * 100%), rgba(255,255,255,.14), rgba(255,255,255,0) 55%);
+  opacity: .52;
+}
+
+.glass {
+  border-image: linear-gradient(180deg, rgba(255,255,255,.28), rgba(255,255,255,.08)) 1;
+}
+
+.glass--strong {
+  background: linear-gradient(180deg, rgba(32,40,56,.82), rgba(23,29,41,.72));
+  border: 1px solid rgba(255,255,255,.16);
+  box-shadow: 0 10px 28px rgba(2,8,23,.34);
+}
+
+.glass--thin {
+  backdrop-filter: blur(10px) saturate(130%);
+  -webkit-backdrop-filter: blur(10px) saturate(130%);
+  background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.06));
+  border: 1px solid rgba(255,255,255,.14);
+  box-shadow: 0 6px 16px rgba(2,8,23,.2);
+}
+
+@supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
+  .glass,
+  .glass-card,
+  .glass--strong,
+  .glass--thin,
+  .desktop-topbar,
+  .bottom-nav,
+  #mobile-menu,
+  .version-footer-link {
+    background: rgba(24, 31, 44, 0.92) !important;
+    border-color: rgba(255, 255, 255, 0.14) !important;
+  }
+}
+
+.bottom-nav {
+  position: fixed;
+  isolation: isolate;
+}
+
+.bottom-nav-indicator {
+  position: absolute;
+  left: 0;
+  bottom: calc(env(safe-area-inset-bottom) + 6px);
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255,255,255,.86), color-mix(in srgb, var(--accent) 60%, #fff 40%));
+  box-shadow: 0 0 0 1px rgba(255,255,255,.16), 0 3px 9px rgba(79,140,255,.34);
+  transition: transform var(--motion-fast), width var(--motion-fast), opacity var(--motion-fast);
+  z-index: 2;
+}
+
+.bottom-nav-item,
+.btn,
+.btn-shine,
+.glass-card,
+button,
+a {
+  transition: transform var(--motion-fast), box-shadow var(--motion-smooth), background-color var(--motion-fast), color var(--motion-fast), border-color var(--motion-fast);
+}
+
+.bottom-nav-item:active,
+.bottom-nav-item.is-pressed,
+.btn:active,
+.btn.is-pressed,
+.btn-shine:active,
+.btn-shine.is-pressed,
+button:active,
+button.is-pressed,
+.glass-card:active,
+.glass-card.is-pressed {
+  transform: scale(.98);
+}
+
+@media (hover: hover) {
+  .glass-card:hover {
+    transform: translate3d(0, -3px, 0);
+    box-shadow: 0 14px 28px rgba(2,8,23,.34);
+  }
+}
+
+#modal,
+#client-modal,
+#order-modal,
+#cutting-modal,
+#art-modal {
+  transition: background-color var(--motion-smooth), opacity var(--motion-smooth);
+}
+
+#modal:not(.hidden),
+#client-modal:not(.hidden),
+#order-modal:not(.hidden),
+#cutting-modal:not(.hidden),
+#art-modal:not(.hidden) {
+  background: rgba(2, 8, 23, .42);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
+#modal:not(.hidden) .glass-card,
+#client-modal:not(.hidden) .glass-card,
+#order-modal:not(.hidden) .glass-card,
+#cutting-modal:not(.hidden) .glass-card,
+#art-modal:not(.hidden) .glass-card {
+  animation: modalAppleIn var(--motion-smooth) both;
+}
+
+@keyframes modalAppleIn {
+  from { opacity: 0; transform: translate3d(0, 10px, 0) scale(.985); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 52%, #fff 12%) !important;
+  outline-offset: 2px;
+}
+
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--muted) 55%, transparent);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.reduced-motion .glass,
+.reduced-motion .glass-card,
+.reduced-motion .bottom-nav-item,
+.reduced-motion .btn,
+.reduced-motion .btn-shine,
+.reduced-motion button,
+.reduced-motion a,
+.reduced-motion #modal,
+.reduced-motion #client-modal,
+.reduced-motion #order-modal,
+.reduced-motion #cutting-modal,
+.reduced-motion #art-modal {
+  animation: none !important;
+  transition-duration: 0.01ms !important;
+  transform: none !important;
+}
+.reduced-motion .bottom-nav-indicator { display: none !important; }
+
+@media (prefers-reduced-motion: reduce) {
+  .glass,
+  .glass-card,
+  .bottom-nav-item,
+  .btn,
+  .btn-shine,
+  button,
+  a,
+  #modal,
+  #client-modal,
+  #order-modal,
+  #cutting-modal,
+  #art-modal {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+    transform: none !important;
+  }
+  .bottom-nav-indicator { display: none !important; }
+}
