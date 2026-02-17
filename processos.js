@@ -30,24 +30,11 @@ const init = () => {
     const orderIsPaidCheckbox = document.getElementById('order-is-paid');
     const cuttingDetailsSection = document.getElementById('cutting-details-section');
     const cuttingSubtasksContainer = document.getElementById('cutting-subtasks-container');
-    const addCuttingItemBtn = document.getElementById('add-cutting-item-btn');
-    // Novos elementos de corte/personalização
-    const cuttingTotalBadge = document.getElementById('cutting-total-badge');
-    const cuttingValidationMsg = document.getElementById('cutting-validation-msg');
-    const hasPersonalizationCheckbox = document.getElementById('has-personalization');
-    const personalizationContainer = document.getElementById('personalization-container');
-    const personalizationNamesInput = document.getElementById('personalization-names');
-    const namesCounter = document.getElementById('names-counter');
-    const copyNamesBtn = document.getElementById('copy-names-btn');
+    // Controle de cortes 2.0 (UI renderizada pelo módulo cutting-system.js)
 
     const tasksContainer = document.getElementById('tasks-container');
     const cuttingTasksContainer = document.getElementById('cutting-tasks-container');
     const ordersHistoryContainer = document.getElementById('orders-history-container');
-    const cuttingModal = document.getElementById('cutting-modal');
-    const cuttingModalTitle = document.getElementById('cutting-modal-title');
-    const closeCuttingModalBtn = document.getElementById('close-cutting-modal-btn');
-    const cuttingChecklistContainer = document.getElementById('cutting-checklist-container');
-    const saveCutsBtn = document.getElementById('save-cuts-btn');
     const orderPrintTypeSelect = document.getElementById('order-print-type');
     const orderColorsContainer = document.getElementById('order-colors-container');
     const addColorBtn = document.getElementById('add-color-btn');
@@ -187,7 +174,6 @@ const init = () => {
     const DONE_RETENTION_MS = DONE_RETENTION_DAYS * 24 * 60 * 60 * 1000;
     let clients = JSON.parse(localStorage.getItem('clients')) || [];
     let editingOrderId = null;
-    let activeCuttingOrderId = null;
     let activeArtOrderId = null;
 
     // --- EXPOR API PARA CEREBRO_IA.JS ---
@@ -283,6 +269,18 @@ const init = () => {
         renderProcessBoard();
         applyDragScroll(); 
     };
+    if (window.CuttingSystem) {
+        window.CuttingSystem.init({
+            getOrders: () => productionOrders,
+            setOrders: (nextOrders) => {
+                productionOrders = nextOrders;
+                window.PsyzonApp.productionOrders = productionOrders;
+            },
+            saveOrders: () => saveOrders()
+        });
+        productionOrders = window.PsyzonApp.productionOrders;
+    }
+
     const formatCurrency = (amount) => amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
     const validTabs = new Set(['quadro', 'afazeres', 'artes', 'cortes', 'dtf', 'historico-pedidos']);
@@ -291,18 +289,22 @@ const init = () => {
     const renderProcessBoard = () => {
         switch (currentTab) {
             case 'afazeres':
+                if (!tasksContainer) break;
                 renderTasks();
                 break;
             case 'artes':
+                if (!artTasksContainer) break;
                 renderArtTasks();
                 break;
             case 'cortes':
-                renderCuttingTasks();
+                if (window.CuttingSystem) window.CuttingSystem.renderCuttingTab(cuttingTasksContainer);
                 break;
             case 'dtf':
+                if (!document.getElementById('dtf-tasks-container')) break;
                 renderDTFTasks();
                 break;
             case 'historico-pedidos':
+                if (!ordersHistoryContainer) break;
                 renderOrdersHistory();
                 break;
             case 'quadro':
@@ -337,6 +339,7 @@ const init = () => {
     });
 
     const populateClientSelect = () => {
+        if (!orderClientSelect) return;
         clients = JSON.parse(localStorage.getItem('clients')) || [];
         orderClientSelect.innerHTML = '<option value="">Selecione um cliente</option>';
         if (orderClientSearchInput) orderClientSearchInput.value = '';
@@ -359,6 +362,7 @@ const init = () => {
     }
 
     const renderChecklist = (checklistData = {}) => {
+        if (!orderChecklistContainer) return;
         orderChecklistContainer.innerHTML = '';
         for (const key in checklistItems) {
             const task = checklistData[key] || { completed: false, deadline: '' };
@@ -369,22 +373,20 @@ const init = () => {
     };
 
     const openModal = (orderId = null) => {
+        if (!orderModal || !orderForm || !orderDescriptionInput || !orderDeadlineInput) return;
         editingOrderId = orderId;
         populateClientSelect();
         orderForm.reset();
-        cuttingSubtasksContainer.innerHTML = '';
         cuttingDetailsSection.classList.remove('hidden');
+        if (cuttingSubtasksContainer) cuttingSubtasksContainer.innerHTML = '';
+
         // reset DTF temp
         activeDtfImages = [];
         if (orderPrintingImagesContainer) orderPrintingImagesContainer.innerHTML = '';
         if (orderPrintQuantityInput) orderPrintQuantityInput.value = '';
+
         // reset Art Only temp
         activeArtOnlyImages = [];
-        // reset Personalization
-        if (hasPersonalizationCheckbox) hasPersonalizationCheckbox.checked = false;
-        if (personalizationContainer) personalizationContainer.classList.add('hidden');
-        if (personalizationNamesInput) personalizationNamesInput.value = '';
-
         if (artOnlyImagesPreview) artOnlyImagesPreview.innerHTML = '';
         if (isArtOnlyCheckbox) isArtOnlyCheckbox.checked = false;
 
@@ -401,23 +403,9 @@ const init = () => {
             orderIsPaidCheckbox.checked = order.isPaid || false;
             renderChecklist(order.checklist);
 
-            const cuttingTask = order.checklist && order.checklist.cutting;
-            if (cuttingTask) {
-                if (cuttingTask.subtasks) cuttingTask.subtasks.forEach(sub => renderCuttingSubtask(sub));
-                // Carregar Personalização
-                if (cuttingTask.personalization) {
-                    if (hasPersonalizationCheckbox) {
-                        hasPersonalizationCheckbox.checked = cuttingTask.personalization.hasNames;
-                        if (cuttingTask.personalization.hasNames) personalizationContainer.classList.remove('hidden');
-                    }
-                    if (personalizationNamesInput) personalizationNamesInput.value = cuttingTask.personalization.names || '';
-                }
-            }
-            updateCuttingTotals(); // Atualiza validação inicial
-
             orderPrintTypeSelect.value = order.printType || 'dtf';
             renderColors(order.colors || []);
-            // load printing data if present
+
             if (order.printing && Array.isArray(order.printing.images)) {
                 activeDtfImages = order.printing.images.slice();
                 renderOrderPrintingPreviews(activeDtfImages);
@@ -428,14 +416,16 @@ const init = () => {
             if (order.printing && typeof order.printing.notes !== 'undefined' && orderPrintingNotesInput) {
                 orderPrintingNotesInput.value = order.printing.notes;
             }
-            // Art Only check
+
             if (order.isArtOnly) {
                 if (isArtOnlyCheckbox) isArtOnlyCheckbox.checked = true;
                 if (order.art && order.art.images) activeArtOnlyImages = order.art.images.slice();
                 renderArtOnlyPreviews();
             }
 
-            // ensure DTF block visibility
+            if (window.CuttingSystem && cuttingSubtasksContainer) {
+                window.CuttingSystem.renderOrderEditor(cuttingSubtasksContainer, order);
+            }
             togglePrintingBlock();
         } else {
             if (orderClientContactInput) orderClientContactInput.value = '';
@@ -448,11 +438,14 @@ const init = () => {
             if (orderPrintingImagesContainer) orderPrintingImagesContainer.innerHTML = '';
             if (orderPrintQuantityInput) orderPrintQuantityInput.value = '';
             if (orderPrintingNotesInput) orderPrintingNotesInput.value = '';
+            if (window.CuttingSystem && cuttingSubtasksContainer) {
+                window.CuttingSystem.renderOrderEditor(cuttingSubtasksContainer, { cutting: { grid: [], personalization: { enabled: false, names: [] } } });
+            }
             togglePrintingBlock();
         }
-        toggleArtOnlyMode(); // Apply visibility based on checkbox state
+
+        toggleArtOnlyMode();
         orderModal.classList.remove('hidden');
-        // Adicione aqui:
         const cancelBtn = document.getElementById('cancel-order-btn');
         if (cancelBtn) {
             cancelBtn.onclick = function (e) {
@@ -467,174 +460,10 @@ const init = () => {
         editingOrderId = null;
     };
 
-    const extractCuttingSubtasksFromUI = (cuttingSubtasksContainer, editingOrderId, productionOrders) => {
-        const cards = Array.from(cuttingSubtasksContainer?.querySelectorAll('.cut-item-card') || []);
-        const editingOrder = editingOrderId ? productionOrders.find(o => o.id === editingOrderId) : null;
-        const existingSubtasks = Array.isArray(editingOrder?.checklist?.cutting?.subtasks)
-            ? editingOrder.checklist.cutting.subtasks
-            : [];
-
-        return cards.map((card, index) => {
-            const genderInput = card.querySelector('.subtask-gender');
-            const variationInput = card.querySelector('.subtask-variation');
-            const sizeInput = card.querySelector('.subtask-size');
-            const totalInput = card.querySelector('.subtask-total');
-            const notesInput = card.querySelector('.subtask-notes');
-
-            if (!totalInput || !genderInput || !variationInput || !sizeInput) {
-                return null;
-            }
-
-            const rawTotal = String(totalInput.value ?? '').replace(/\D/g, '');
-            const sanitizedTotal = Number(rawTotal);
-            const total = Number.isFinite(sanitizedTotal)
-                ? Math.max(0, Math.floor(sanitizedTotal))
-                : 0;
-
-            const parsedId = Number(card.dataset.subtaskId);
-            const id = Number.isFinite(parsedId) ? parsedId : (Date.now() + index + Math.random());
-            const existingSubtask = existingSubtasks.find(s => Number(s?.id) === id);
-
-            return {
-                id,
-                gender: (genderInput.value || 'Masculina').trim(),
-                variation: (variationInput.value || 'Normal').trim(),
-                size: (sizeInput.value || 'Único').trim(),
-                total,
-                cut: Math.max(0, parseInt(existingSubtask?.cut ?? 0, 10) || 0),
-                notes: (notesInput?.value || '').trim()
-            };
-        }).filter(subtask => subtask && subtask.total > 0);
-    };
-
-    // --- NOVA LÓGICA DE CORTES (MINI-CARDS) ---
-    const renderCuttingSubtask = (subtask = {}) => {
-        const subtaskId = subtask.id || Date.now() + Math.random();
-        const item = document.createElement('div');
-        item.className = 'cut-item-card';
-        item.dataset.subtaskId = subtaskId;
-
-        const genders = ['Feminina', 'Masculina', 'Infantil'];
-        const variations = ['Normal', 'Babylook', 'Oversized', 'Regata', 'Manga Longa'];
-        
-        // Compatibilidade com dados antigos
-        const currentGender = subtask.gender || (genders.includes(subtask.type) ? subtask.type : 'Masculina');
-        const currentVariation = subtask.variation || subtask.style || 'Normal';
-        
-        const isInfantil = currentGender === 'Infantil';
-        const currentSizeList = isInfantil ? sizeOptions.infantil : sizeOptions.adulto;
-
-        item.innerHTML = `
-            <div class="cut-header grid grid-cols-3 gap-2">
-                <select class="subtask-gender cut-select">${genders.map(g => `<option ${currentGender === g ? 'selected' : ''}>${g}</option>`).join('')}</select>
-                <select class="subtask-size cut-select">${currentSizeList.map(s => `<option ${subtask.size === s ? 'selected' : ''}>${s}</option>`).join('')}</select>
-                <select class="subtask-variation cut-select">${variations.map(v => `<option ${currentVariation === v ? 'selected' : ''}>${v}</option>`).join('')}</select>
-            </div>
-            <div class="flex items-center justify-between mt-2">
-                <div class="qty-control">
-                    <button type="button" class="qty-btn minus">-</button>
-                    <input type="number" class="subtask-total qty-input" value="${subtask.total || 0}" min="0" step="1">
-                    <button type="button" class="qty-btn plus">+</button>
-                </div>
-                <div class="cut-actions flex gap-3 text-xs">
-                    <button type="button" class="dup-btn text-cyan-400">Duplicar</button>
-                    <button type="button" class="del-btn text-red-400">Excluir</button>
-                </div>
-            </div>
-            <input type="text" class="subtask-notes w-full mt-2 bg-transparent border-b border-white/10 text-xs text-gray-400 focus:border-cyan-500 outline-none" placeholder="Observação (ex: Gola Polo)" value="${subtask.notes || ''}">
-        `;
-
-        // Event Listeners do Card
-        const qtyInput = item.querySelector('.subtask-total');
-        item.querySelector('.plus').onclick = () => { qtyInput.value = parseInt(qtyInput.value||0) + 1; updateCuttingTotals(); };
-        item.querySelector('.minus').onclick = () => { qtyInput.value = Math.max(0, parseInt(qtyInput.value||0) - 1); updateCuttingTotals(); };
-        qtyInput.oninput = updateCuttingTotals;
-        
-        item.querySelector('.del-btn').onclick = () => {
-            if(confirm('Excluir este item de corte?')) { item.remove(); updateCuttingTotals(); }
-        };
-
-        item.querySelector('.dup-btn').onclick = () => {
-            const cloneData = {
-                gender: item.querySelector('.subtask-gender').value,
-                size: item.querySelector('.subtask-size').value,
-                variation: item.querySelector('.subtask-variation').value,
-                total: parseInt(qtyInput.value),
-                notes: item.querySelector('.subtask-notes').value
-            };
-            renderCuttingSubtask(cloneData);
-            updateCuttingTotals();
-        };
-
-        // Atualiza tamanhos ao mudar gênero
-        item.querySelector('.subtask-gender').onchange = (e) => {
-            const sel = e.target.value;
-            const sizeSel = item.querySelector('.subtask-size');
-            const list = sel === 'Infantil' ? sizeOptions.infantil : sizeOptions.adulto;
-            const currentSize = sizeSel.value;
-            sizeSel.innerHTML = list.map(s => `<option ${currentSize === s ? 'selected' : ''}>${s}</option>`).join('');
-            updateCuttingTotals();
-        };
-        item.querySelector('.subtask-size').addEventListener('change', updateCuttingTotals);
-        item.querySelector('.subtask-total').addEventListener('change', updateCuttingTotals);
-
-        cuttingSubtasksContainer.appendChild(item);
-        updateCuttingTotals();
-    };
-
-    // Validação e Totais
-    const updateCuttingTotals = () => {
-        let totalCuts = 0;
-        document.querySelectorAll('.subtask-total').forEach(inp => totalCuts += parseInt(inp.value || 0));
-        
-        if (cuttingTotalBadge) cuttingTotalBadge.textContent = `Total: ${totalCuts}`;
-        
-        // Validação com Total do Pedido (se houver campo de qtd total de impressão ou se for calculado)
-        // Como o sistema original não tinha um campo "Total do Pedido" explícito além do printing.total, vamos usar esse ou criar um alerta visual apenas.
-        // O prompt pede validação. Vamos assumir que o usuário deve preencher o total em algum lugar ou que a soma É o total.
-        // Se houver nomes, validamos nomes vs totalCuts.
-        
-        if (personalizationNamesInput) {
-            const names = personalizationNamesInput.value.split('\n').filter(l => l.trim() !== '');
-            const namesCount = names.length;
-            if (namesCounter) {
-                namesCounter.textContent = `${namesCount} nomes / ${totalCuts} peças`;
-                namesCounter.className = namesCount === totalCuts ? 'text-green-400 font-bold' : 'text-red-400 font-bold';
-            }
-        }
-    };
-
-    // Listeners antigos removidos ou adaptados
-    cuttingSubtasksContainer.addEventListener('change', (e) => {
-        // atualiza lista de tamanhos quando trocar gênero (Feminina/Masculina/Infantil)
-        if (e.target.classList.contains('subtask-gender')) {
-            const selectedType = e.target.value;
-            const sizeSelect = e.target.closest('.grid').querySelector('.subtask-size');
-            const newSizeList = selectedType === 'Infantil' ? sizeOptions.infantil : sizeOptions.adulto;
-            sizeSelect.innerHTML = newSizeList.map(s => `<option>${s}</option>`).join('');
-        }
-    });
-
-    addCuttingItemBtn.addEventListener('click', () => renderCuttingSubtask());
-
-    // Personalização Listeners
-    if (hasPersonalizationCheckbox) {
-        hasPersonalizationCheckbox.addEventListener('change', () => {
-            personalizationContainer.classList.toggle('hidden', !hasPersonalizationCheckbox.checked);
-        });
-    }
-    if (personalizationNamesInput) {
-        personalizationNamesInput.addEventListener('input', updateCuttingTotals);
-    }
-    if (copyNamesBtn) {
-        copyNamesBtn.addEventListener('click', () => {
-            if (personalizationNamesInput) {
-                copyTextSafe(personalizationNamesInput.value).then((ok) => alert(ok ? 'Lista copiada!' : 'Não foi possível copiar a lista.'));
-            }
-        });
-    }
+    // --- Controle de cortes agora é gerenciado por cutting-system.js ---
 
     // --- FIX: Listeners que estavam faltando ---
+
     if (addOrderBtn) addOrderBtn.addEventListener('click', () => openModal());
 
     // DTF Image Handlers (Order Modal)
@@ -659,7 +488,7 @@ const init = () => {
         });
     }
 
-    if (orderForm) {
+    if (orderForm && orderClientSelect && orderDescriptionInput && orderDeadlineInput) {
         orderForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const checklist = {};
@@ -669,23 +498,12 @@ const init = () => {
                 checklist[key] = { completed: item.checked, deadline: deadlineInput.value || null };
             });
 
-            const subtasks = extractCuttingSubtasksFromUI(cuttingSubtasksContainer, editingOrderId, productionOrders);
-            const uiCardsCount = cuttingSubtasksContainer.querySelectorAll('.cut-item-card').length;
-            if (subtasks.length === 0 && uiCardsCount > 0) {
-                console.warn('[processos] Salvamento de pedido sem subtasks válidas, apesar de itens de corte na UI.', {
-                    editingOrderId,
-                    uiCardsCount
-                });
-            }
+            const cuttingPayload = window.CuttingSystem
+                ? window.CuttingSystem.getEditorData()
+                : { grid: [], personalization: { enabled: false, names: [] } };
 
             checklist.cutting = checklist.cutting || {};
             checklist.cutting.completed = isArtOnlyCheckbox?.checked ? true : false;
-            checklist.cutting.subtasks = subtasks;
-            // Salvar Personalização
-            checklist.cutting.personalization = {
-                hasNames: hasPersonalizationCheckbox ? hasPersonalizationCheckbox.checked : false,
-                names: personalizationNamesInput ? personalizationNamesInput.value : ''
-            };
 
             // coleta cores dos inputs reais (hex text inputs ou compatíveis)
             const colors = orderColorsContainer
@@ -714,6 +532,11 @@ const init = () => {
                     images: activeDtfImages.slice(),
                     total: parseInt(orderPrintQuantityInput?.value) || (checklist.printing && checklist.printing.total ? parseInt(checklist.printing.total) : 0),
                     notes: orderPrintingNotesInput ? (orderPrintingNotesInput.value || '').trim() : ''
+                },
+                cutting: {
+                    grid: cuttingPayload.grid,
+                    personalization: cuttingPayload.personalization,
+                    updatedAt: Date.now()
                 }
             };
             
@@ -733,7 +556,7 @@ const init = () => {
                 if (window.HipocampoIA) {
                     window.HipocampoIA.recordEvent('order_created', {
                         totalValue: newOrder.totalValue,
-                        totalItems: (newOrder.checklist.cutting?.subtasks || []).reduce((a,b)=>a+b.total,0) || newOrder.printing?.total || 1,
+                        totalItems: (newOrder.cutting?.grid || []).reduce((a,b)=>a+b.total,0) || newOrder.printing?.total || 1,
                         printType: newOrder.printType
                     }, { orderId: newOrder.id, customerId: newOrder.clientId });
                 }
@@ -1357,220 +1180,6 @@ const init = () => {
     }
 
 
-    const normalizeCuttingSubtasks = (order) => {
-        const rawSubtasks = order?.checklist?.cutting?.subtasks;
-        const normalized = Array.isArray(rawSubtasks)
-            ? rawSubtasks.map((subtask, index) => {
-                const total = parseInt(subtask?.total ?? subtask?.qty ?? subtask?.quantity ?? subtask?.qtd ?? 0, 10) || 0;
-                const cut = parseInt(subtask?.cut ?? subtask?.cortado ?? 0, 10) || 0;
-                const id = parseFloat(subtask?.id) || (Date.now() + index + Math.random());
-                return {
-                    id,
-                    gender: subtask?.gender || subtask?.type || 'Masculina',
-                    variation: subtask?.variation || subtask?.style || 'Normal',
-                    size: subtask?.size || subtask?.tamanho || 'Único',
-                    total,
-                    cut: Math.min(cut, total),
-                    notes: subtask?.notes || ''
-                };
-            }).filter(item => item.total > 0)
-            : [];
-
-        if (normalized.length > 0) {
-            return normalized;
-        }
-
-        const fallbackTotal = parseInt(order?.printing?.total ?? 0, 10) || 0;
-        if (fallbackTotal > 0) {
-            return [{
-                id: Date.now() + Math.random(),
-                gender: 'Masculina',
-                variation: 'Normal',
-                size: 'Único',
-                total: fallbackTotal,
-                cut: 0,
-                notes: 'Gerado automaticamente pela quantidade do pedido'
-            }];
-        }
-
-        return [];
-    };
-
-    const renderCuttingTasks = () => {
-        cuttingTasksContainer.innerHTML = '';
-        // Show orders even if subtasks are not defined yet, so user can open checklist and add them
-        const pendingCutOrders = productionOrders.filter(order => 
-            !order.isArtOnly && 
-            order.checklist && 
-            order.checklist.cutting && 
-            !order.checklist.cutting.completed
-        );
-        if (pendingCutOrders.length === 0) {
-            cuttingTasksContainer.innerHTML = '<div class="glass-card p-6 text-center text-gray-400">Nenhuma tarefa de corte pendente. ✨</div>';
-            return;
-        }
-        pendingCutOrders.forEach(order => {
-            const client = clients.find(c => c.id === order.clientId);
-            const subtasks = normalizeCuttingSubtasks(order);
-            const totalToCut = subtasks.reduce((acc, sub) => acc + sub.total, 0);
-            const totalCut = subtasks.reduce((acc, sub) => acc + sub.cut, 0);
-
-            // render colors
-            const colors = order.colors || [];
-            const colorsHtml = colors.map(c => {
-                // try to use as background if looks like hex, otherwise show label
-                const safeBg = /^#([0-9A-F]{3}){1,2}$/i.test(c.trim()) ? `background:${c}` : '';
-                return `<div class="flex items-center gap-2"><div class="w-6 h-6 rounded-sm border" style="${safeBg}"></div><span class="text-xs text-gray-300">${c}</span></div>`;
-            }).join('');
-
-            const card = document.createElement('div');
-            card.className = 'glass-card p-4 flex flex-col gap-3';
-            card.innerHTML = `
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="font-bold">${order.description}</p>
-                        <p class="text-sm text-cyan-300">${client ? client.name : 'Cliente'}</p>
-                        <p class="text-xs text-gray-400">Prazo: ${order.deadline ? new Date(order.deadline + "T03:00:00").toLocaleDateString('pt-BR') : ''}</p>
-                    </div>
-                    <div class="text-right">
-                        <p class="font-semibold">${totalCut} / ${totalToCut}</p>
-                        <p class="text-xs text-gray-400">Peças Cortadas</p>
-                    </div>
-                </div>
-                <div class="flex flex-wrap gap-3 items-center">
-                    ${colorsHtml || '<span class="text-xs text-gray-500">Sem cores definidas</span>'}
-                </div>
-                <div class="flex justify-end">
-                    <button data-order-id="${order.id}" class="open-checklist-btn btn-shine py-2 px-4 rounded-lg text-sm">Abrir Checklist</button>
-                </div>
-            `;
-            cuttingTasksContainer.appendChild(card);
-        });
-    };
-
-    if (cuttingTasksContainer) {
-        cuttingTasksContainer.addEventListener('click', (e) => {
-            if (e.target.classList.contains('open-checklist-btn')) {
-                openCuttingModal(parseInt(e.target.dataset.orderId));
-            }
-        });
-    }
-
-    const openCuttingModal = (orderId) => {
-        activeCuttingOrderId = orderId;
-        const order = productionOrders.find(o => o.id === orderId);
-        const client = clients.find(c => c.id === order.clientId);
-        cuttingModalTitle.textContent = `Pedido: ${order.description} (${client.name})`;
-
-        // remove existing details display (avoid duplicates)
-        const existingDetails = document.getElementById('cutting-details-display');
-        if (existingDetails) existingDetails.remove();
-
-        // build details card with colors and insert above checklist (tipo de camisa removido)
-        const colors = order.colors || [];
-        const colorsHtml = colors.map(c => {
-            const safeBg = /^#([0-9A-F]{3}){1,2}$/i.test((c || '').trim()) ? `background:${c}` : '';
-            return `<div class="flex items-center gap-2"><div class="w-6 h-6 rounded-sm border" style="${safeBg}"></div><span class="text-xs text-gray-300">${c}</span></div>`;
-        }).join('');
-        const detailsHtml = `
-            <div id="cutting-details-display" class="glass-card p-4 mb-4">
-                <div>
-                    <p class="text-sm text-gray-300">Cores</p>
-                    <div class="flex gap-3 mt-2 flex-wrap">
-                        ${colorsHtml || '<span class="text-xs text-gray-500">Sem cores</span>'}
-                    </div>
-                </div>
-            </div>
-        `;
-        if (cuttingChecklistContainer && cuttingChecklistContainer.parentElement) {
-            cuttingChecklistContainer.insertAdjacentHTML('beforebegin', detailsHtml);
-        }
-
-        const normalizedSubtasks = normalizeCuttingSubtasks(order);
-        const currentSubtasks = Array.isArray(order?.checklist?.cutting?.subtasks) ? order.checklist.cutting.subtasks : [];
-        const shouldMigrateSubtasks = currentSubtasks.length === 0 && normalizedSubtasks.length > 0;
-        if (!Array.isArray(order.checklist.cutting.subtasks) || order.checklist.cutting.subtasks.length !== normalizedSubtasks.length || shouldMigrateSubtasks) {
-            order.checklist.cutting.subtasks = normalizedSubtasks;
-            if (normalizedSubtasks.length > 0 && order.checklist.cutting.completed) {
-                order.checklist.cutting.completed = false;
-            }
-            saveOrders();
-        }
-
-        const printingTotal = parseInt(order?.printing?.total ?? 0, 10) || 0;
-        if (normalizedSubtasks.length === 0 && printingTotal <= 0) {
-            console.warn('[processos] Controle de cortes aberto sem subtasks e sem printing.total.', {
-                orderId,
-                description: order?.description || ''
-            });
-        }
-
-        renderCuttingChecklist(normalizedSubtasks);
-        cuttingModal.classList.remove('hidden');
-        const closeBtn = document.getElementById('close-cutting-modal-btn');
-        if (closeBtn) {
-            closeBtn.onclick = function (e) {
-                e.preventDefault();
-                closeCuttingModal();
-            };
-        }
-    };
-
-    const renderCuttingChecklist = (subtasks) => {
-        cuttingChecklistContainer.innerHTML = '';
-        if (!Array.isArray(subtasks) || subtasks.length === 0) {
-            cuttingChecklistContainer.innerHTML = '<div class="glass-card p-4 text-sm text-gray-300">Nenhum tamanho/quantidade encontrado para corte neste pedido. Edite o pedido e adicione os itens de corte.</div>';
-            return;
-        }
-
-        subtasks.forEach(subtask => {
-            const isCompleted = subtask.cut >= subtask.total;
-            const label = `${subtask.gender || subtask.type || ''} ${subtask.variation || subtask.style || ''} • Tam. ${subtask.size} ${subtask.notes ? '('+subtask.notes+')' : ''}`;
-            const item = document.createElement('div');
-            item.className = `p-3 rounded-md flex justify-between items-center bg-white/5 ${isCompleted ? 'border-l-4 border-green-500' : ''}`;
-            item.innerHTML = `<div class="font-semibold">${label}</div><div class="flex items-center gap-4"><input type="number" value="${subtask.cut}" min="0" max="${subtask.total}" class="cut-quantity-input w-20 p-2 text-center rounded-md bg-white/10" data-subtask-id="${subtask.id}"><span class="text-gray-400">${subtask.cut} / ${subtask.total}</span></div>`;
-            cuttingChecklistContainer.appendChild(item);
-        });
-    };
-
-    const saveCuts = () => {
-        const order = productionOrders.find(o => o.id === activeCuttingOrderId);
-        if (!order) return;
-        let allSubtasksCompleted = true;
-        const cutInputs = document.querySelectorAll('.cut-quantity-input');
-        if (cutInputs.length === 0) {
-            alert('Este pedido ainda não possui tamanhos/quantidades de corte cadastrados.');
-            return;
-        }
-
-        cutInputs.forEach(input => {
-            const subtaskId = parseFloat(input.dataset.subtaskId);
-            const newCutAmount = parseInt(input.value);
-            const subtask = order.checklist.cutting.subtasks.find(s => s.id === subtaskId);
-            if (subtask) {
-                subtask.cut = newCutAmount;
-                if (subtask.cut < subtask.total) allSubtasksCompleted = false;
-            }
-        });
-        if (allSubtasksCompleted) {
-            if (confirm("Todos os itens foram cortados. Deseja marcar a tarefa de corte como concluída?")) {
-                order.checklist.cutting.completed = true;
-            }
-        }
-        saveOrders();
-        closeCuttingModal();
-        renderCuttingTasks();
-        renderKanban();
-    };
-
-    // Listener para salvar cortes
-    if (saveCutsBtn) saveCutsBtn.addEventListener('click', saveCuts);
-
-    const closeCuttingModal = () => {
-        cuttingModal.classList.add('hidden');
-        activeCuttingOrderId = null;
-    };
-
     const renderArtTasks = () => {
         if (window.ArteControl && typeof window.ArteControl.render === 'function') {
             window.ArteControl.render();
@@ -2071,7 +1680,7 @@ const init = () => {
     }
 
     // DEBUG — lista elementos ausentes
-    ['add-order-btn', 'tab-quadro', 'tab-afazeres', 'tab-cortes', 'view-quadro', 'view-afazeres', 'view-cortes', 'order-modal', 'cancel-order-btn', 'close-cutting-modal-btn', 'close-art-modal-btn']
+    ['add-order-btn', 'tab-quadro', 'tab-afazeres', 'tab-cortes', 'view-quadro', 'view-afazeres', 'view-cortes', 'order-modal', 'close-art-modal-btn']
         .forEach(id => {
             if (!document.getElementById(id)) console.warn(`processos.js: elemento ausente no DOM -> #${id}`);
         });
@@ -2088,12 +1697,11 @@ const init = () => {
             }
             editingOrderId = null;
         }
-        // Fechar modal de corte
-        if (btn.id === 'close-cutting-modal-btn' || btn.closest && btn.closest('[data-action="close-cutting-modal"]')) {
+        // Fechar modal de corte (novo modal dinâmico)
+        if (btn.closest && btn.closest('#new-cutting-modal [data-action="close"]')) {
             e.preventDefault();
-            const modal = document.getElementById('cutting-modal');
-            if (modal) { modal.classList.add('hidden'); console.log('processos.js: cuttingModal fechado (delegado)'); }
-            activeCuttingOrderId = null;
+            const modal = document.getElementById('new-cutting-modal');
+            if (modal) { modal.classList.add('hidden'); console.log('processos.js: cutting modal fechado (delegado)'); }
         }
         // Fechar modal de arte
         if (btn.id === 'close-art-modal-btn' || btn.closest && btn.closest('[data-action="close-art-modal"]')) {
@@ -2111,7 +1719,7 @@ const init = () => {
 
     // Diagnóstico e correção temporária de overlays que cobrem a tela
     (function detectAndFixOverlays() {
-        const modalIds = ['order-modal', 'cutting-modal', 'art-modal', 'art-image-fullscreen-modal'];
+        const modalIds = ['order-modal', 'new-cutting-modal', 'art-modal', 'art-image-fullscreen-modal'];
         const vw = window.innerWidth;
         const vh = window.innerHeight;
 
@@ -2777,18 +2385,18 @@ const init = () => {
                     localStorage.setItem('clients', JSON.stringify(clients));
                 }
 
-                // Processa Grade de Tamanhos (Sizes)
-                let subtasks = [];
-                if (args.sizes && Array.isArray(args.sizes)) {
-                    subtasks = args.sizes.map(s => ({
-                        id: Date.now() + Math.random(),
-                        type: s.gender || 'Masculina', // Default se não informado
-                        style: 'Normal',
-                        size: s.size,
-                        total: s.qty,
-                        cut: 0
-                    }));
-                }
+                const cuttingGrid = Array.isArray(args.sizes)
+                    ? args.sizes.map(s => ({
+                        id: (crypto?.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`),
+                        label: `${(s.gender || 'unissex').toLowerCase()} • Padrão • ${s.size || 'Único'}`,
+                        gender: ['adulto','infantil','unissex'].includes(String(s.gender || '').toLowerCase()) ? String(s.gender).toLowerCase() : 'unissex',
+                        variation: 'Padrão',
+                        size: s.size || 'Único',
+                        total: Math.max(0, parseInt(s.qty, 10) || 0),
+                        cut: 0,
+                        notes: ''
+                    }))
+                    : [];
 
                 const newOrder = {
                     id: Date.now(),
@@ -2805,12 +2413,17 @@ const init = () => {
                         art: { completed: false, deadline: '' },
                         mockup: { completed: false, deadline: '' },
                         fabric: { completed: false, deadline: '' },
-                        cutting: { completed: false, deadline: '', subtasks: subtasks },
+                        cutting: { completed: false, deadline: '' },
                         sewing: { completed: false, deadline: '' },
                         printing: { completed: false, deadline: '' },
                         finishing: { completed: false, deadline: '' }
                     },
-                    colors: []
+                    colors: [],
+                    cutting: {
+                        grid: cuttingGrid,
+                        personalization: { enabled: false, names: [] },
+                        updatedAt: Date.now()
+                    }
                 };
 
                 productionOrders.push(newOrder);
@@ -2870,17 +2483,19 @@ const init = () => {
                 // Se a IA passou dados de checklist, atualiza
                 if (args.checklistData) {
                     if (args.checklistData.colors) order.colors = args.checklistData.colors;
-                    // Lógica para adicionar subtasks de corte se fornecidas
                     if (args.checklistData.sizes) {
-                        // Exemplo simplificado: sizes = [{"size": "P", "qty": 10}]
-                        order.checklist.cutting.subtasks = args.checklistData.sizes.map(s => ({
-                            id: Date.now() + Math.random(),
-                            type: 'Feminina', // Default
-                            style: 'Normal',
-                            size: s.size,
-                            total: s.qty,
-                            cut: 0
+                        order.cutting = order.cutting || { grid: [], personalization: { enabled: false, names: [] }, updatedAt: Date.now() };
+                        order.cutting.grid = args.checklistData.sizes.map(s => ({
+                            id: (crypto?.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`),
+                            label: `unissex • Padrão • ${s.size || 'Único'}`,
+                            gender: 'unissex',
+                            variation: 'Padrão',
+                            size: s.size || 'Único',
+                            total: Math.max(0, parseInt(s.qty, 10) || 0),
+                            cut: 0,
+                            notes: ''
                         }));
+                        order.cutting.updatedAt = Date.now();
                     }
                 }
 

@@ -217,35 +217,12 @@
                     <h3 class="text-lg font-semibold mb-3">Checklist de Produção</h3>
                     <div id="order-checklist" class="space-y-2 text-sm"></div>
                     
-                    <!-- Nova Seção de Detalhes do Corte -->
                     <div id="cutting-details-section" class="hidden mt-4 p-4 rounded-lg bg-white/5 border border-white/10">
                         <div class="flex justify-between items-center mb-3">
                             <h4 class="text-md font-semibold text-cyan-300">Detalhes do Corte</h4>
-                            <div id="cutting-total-badge" class="text-sm font-bold bg-gray-700 px-2 py-1 rounded text-white">Total: 0</div>
+                            <div class="text-xs text-gray-300">Grade dinâmica</div>
                         </div>
-                        
-                        <div id="cutting-validation-msg" class="text-xs mb-3 hidden"></div>
-
-                        <div id="cutting-subtasks-container" class="space-y-3 grid grid-cols-1 gap-3"></div>
-                        
-                        <div class="flex gap-2 mt-3">
-                            <button type="button" id="add-cutting-item-btn" class="text-xs btn-shine py-2 px-3 rounded-md flex-1 justify-center">+ Adicionar Corte</button>
-                        </div>
-
-                        <!-- Personalização -->
-                        <div class="mt-4 pt-4 border-t border-white/10">
-                            <label class="flex items-center gap-2 text-sm font-bold cursor-pointer mb-2"><input type="checkbox" id="has-personalization" class="w-4 h-4 rounded text-purple-500"> Personalização (Nomes)</label>
-                            <div id="personalization-container" class="hidden space-y-2">
-                                <div class="flex justify-between text-xs text-gray-400">
-                                    <span>Cole a lista de nomes (um por linha)</span>
-                                    <span id="names-counter">0 nomes / 0 peças</span>
-                                </div>
-                                <textarea id="personalization-names" rows="4" class="w-full p-2 rounded bg-black/20 border border-white/10 text-sm font-mono" placeholder="João&#10;Maria&#10;Pedro..."></textarea>
-                                <div class="flex gap-2 justify-end">
-                                    <button type="button" id="copy-names-btn" class="text-xs bg-white/10 hover:bg-white/20 px-2 py-1 rounded">Copiar Lista</button>
-                                </div>
-                            </div>
-                        </div>
+                        <div id="cutting-subtasks-container" class="space-y-3"></div>
                     </div>
                 </div>
             </div>
@@ -338,7 +315,7 @@
   <!-- Barra de Navegação Inferior (Mobile) -->
 
   <footer class="version-footer">
-    <a href="versoes.html" class="version-footer-link">Versão 1.5.16</a>
+    <a href="versoes.html" class="version-footer-link">Versão 1.5.17</a>
   </footer>
 
   <nav class="bottom-nav">
@@ -369,17 +346,10 @@
   </nav>
 
   </div>
-  <script>
-    // Carrega processos.js apenas após o Backend inicializar
-    const checkSync = setInterval(() => {
-        if (window.BackendInitialized) {
-            clearInterval(checkSync);
-            const s = document.createElement('script'); s.src = "processos.js"; document.body.appendChild(s);
-            const ai = document.createElement('script'); ai.src = "cerebro_ia.js"; document.body.appendChild(ai);
-            const hipo = document.createElement('script'); hipo.src = "hipocampo_ia.js"; document.body.appendChild(hipo);
-        }
-    }, 100);
-  </script>
+  <script src="./cutting-system.js"></script>
+  <script src="./processos.js"></script>
+  <script src="./cerebro_ia.js"></script>
+  <script src="./hipocampo_ia.js"></script>
   <script type="module" src="processos-art-control.js"></script>
   <script src="theme-toggle.js"></script>
 </body>
