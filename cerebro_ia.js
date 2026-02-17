@@ -1,6 +1,7 @@
 (() => {
   const canUseHttp = window.location.protocol === 'http:' || window.location.protocol === 'https:';
   const API_ENDPOINT = canUseHttp ? `${window.location.origin}/api/gemini` : null;
+  const blockedPaths = new Set(['/login.html', '/Arte-Online.html', '/arteonline.html']);
 
   let busy = false;
   const history = [];
@@ -10,10 +11,14 @@
     const style = document.createElement('style');
     style.id = 'nova-ia-style';
     style.textContent = `
-      .nova-ai-fab { position: fixed; right: 18px; bottom: 22px; z-index: 9999; border: none; width: 62px; height: 62px; border-radius: 9999px; cursor: pointer; display: grid; place-items: center; color: #e6f7ff; background: linear-gradient(135deg,#0ea5e9 0%,#2563eb 45%,#7c3aed 100%); box-shadow: 0 10px 30px rgba(37,99,235,.45), inset 0 2px 8px rgba(255,255,255,.22); transition: transform .2s ease, box-shadow .2s ease; }
-      .nova-ai-fab:hover { transform: translateY(-2px) scale(1.04); box-shadow: 0 14px 36px rgba(37,99,235,.5), inset 0 2px 10px rgba(255,255,255,.26); }
-      .nova-ai-fab svg { width: 30px; height: 30px; }
-      .nova-ai-panel { position: fixed; right: 18px; bottom: 96px; width: min(360px, calc(100vw - 24px)); height: 480px; background: rgba(7,12,24,.92); border: 1px solid rgba(148,163,184,.3); border-radius: 18px; backdrop-filter: blur(10px); color: #e2e8f0; z-index: 9999; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 52px rgba(2,6,23,.55); }
+      .nova-ai-fab { position: fixed; right: 18px; bottom: calc(env(safe-area-inset-bottom, 0px) + 22px); z-index: 9999; border: 1px solid rgba(148,163,184,.28); width: 58px; height: 58px; border-radius: 9999px; cursor: pointer; display: grid; place-items: center; color: #e6f7ff; background: linear-gradient(145deg, rgba(14,165,233,.82) 0%, rgba(59,130,246,.78) 50%, rgba(124,58,237,.72) 100%); box-shadow: 0 8px 24px rgba(30,64,175,.32), inset 0 1px 8px rgba(255,255,255,.20); backdrop-filter: blur(8px); transition: transform .2s ease, box-shadow .2s ease, filter .2s ease; }
+      .nova-ai-fab:hover { transform: translateY(-1px) scale(1.02); box-shadow: 0 12px 30px rgba(30,64,175,.38), inset 0 1px 10px rgba(255,255,255,.24); filter: saturate(1.05); }
+      .nova-ai-fab svg { width: 28px; height: 28px; }
+      .nova-ai-panel { position: fixed; right: 18px; bottom: calc(env(safe-area-inset-bottom, 0px) + 94px); width: min(360px, calc(100vw - 24px)); height: 480px; background: rgba(7,12,24,.92); border: 1px solid rgba(148,163,184,.3); border-radius: 18px; backdrop-filter: blur(10px); color: #e2e8f0; z-index: 9999; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 52px rgba(2,6,23,.55); }
+      @media (max-width: 768px) {
+        .nova-ai-fab { bottom: calc(env(safe-area-inset-bottom, 0px) + 88px); }
+        .nova-ai-panel { right: 12px; left: 12px; width: auto; bottom: calc(env(safe-area-inset-bottom, 0px) + 156px); height: min(68vh, 500px); }
+      }
       .nova-ai-hidden { display:none; }
       .nova-ai-head { display:flex; justify-content:space-between; align-items:center; padding: 12px 14px; background: linear-gradient(90deg,rgba(14,165,233,.22),rgba(124,58,237,.2)); border-bottom: 1px solid rgba(148,163,184,.22); font-weight: 700; }
       .nova-ai-head button { border:none; background:transparent; color:#cbd5e1; cursor:pointer; font-size: 22px; }
@@ -69,6 +74,7 @@
   };
 
   const init = () => {
+    if (blockedPaths.has(window.location.pathname)) return;
     if (document.getElementById('nova-ai-fab')) return;
     injectStyles();
 
