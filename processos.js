@@ -1838,13 +1838,13 @@ const init = () => {
         return map[status] || status;
     };
 
-    const openArtControlModal = (orderId) => {
+    const openArtControlModal = async (orderId) => {
         activeArtOrderId = orderId;
         const order = productionOrders.find((o) => o.id === orderId);
         const client = clients.find((c) => c.id === order.clientId);
         if (!order) return;
         ensureArtStructure(order);
-        ensureOrderClientBridge(order);
+        await ensureOrderClientBridge(order);
 
         const shell = document.getElementById('art-modal-shell');
         shell.innerHTML = `

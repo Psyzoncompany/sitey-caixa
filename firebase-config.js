@@ -309,16 +309,23 @@ Object.defineProperty(window, 'localStorage', {
 
 const sanitizeOrderForClient = (order) => {
     const oid = String(order?.id || '');
-    const versions = Array.isArray(order?.artControl?.versions) ? order.artControl.versions : [];
-    const normalizedVersions = versions.map((ver, idx) => ({
+    const sourceVersions = Array.isArray(order?.artControl?.versions)
+        ? order.artControl.versions
+        : (Array.isArray(order?.art?.versions) ? order.art.versions : []);
+
+    const normalizedVersions = sourceVersions.map((ver, idx) => ({
         id: ver?.id || `v_${oid}_${idx + 1}`,
         versionNumber: ver?.versionNumber || ver?.version || idx + 1,
-        previewUrl: ver?.previewUrl || (Array.isArray(ver?.images) ? ver.images[0] : '') || '',
+        previewUrl: ver?.previewUrl || (Array.isArray(ver?.images) ? ver.images[0] : '') || ver?.imageUrl || '',
+        images: Array.isArray(ver?.images) ? ver.images : (ver?.previewUrl ? [ver.previewUrl] : []),
         status: ver?.status || 'draft',
         createdAt: ver?.createdAt || Date.now()
     }));
+
     const activeVersionId = order?.art?.activeVersionId;
-    const activeVersion = normalizedVersions.find((v) => v.id === activeVersionId) || normalizedVersions[normalizedVersions.length - 1] || null;
+    const activeVersion = normalizedVersions.find((v) => v.id === activeVersionId)
+        || normalizedVersions[normalizedVersions.length - 1]
+        || null;
 
     return {
         oid,

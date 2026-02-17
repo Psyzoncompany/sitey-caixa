@@ -25,6 +25,7 @@ const initAI = () => {
 
     let chatHistory = [];
     let isAiProcessing = false;
+    let geminiUnavailable = false;
 
     // Definição das Ferramentas (Function Calling)
     const aiTools = [
@@ -253,6 +254,10 @@ const initAI = () => {
 
         ensureGeminiEndpoint();
 
+        if (geminiUnavailable) {
+            throw new Error('IA indisponível no momento');
+        }
+
         for (const model of models) {
             try {
                 const res = await fetch(GEMINI_PROXY_ENDPOINT, {
@@ -261,6 +266,11 @@ const initAI = () => {
                     body: JSON.stringify({ model, payload })
                 });
                 const data = await res.json();
+                if (res.status === 404) {
+                    geminiUnavailable = true;
+                    throw new Error('IA indisponível no momento');
+                }
+
                 if (res.ok && Array.isArray(data?.candidates) && data.candidates.length > 0) {
                     successData = data;
                     break;
@@ -269,6 +279,10 @@ const initAI = () => {
                 const errorMsg = data?.error?.message || data?.error || `Falha no modelo ${model} (${res.status})`;
                 lastError = new Error(errorMsg);
             } catch (e) {
+                if ((e?.message || '').includes('IA indisponível no momento')) {
+                    lastError = e;
+                    break;
+                }
                 lastError = e;
             }
         }
