@@ -4,14 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Redirecionando…</title>
-  <meta http-equiv="refresh" content="0; url=arteonline.html">
+  <meta http-equiv="refresh" content="0; url=/arteonline.html">
 </head>
 <body style="background:#070b16;color:#fff;font-family:Inter,Arial,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;">
   <script>
     const params = new URLSearchParams(location.search);
-    const oid = params.get('oid') || '';
     const token = params.get('token') || '';
-    const target = `arteonline.html?oid=${encodeURIComponent(oid)}&token=${encodeURIComponent(token)}`;
+    const target = `/arteonline.html?token=${encodeURIComponent(token)}`;
     location.replace(target);
   </script>
   <p>Redirecionando para página do cliente…</p>

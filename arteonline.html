@@ -54,46 +54,26 @@
   </main>
 
   <script type="module">
-    import { collection, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { doc, getDoc, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
     import { db, storage } from "./js/firebase-init.js";
 
     const params = new URLSearchParams(location.search);
-    const oid = params.get('oid');
     const token = params.get('token');
 
     const quickTexts = ['Trocar cor', 'Aumentar logo', 'Diminuir texto', 'Reposicionar elementos', 'Outro'];
     const el = (id) => document.getElementById(id);
-    const state = { userDocId: null, field: 'production_orders', ordersRawString: false, order: null, selectedVersionId: null, files: [] };
-
-    function parseOrders(data) {
-      if (Array.isArray(data.production_orders)) return { field: 'production_orders', orders: data.production_orders, rawString: false };
-      if (typeof data.production_orders === 'string') {
-        try { return { field: 'production_orders', orders: JSON.parse(data.production_orders), rawString: true }; } catch {}
-      }
-      if (Array.isArray(data.orders)) return { field: 'orders', orders: data.orders, rawString: false };
-      if (typeof data.orders === 'string') {
-        try { return { field: 'orders', orders: JSON.parse(data.orders), rawString: true }; } catch {}
-      }
-      return { field: 'production_orders', orders: [], rawString: false };
-    }
-
-    function ensureArt(order) {
-      order.art = order.art || {};
-      order.artControl = order.artControl || { versions: [] };
-      order.artControl.versions = Array.isArray(order.artControl.versions) ? order.artControl.versions : [];
-      order.art.activeVersionId = order.art.activeVersionId || order.artControl.versions[order.artControl.versions.length - 1]?.id || null;
-      return order;
-    }
+    const state = { order: null, selectedVersionId: null, files: [], oid: null };
 
     function statusLabel(status) {
       return ({ draft:'Rascunho', sent:'Enviada', changes_requested:'Ajustes solicitados', approved:'Aprovada', done:'Finalizado', pending:'Pendente' })[status] || status;
     }
 
     function getActiveVersion(order) {
-      return order.artControl.versions.find((v) => v.id === state.selectedVersionId)
-        || order.artControl.versions.find((v) => v.id === order.art.activeVersionId)
-        || order.artControl.versions[order.artControl.versions.length - 1]
+      const versions = Array.isArray(order?.artControl?.versions) ? order.artControl.versions : [];
+      return versions.find((v) => v.id === state.selectedVersionId)
+        || versions.find((v) => v.id === order?.art?.activeVersionId)
+        || versions[versions.length - 1]
         || null;
     }
 
@@ -102,10 +82,11 @@
       const active = getActiveVersion(order);
       el('order-title').textContent = order.description || `Pedido #${order.id}`;
       el('order-subtitle').textContent = `Pedido ${order.id}`;
-      const currentStatus = order.art.status || active?.status || 'pending';
+      const currentStatus = order?.art?.status || active?.status || 'pending';
       el('order-status').textContent = statusLabel(currentStatus);
-      el('btn-send-feedback').disabled = currentStatus === 'done';
-      el('btn-approve').disabled = currentStatus === 'done';
+      const isDone = currentStatus === 'done';
+      el('btn-send-feedback').disabled = isDone;
+      el('btn-approve').disabled = isDone;
 
       const preview = el('active-preview');
       preview.src = active?.previewUrl || active?.images?.[0] || '';
@@ -113,7 +94,8 @@
 
       const list = el('versions-list');
       list.innerHTML = '';
-      [...order.artControl.versions].sort((a,b)=>(b.versionNumber||b.version)-(a.versionNumber||a.version)).forEach((ver) => {
+      const versions = [...(order?.artControl?.versions || [])].sort((a,b)=>(b.versionNumber||b.version)-(a.versionNumber||a.version));
+      versions.forEach((ver) => {
         const item = document.createElement('button');
         item.type = 'button';
         item.className = 'cliente-version-item';
@@ -124,18 +106,18 @@
     }
 
     function mountChips() {
-      const host = el('quick-chips');
-      quickTexts.forEach((text) => {
-        const chip = document.createElement('button');
-        chip.type = 'button';
-        chip.className = 'artx-chip';
-        chip.textContent = text;
-        chip.onclick = () => {
-          const area = el('feedback-message');
-          area.value = area.value ? `${area.value}\n${text}` : text;
-          area.focus();
+      const row = el('quick-chips');
+      row.innerHTML = '';
+      quickTexts.forEach((txt) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'artx-btn-soft';
+        btn.textContent = txt;
+        btn.onclick = () => {
+          const t = el('feedback-message');
+          t.value = t.value ? `${t.value} | ${txt}` : txt;
         };
-        host.appendChild(chip);
+        row.appendChild(btn);
       });
     }
 
@@ -164,13 +146,13 @@
       });
     }
 
-    async function uploadSelectedImages(orderId, versionId) {
+    async function uploadSelectedImages(versionId) {
       if (!state.files.length) return [];
       const uploads = [];
       let uploadedCount = 0;
       for (const file of state.files) {
         const compressed = await compressImage(file);
-        const path = `art-feedback/${orderId}/${versionId}/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
+        const path = `art-feedback/${state.oid}/${versionId}/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
         const task = uploadBytesResumable(ref(storage, path), compressed);
         const url = await new Promise((resolve, reject) => {
           task.on('state_changed', (snap) => {
@@ -186,79 +168,73 @@
       return uploads;
     }
 
-    async function persistOrder() {
-      const snap = await getDocs(collection(db, 'users'));
-      for (const userDoc of snap.docs) {
-        const parsed = parseOrders(userDoc.data());
-        const index = parsed.orders.findIndex((o) => String(o.id) === String(oid) && (o?.art?.clientToken || o?.clientToken) === token);
-        if (index >= 0) {
-          const updated = [...parsed.orders];
-          updated[index] = state.order;
-          await updateDoc(doc(db, 'users', userDoc.id), { [parsed.field]: parsed.rawString ? JSON.stringify(updated) : updated });
-          return;
-        }
-      }
-      throw new Error('Pedido não encontrado para atualizar.');
-    }
-
-    async function sendFeedback() {
-      const msg = el('feedback-message').value.trim();
-      if (!msg) return alert('Escreva o feedback antes de enviar.');
+    async function sendClientEvent(type) {
       const active = getActiveVersion(state.order);
       if (!active) return alert('Sem versão ativa.');
 
-      const images = await uploadSelectedImages(state.order.id, active.id);
-      active.clientFeedback = { message: msg, images, createdAt: Date.now() };
-      active.status = 'changes_requested';
-      active.history = Array.isArray(active.history) ? active.history : [];
-      active.history.push({ action: 'changes_requested', date: Date.now(), user: 'Cliente', comment: msg });
-      state.order.art.status = 'changes_requested';
-      state.order.art.lastClientActivity = { type: 'changes_requested', at: Date.now() };
-      await persistOrder();
-      alert('Recebido!');
-      location.reload();
-    }
+      const msg = el('feedback-message').value.trim();
+      if (type === 'changes_requested' && !msg) return alert('Escreva o feedback antes de enviar.');
 
-    async function approveVersion() {
-      const active = getActiveVersion(state.order);
-      if (!active) return;
-      active.status = 'approved';
-      active.history = Array.isArray(active.history) ? active.history : [];
-      active.history.push({ action: 'approved', date: Date.now(), user: 'Cliente', comment: 'Aprovado pelo cliente' });
-      state.order.art.status = 'approved';
-      state.order.art.lastClientActivity = { type: 'approved', at: Date.now() };
-      await persistOrder();
-      alert('Versão aprovada com sucesso.');
+      const images = await uploadSelectedImages(active.id || 'v1');
+      const payload = {
+        type,
+        token,
+        oid: state.oid,
+        versionId: active.id || null,
+        versionNumber: active.versionNumber || active.version || null,
+        message: msg,
+        images,
+        createdAtClient: Date.now()
+      };
+
+      await addDoc(collection(db, `orders/${state.oid}/clientFeedback`), {
+        ...payload,
+        createdAt: serverTimestamp()
+      });
+      await addDoc(collection(db, 'order_feedback', token, 'events'), {
+        ...payload,
+        createdAt: serverTimestamp()
+      });
+
+      alert(type === 'approved' ? 'Versão aprovada com sucesso.' : 'Recebido!');
       location.reload();
     }
 
     async function load() {
-      if (!oid || !token) {
-        el('cliente-loading').classList.add('hidden');
-        el('invalid-link').classList.remove('hidden');
-        return;
-      }
-      const snap = await getDocs(collection(db, 'users'));
-      let found = null;
-      for (const userDoc of snap.docs) {
-        const parsed = parseOrders(userDoc.data());
-        const order = parsed.orders.find((o) => String(o.id) === String(oid) && (o?.art?.clientToken || o?.clientToken) === token);
-        if (order) {
-          found = ensureArt(order);
-          state.userDocId = userDoc.id;
-          state.field = parsed.field;
-          state.ordersRawString = parsed.rawString;
-          break;
-        }
-      }
-
-      if (!found) {
+      if (!token) {
         el('cliente-loading').classList.add('hidden');
         el('invalid-link').classList.remove('hidden');
         return;
       }
 
+      const bridgeSnap = await getDoc(doc(db, 'order_clients', token));
+      if (!bridgeSnap.exists()) {
+        el('cliente-loading').classList.add('hidden');
+        el('invalid-link').classList.remove('hidden');
+        return;
+      }
+
+      state.oid = String((bridgeSnap.data() || {}).oid || '');
+      if (!state.oid) {
+        el('cliente-loading').classList.add('hidden');
+        el('invalid-link').classList.remove('hidden');
+        return;
+      }
+
+      const orderSnap = await getDoc(doc(db, 'orders', state.oid));
+      if (!orderSnap.exists()) {
+        el('cliente-loading').classList.add('hidden');
+        el('invalid-link').classList.remove('hidden');
+        return;
+      }
+
+      const found = orderSnap.data() || {};
+      found.id = found.id || state.oid;
+      found.art = found.art || {};
+      found.artControl = found.artControl || { versions: [] };
+      found.artControl.versions = Array.isArray(found.artControl.versions) ? found.artControl.versions : [];
       state.order = found;
+
       mountChips();
       render();
       el('cliente-loading').classList.add('hidden');
@@ -271,8 +247,8 @@
         state.files = [...state.files, ...valid].slice(0, 5);
         renderUploadPreview();
       };
-      el('btn-send-feedback').onclick = () => sendFeedback().catch((e) => { console.error(e); alert('Falha ao enviar feedback.'); });
-      el('btn-approve').onclick = () => approveVersion().catch((e) => { console.error(e); alert('Falha ao aprovar versão.'); });
+      el('btn-send-feedback').onclick = () => sendClientEvent('changes_requested').catch((e) => { console.error(e); alert('Falha ao enviar feedback.'); });
+      el('btn-approve').onclick = () => sendClientEvent('approved').catch((e) => { console.error(e); alert('Falha ao aprovar versão.'); });
     }
 
     load().catch((e) => {

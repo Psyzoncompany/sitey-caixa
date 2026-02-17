@@ -1816,8 +1816,23 @@ const init = () => {
         }));
         const active = order.artControl.versions.find((v) => v.id === order.art.activeVersionId) || order.artControl.versions[order.artControl.versions.length - 1] || null;
         order.art.activeVersionId = active?.id || null;
+        if (window.firebaseAuth?.upsertOrderClientBridge && order.art.clientToken) {
+            window.firebaseAuth.upsertOrderClientBridge(order, order.art.clientToken).catch((err) => {
+                console.warn('Não foi possível sincronizar order_clients/orders:', err);
+            });
+        }
     };
-    const getClientReviewLink = (order) => `${window.location.origin}/arteonline.html?oid=${encodeURIComponent(order.id)}&token=${encodeURIComponent(order.art.clientToken)}`;
+    const getClientReviewLink = (order) => `${window.location.origin}/arteonline.html?token=${encodeURIComponent(order.art.clientToken)}`;
+    const ensureOrderClientBridge = async (order) => {
+        try {
+            ensureArtStructure(order);
+            if (window.firebaseAuth?.upsertOrderClientBridge) {
+                await window.firebaseAuth.upsertOrderClientBridge(order, order.art.clientToken);
+            }
+        } catch (err) {
+            console.warn('Falha ao atualizar ponte do cliente:', err);
+        }
+    };
     const statusChip = (status) => {
         const map = { draft: 'Rascunho', sent: 'Enviada', approved: 'Aprovada', changes_requested: 'Ajustes Solicitados', pending: 'Pendente', done: 'Concluída' };
         return map[status] || status;
@@ -1829,6 +1844,7 @@ const init = () => {
         const client = clients.find((c) => c.id === order.clientId);
         if (!order) return;
         ensureArtStructure(order);
+        ensureOrderClientBridge(order);
 
         const shell = document.getElementById('art-modal-shell');
         shell.innerHTML = `
@@ -1886,6 +1902,7 @@ const init = () => {
             openArtControlModal(order.id);
         };
         shell.querySelector('#btn-export-link').onclick = async () => {
+            await ensureOrderClientBridge(order);
             const link = getClientReviewLink(order);
             const text = `Olá! Aqui está seu link de aprovação: ${link}`;
             const ok = await copyTextSafe(text);
@@ -1914,6 +1931,7 @@ const init = () => {
 
         versions.forEach((ver) => {
             const link = getClientReviewLink(order);
+            ensureOrderClientBridge(order);
             const feedbackText = ver.clientFeedback?.message || 'Sem feedback do cliente.';
             const hasClientUpdate = Boolean(ver.clientFeedback?.message) || (order.art.lastClientActivity && ['changes_requested','approved'].includes(order.art.lastClientActivity.type));
             const last = Array.isArray(ver.history) && ver.history.length ? ver.history[ver.history.length - 1] : null;
@@ -2013,6 +2031,7 @@ const init = () => {
                 const order = productionOrders.find(o => o.id === orderId);
                 if (!order) return;
                 ensureArtStructure(order);
+                ensureOrderClientBridge(order);
                 const approvalLink = getClientReviewLink(order);
                 copyTextSafe(approvalLink).then((ok) => {
                     if (!ok) {
