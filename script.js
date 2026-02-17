@@ -982,3 +982,8 @@ if (document.readyState === 'loading') {
 } else {
     init();
 }
+
+// App shell integration (v6.0.0): keep dark + active nav consistent
+if (window.AppShell && typeof window.AppShell.enforceDark === 'function') {
+  window.AppShell.enforceDark();
+}

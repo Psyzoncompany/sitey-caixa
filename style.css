@@ -3673,3 +3673,106 @@ button.is-pressed,
   }
   .bottom-nav-indicator { display: none !important; }
 }
+
+/* =============================
+   v6.0.0 App Shell Refactor + Dark Lock
+   ============================= */
+html.app,
+html.theme-dark,
+html[data-theme="light"],
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0b0f17;
+  --surface: rgba(255,255,255,0.06);
+  --surface-2: rgba(255,255,255,0.09);
+  --text: rgba(255,255,255,0.92);
+  --muted: rgba(255,255,255,0.62);
+  --border: rgba(255,255,255,0.10);
+  --accent: #4f8cff;
+  --danger: #ff6b6b;
+  --success: #30d158;
+}
+
+body,
+.app-body,
+html[data-theme="light"] body {
+  background: var(--bg) !important;
+  color: var(--text) !important;
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+}
+
+.content {
+  flex: 1;
+  width: 100%;
+}
+
+.tabbar {
+  position: fixed;
+  left: 10px;
+  right: 10px;
+  bottom: calc(env(safe-area-inset-bottom) + 8px);
+  border-radius: 20px;
+}
+
+.tabbar--desktop-hidden {
+  display: none !important;
+}
+
+@media (min-width: 1024px) {
+  .tabbar { display: none !important; }
+}
+
+/* dark list/table/form normalization */
+.card,
+.glass-card,
+table,
+thead,
+tbody,
+tr,
+td,
+th,
+input,
+select,
+textarea,
+.modal,
+.version-footer-link,
+#mobile-menu {
+  background-color: transparent;
+  color: var(--text);
+  border-color: var(--border);
+}
+
+table tr { background: rgba(255,255,255,0.01); }
+table tr:hover { background: rgba(255,255,255,0.03); }
+
+.badge,
+.chip,
+.scope-badge,
+.cat-pill {
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+/* neutralize old light-theme overrides */
+html[data-theme="light"] .glass-card,
+html[data-theme="light"] input,
+html[data-theme="light"] select,
+html[data-theme="light"] textarea,
+html[data-theme="light"] .desktop-topbar,
+html[data-theme="light"] .bottom-nav {
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
