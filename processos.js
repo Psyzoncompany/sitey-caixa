@@ -467,6 +467,46 @@ const init = () => {
         editingOrderId = null;
     };
 
+    const extractCuttingSubtasksFromUI = (cuttingSubtasksContainer, editingOrderId, productionOrders) => {
+        const cards = Array.from(cuttingSubtasksContainer?.querySelectorAll('.cut-item-card') || []);
+        const editingOrder = editingOrderId ? productionOrders.find(o => o.id === editingOrderId) : null;
+        const existingSubtasks = Array.isArray(editingOrder?.checklist?.cutting?.subtasks)
+            ? editingOrder.checklist.cutting.subtasks
+            : [];
+
+        return cards.map((card, index) => {
+            const genderInput = card.querySelector('.subtask-gender');
+            const variationInput = card.querySelector('.subtask-variation');
+            const sizeInput = card.querySelector('.subtask-size');
+            const totalInput = card.querySelector('.subtask-total');
+            const notesInput = card.querySelector('.subtask-notes');
+
+            if (!totalInput || !genderInput || !variationInput || !sizeInput) {
+                return null;
+            }
+
+            const rawTotal = String(totalInput.value ?? '').replace(/\D/g, '');
+            const sanitizedTotal = Number(rawTotal);
+            const total = Number.isFinite(sanitizedTotal)
+                ? Math.max(0, Math.floor(sanitizedTotal))
+                : 0;
+
+            const parsedId = Number(card.dataset.subtaskId);
+            const id = Number.isFinite(parsedId) ? parsedId : (Date.now() + index + Math.random());
+            const existingSubtask = existingSubtasks.find(s => Number(s?.id) === id);
+
+            return {
+                id,
+                gender: (genderInput.value || 'Masculina').trim(),
+                variation: (variationInput.value || 'Normal').trim(),
+                size: (sizeInput.value || 'Único').trim(),
+                total,
+                cut: Math.max(0, parseInt(existingSubtask?.cut ?? 0, 10) || 0),
+                notes: (notesInput?.value || '').trim()
+            };
+        }).filter(subtask => subtask && subtask.total > 0);
+    };
+
     // --- NOVA LÓGICA DE CORTES (MINI-CARDS) ---
     const renderCuttingSubtask = (subtask = {}) => {
         const subtaskId = subtask.id || Date.now() + Math.random();
@@ -493,7 +533,7 @@ const init = () => {
             <div class="flex items-center justify-between mt-2">
                 <div class="qty-control">
                     <button type="button" class="qty-btn minus">-</button>
-                    <input type="number" class="subtask-total qty-input" value="${subtask.total || 0}" min="0">
+                    <input type="number" class="subtask-total qty-input" value="${subtask.total || 0}" min="0" step="1">
                     <button type="button" class="qty-btn plus">+</button>
                 </div>
                 <div class="cut-actions flex gap-3 text-xs">
@@ -533,7 +573,10 @@ const init = () => {
             const list = sel === 'Infantil' ? sizeOptions.infantil : sizeOptions.adulto;
             const currentSize = sizeSel.value;
             sizeSel.innerHTML = list.map(s => `<option ${currentSize === s ? 'selected' : ''}>${s}</option>`).join('');
+            updateCuttingTotals();
         };
+        item.querySelector('.subtask-size').addEventListener('change', updateCuttingTotals);
+        item.querySelector('.subtask-total').addEventListener('change', updateCuttingTotals);
 
         cuttingSubtasksContainer.appendChild(item);
         updateCuttingTotals();
@@ -626,25 +669,17 @@ const init = () => {
                 checklist[key] = { completed: item.checked, deadline: deadlineInput.value || null };
             });
 
-            const subtasks = [];
-            cuttingSubtasksContainer.querySelectorAll('.cut-item-card').forEach(row => {
-                const totalInput = row.querySelector('.subtask-total');
-                if (totalInput && totalInput.value) {
-                    const existingSubtask = (editingOrderId && productionOrders.find(o => o.id === editingOrderId).checklist.cutting.subtasks.find(s => s.id == row.dataset.subtaskId));
-                    subtasks.push({
-                        id: parseFloat(row.dataset.subtaskId) || Date.now() + Math.random(),
-                        gender: row.querySelector('.subtask-gender').value,
-                        variation: row.querySelector('.subtask-variation').value,
-                        size: row.querySelector('.subtask-size').value,
-                        total: parseInt(totalInput.value) || 0,
-                        cut: existingSubtask ? existingSubtask.cut : 0,
-                        notes: row.querySelector('.subtask-notes').value
-                    });
-                }
-            });
+            const subtasks = extractCuttingSubtasksFromUI(cuttingSubtasksContainer, editingOrderId, productionOrders);
+            const uiCardsCount = cuttingSubtasksContainer.querySelectorAll('.cut-item-card').length;
+            if (subtasks.length === 0 && uiCardsCount > 0) {
+                console.warn('[processos] Salvamento de pedido sem subtasks válidas, apesar de itens de corte na UI.', {
+                    editingOrderId,
+                    uiCardsCount
+                });
+            }
 
             checklist.cutting = checklist.cutting || {};
-            checklist.cutting.completed = subtasks.length === 0;
+            checklist.cutting.completed = isArtOnlyCheckbox?.checked ? true : false;
             checklist.cutting.subtasks = subtasks;
             // Salvar Personalização
             checklist.cutting.personalization = {
@@ -1452,12 +1487,22 @@ const init = () => {
         }
 
         const normalizedSubtasks = normalizeCuttingSubtasks(order);
-        if (!Array.isArray(order.checklist.cutting.subtasks) || order.checklist.cutting.subtasks.length !== normalizedSubtasks.length) {
+        const currentSubtasks = Array.isArray(order?.checklist?.cutting?.subtasks) ? order.checklist.cutting.subtasks : [];
+        const shouldMigrateSubtasks = currentSubtasks.length === 0 && normalizedSubtasks.length > 0;
+        if (!Array.isArray(order.checklist.cutting.subtasks) || order.checklist.cutting.subtasks.length !== normalizedSubtasks.length || shouldMigrateSubtasks) {
             order.checklist.cutting.subtasks = normalizedSubtasks;
             if (normalizedSubtasks.length > 0 && order.checklist.cutting.completed) {
                 order.checklist.cutting.completed = false;
             }
             saveOrders();
+        }
+
+        const printingTotal = parseInt(order?.printing?.total ?? 0, 10) || 0;
+        if (normalizedSubtasks.length === 0 && printingTotal <= 0) {
+            console.warn('[processos] Controle de cortes aberto sem subtasks e sem printing.total.', {
+                orderId,
+                description: order?.description || ''
+            });
         }
 
         renderCuttingChecklist(normalizedSubtasks);
