@@ -1074,20 +1074,58 @@ body.is-dragging-kanban {
     bottom: 100px;
     right: 24px;
     z-index: 9996;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
-    box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
-    border: none;
-    color: white;
+    min-width: 62px;
+    height: 56px;
+    padding: 0 16px 0 12px;
+    border-radius: 999px;
+    background: linear-gradient(145deg, #0f172a, #111827);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    box-shadow: 0 12px 26px rgba(2, 6, 23, 0.5), inset 0 1px 0 rgba(255,255,255,0.08);
+    color: #dbeafe;
     cursor: pointer;
-    display: flex;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+#ai-toggle-btn:hover {
+    transform: translateY(-2px);
+    border-color: rgba(56, 189, 248, 0.65);
+    box-shadow: 0 16px 30px rgba(2, 6, 23, 0.58), 0 0 18px rgba(6, 182, 212, 0.24);
+}
+#ai-toggle-btn .ai-toggle-btn__icon {
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.2s;
+    color: #67e8f9;
 }
-#ai-toggle-btn:hover { transform: scale(1.1); }
+#ai-toggle-btn .ai-toggle-btn__icon svg {
+    width: 100%;
+    height: 100%;
+}
+#ai-toggle-btn .ai-toggle-btn__label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+#ai-toggle-btn .ai-toggle-btn__status {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    margin-left: 2px;
+    background: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+}
+#ai-toggle-btn[data-gemini-status="online"] .ai-toggle-btn__status {
+    background: #22c55e;
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+}
+#ai-toggle-btn[data-gemini-status="offline"] .ai-toggle-btn__status {
+    background: #ef4444;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+}
 
 @media (max-width: 768px) {
     #ai-chat-widget {
@@ -1099,7 +1137,7 @@ body.is-dragging-kanban {
         border-radius: 0;
         z-index: 10000;
     }
-    #ai-toggle-btn { bottom: 90px; }
+    #ai-toggle-btn { bottom: 90px; min-width: 56px; height: 48px; }
 }
 
 /* --- NOVOS ESTILOS PARA CARDS DE CORTE --- */
@@ -1334,8 +1372,9 @@ body.is-dragging-kanban {
     #ai-toggle-btn {
         bottom: 75px !important;
         right: 16px !important;
-        width: 44px !important;
-        height: 44px !important;
+        min-width: 56px !important;
+        height: 48px !important;
+        padding: 0 12px 0 10px !important;
         z-index: 9995 !important;
     }
 }
@@ -1499,8 +1538,9 @@ body.is-dragging-kanban {
     #ai-toggle-btn {
         bottom: 75px !important;
         right: 16px !important;
-        width: 44px !important;
-        height: 44px !important;
+        min-width: 56px !important;
+        height: 48px !important;
+        padding: 0 12px 0 10px !important;
         z-index: 9995 !important;
     }
 }
@@ -1687,8 +1727,9 @@ body.is-dragging-kanban {
     #ai-toggle-btn {
         bottom: 75px !important;
         right: 16px !important;
-        width: 44px !important;
-        height: 44px !important;
+        min-width: 56px !important;
+        height: 48px !important;
+        padding: 0 12px 0 10px !important;
         z-index: 9995 !important;
     }
 }

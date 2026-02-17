@@ -23,6 +23,17 @@ const initAI = () => {
         throw new Error('Ambiente inválido para IA. Abra o site por URL HTTP/HTTPS (ex: Vercel), não por arquivo local.');
     };
 
+    const fetchGeminiConfigStatus = async () => {
+        if (!GEMINI_PROXY_ENDPOINT) return { configured: false };
+        try {
+            const res = await fetch(`${GEMINI_PROXY_ENDPOINT}?status=1`, { cache: 'no-store' });
+            const data = await res.json();
+            return { configured: Boolean(data?.configured) };
+        } catch {
+            return { configured: false };
+        }
+    };
+
     let chatHistory = [];
     let isAiProcessing = false;
 
@@ -108,7 +119,16 @@ const initAI = () => {
         if (document.getElementById('ai-chat-widget')) return;
 
         const chatHTML = `
-            <button id="ai-toggle-btn" title="Assistente PSYZON">✨</button>
+            <button id="ai-toggle-btn" title="Abrir Assistente PSYZON" aria-label="Abrir assistente IA" data-gemini-status="checking">
+                <span class="ai-toggle-btn__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L14.9 8.1L21 11L14.9 13.9L12 20L9.1 13.9L3 11L9.1 8.1L12 2Z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M18.5 3.5L19.2 5L20.7 5.7L19.2 6.4L18.5 7.9L17.8 6.4L16.3 5.7L17.8 5L18.5 3.5Z" fill="currentColor"/>
+                    </svg>
+                </span>
+                <span class="ai-toggle-btn__label">IA</span>
+                <span class="ai-toggle-btn__status" aria-hidden="true"></span>
+            </button>
             <div id="ai-chat-widget" class="hidden">
                 <div id="ai-chat-header">
                     <div class="flex items-center gap-2">
@@ -134,6 +154,15 @@ const initAI = () => {
         const sendBtn = document.getElementById('ai-send-btn');
         const input = document.getElementById('ai-input');
         const msgsArea = document.getElementById('ai-chat-messages');
+
+        const applyGeminiStatus = (configured) => {
+            toggleBtn.dataset.geminiStatus = configured ? 'online' : 'offline';
+            toggleBtn.title = configured
+                ? 'Assistente PSYZON (Gemini conectado no servidor)'
+                : 'Assistente PSYZON (configure GEMINI_API_KEY no .env para ativar)';
+        };
+
+        fetchGeminiConfigStatus().then(({ configured }) => applyGeminiStatus(configured));
 
         const toggleChat = () => {
             widget.classList.toggle('hidden');
