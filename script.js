@@ -132,8 +132,8 @@ const init = () => {
         });
     };
 
-    // --- Generic Carousel Logic ---
-    const setupCarousel = (trackId, dotsId, intervalMs = 5000) => {
+    // --- Generic Carousel Logic (Manual Only) ---
+    const setupCarousel = (trackId, dotsId) => {
         const carousel = document.getElementById(trackId);
         const carouselDots = document.getElementById(dotsId);
 
@@ -143,10 +143,12 @@ const init = () => {
         if (slides.length <= 1) return;
 
         let currentIndex = 0;
-        let carouselInterval;
+        let dragStartX = 0;
+        let dragDeltaX = 0;
+        let isDragging = false;
 
         const goToSlide = (index) => {
-            currentIndex = index;
+            currentIndex = (index + slides.length) % slides.length;
             carousel.style.transform = `translateX(-${currentIndex * 100}%)`;
             const dots = carouselDots.querySelectorAll('button');
             dots.forEach((dot, i) => {
@@ -155,9 +157,24 @@ const init = () => {
             });
         };
 
-        const autoSlide = () => {
-            const nextIndex = (currentIndex + 1) % slides.length;
-            goToSlide(nextIndex);
+        const onStart = (clientX) => {
+            isDragging = true;
+            dragStartX = clientX;
+            dragDeltaX = 0;
+        };
+
+        const onMove = (clientX) => {
+            if (!isDragging) return;
+            dragDeltaX = clientX - dragStartX;
+        };
+
+        const onEnd = () => {
+            if (!isDragging) return;
+            const threshold = Math.max(36, carousel.clientWidth * 0.12);
+            if (dragDeltaX > threshold) goToSlide(currentIndex - 1);
+            else if (dragDeltaX < -threshold) goToSlide(currentIndex + 1);
+            isDragging = false;
+            dragDeltaX = 0;
         };
 
         carouselDots.innerHTML = '';
@@ -165,15 +182,20 @@ const init = () => {
             const dot = document.createElement('button');
             dot.className = 'w-2 h-2 rounded-full bg-white/30 transition-colors duration-300';
             if (index === 0) dot.classList.replace('bg-white/30', 'bg-white');
-            dot.addEventListener('click', () => {
-                goToSlide(index);
-                clearInterval(carouselInterval);
-                carouselInterval = setInterval(autoSlide, intervalMs);
-            });
+            dot.addEventListener('click', () => goToSlide(index));
             carouselDots.appendChild(dot);
         });
 
-        carouselInterval = setInterval(autoSlide, intervalMs);
+        carousel.addEventListener('mousedown', (e) => onStart(e.clientX));
+        window.addEventListener('mousemove', (e) => onMove(e.clientX));
+        window.addEventListener('mouseup', onEnd);
+        carousel.addEventListener('mouseleave', onEnd);
+
+        carousel.addEventListener('touchstart', (e) => onStart(e.touches[0].clientX), { passive: true });
+        carousel.addEventListener('touchmove', (e) => onMove(e.touches[0].clientX), { passive: true });
+        carousel.addEventListener('touchend', onEnd);
+
+        goToSlide(0);
     };
 
     const toggleQuantityField = () => {
@@ -506,15 +528,15 @@ const init = () => {
         const { id, name, description, amount, date, category, type, scope } = transaction;
         const item = document.createElement('div');
         item.className = 'transaction-card';
-        item.dataset.id = id; // Add ID for event handling
+        item.dataset.id = id;
 
-        const colorClass = type === 'income' ? 'text-green-400' : 'text-red-400';
-        let scopeText = scope === 'personal' ? '👤 Pessoal' : '🏢 Empresarial';
+        const colorClass = type === 'income' ? 'text-green-400 value-positive' : 'text-red-400 value-negative';
+        let scopeText = scope === 'personal' ? 'Pessoal' : 'Empresarial';
         if (type !== 'expense') scopeText = '--';
+        const scopeClass = scope === 'personal' ? 'personal' : 'business';
 
         const amountPrefix = type === 'income' ? '+' : '-';
 
-        // Meta data for mobile view
         const metaItems = [
             `<span class="data-chip data-date" title="Data">${formatDate(date)}</span>`,
             `<span class="data-chip data-category" title="${category}">${compactLabel(category)}</span>`,
@@ -522,37 +544,32 @@ const init = () => {
         ].filter(Boolean).join('');
 
         item.innerHTML = `
-            <!-- Sticky Action Bar (Mobile Only, shown on expand) -->
             <div class="syt-sticky-actions">
                 <button class="syt-action-btn edit" data-action="edit" data-id="${id}">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
                     Editar
                 </button>
                 <button class="syt-action-btn delete" data-action="delete" data-id="${id}">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 7h12M9 7V5h6v2m-7 4v6m4-6v6m4-10v12a1 1 0 01-1 1H8a1 1 0 01-1-1V7h10z"></path></svg>
                     Excluir
                 </button>
             </div>
 
-            <!-- Card Content (Grid for both mobile and desktop) -->
-            <div class="data-name" title="${name || '--'}">${name || '--'}</div>
-            <div class="data-description" title="${description}">${description}</div>
+            <div class="data-name" title="${name || '--'}">${name || '--'}<div class="data-description" title="${description}">${description}</div></div>
             <div class="data-amount ${colorClass}">${amountPrefix} ${formatCurrency(Math.abs(amount))}</div>
-            <div class="data-scope">${scopeText}</div>
-            <div class="data-category">${category}</div>
+            <div class="data-scope">${type === 'expense' ? `<span class="scope-badge ${scopeClass}">${scopeText}</span>` : '--'}</div>
+            <div class="data-category"><span class="cat-pill">${category}</span></div>
             <div class="data-date">${formatDate(date)}</div>
-            
-            <!-- Meta for mobile (replaces some columns) -->
+
             <div class="data-meta">${metaItems}</div>
 
-            <!-- Desktop Actions (old dropdown, now just buttons) -->
             <div class="data-action">
                 <div class="flex items-center justify-end gap-2">
                     <button class="action-toggle-btn text-gray-500 hover:text-cyan-400 p-1 rounded-full" data-action="edit" data-id="${id}" title="Editar">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
                     </button>
                     <button class="action-toggle-btn text-gray-500 hover:text-red-400 p-1 rounded-full" data-action="delete" data-id="${id}" title="Excluir">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 7h12M9 7V5h6v2m-7 4v6m4-6v6m4-10v12a1 1 0 01-1 1H8a1 1 0 01-1-1V7h10z"></path></svg>
                     </button>
                 </div>
             </div>
@@ -614,7 +631,7 @@ const init = () => {
         }).sort((a, b) => a.diffDays - b.diffDays).slice(0, 3);
         deadlinesListEl.innerHTML = '';
         if (upcomingOrders.length === 0) {
-            deadlinesListEl.innerHTML = '<p class="text-sm text-gray-500">Nenhum prazo pendente. 🎉</p>';
+            deadlinesListEl.innerHTML = '<p class="text-sm text-gray-500">Nenhum prazo pendente.</p>';
             return;
         }
         upcomingOrders.forEach(order => {
@@ -674,7 +691,7 @@ const init = () => {
         if (next3Bills.length > 0) {
             html += next3Bills.map(bill => `<div class="text-sm flex justify-between border-t border-white/5 pt-1 mt-1"><span>${bill.name}</span><span class="font-semibold">Vence dia ${bill.due_day}</span></div>`).join('');
         } else {
-            html += '<p class="text-sm text-green-400 mt-2">Tudo pago este mês! 🎉</p>';
+            html += '<p class="text-sm text-green-400 mt-2">Tudo pago este mês.</p>';
         }
         dashboardBillsSummaryEl.innerHTML = html;
     };
@@ -720,7 +737,7 @@ const init = () => {
 
         transactionListEl.innerHTML = '';
         if (filteredTransactions.length === 0) {
-            transactionListEl.innerHTML = '<div class="text-center text-gray-400 p-4">Nenhum lançamento encontrado para este filtro.</div>';
+            transactionListEl.innerHTML = '<div class="text-center text-gray-400 p-4">Sem lançamentos neste período</div>';
             return;
         }
         filteredTransactions.forEach(addTransactionToDOM);
@@ -778,7 +795,9 @@ const init = () => {
 
         if (totalReceivablesEl) {
             const alertClass = hasOverdueReceivables ? 'text-red-400 font-bold' : 'text-gray-400';
-            const icon = hasOverdueReceivables ? '⚠️' : '📦';
+            const icon = hasOverdueReceivables
+                ? '<svg class="syt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M4.9 19h14.2a1 1 0 00.87-1.49L12.87 4.5a1 1 0 00-1.74 0L4.03 17.5A1 1 0 004.9 19z"/></svg>'
+                : '<svg class="syt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0v10l-8 4m8-14-8 4m0 10-8-4V7m8 4v10"/></svg>'; 
             
             totalReceivablesEl.innerHTML = `
                 <div>${formatCurrency(receivablesTotal)}</div>

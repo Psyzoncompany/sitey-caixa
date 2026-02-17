@@ -251,35 +251,35 @@
     <main class="flex-1 p-4 md:p-6 lg:p-8 dashboard-main">
       <div class="flex justify-between items-center mb-8 dashboard-hero">
           <h1 class="text-2xl md:text-3xl font-bold">DASHBOARD</h1>
-          <button id="add-transaction-btn" class="btn-shine py-2 px-4 md:py-3 md:px-6 text-sm md:text-base font-bold rounded-lg shadow-lg hover:shadow-cyan-500/40 hover:-translate-y-1 transition-all duration-200 bg-gradient-to-br from-cyan-500 to-cyan-600">+ Lançamento</button>
+          <button id="add-transaction-btn" class="btn-shine py-2 px-4 md:py-3 md:px-6 text-sm md:text-base font-bold rounded-lg shadow-lg hover:shadow-cyan-500/40 hover:-translate-y-1 transition-all duration-200 bg-gradient-to-br from-cyan-500 to-cyan-600 inline-flex items-center gap-2"><svg class="syt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v14m-7-7h14"/></svg>Lançamento</button>
       </div>
 
       <section class="glass-card dashboard-section mb-6">
         <div class="section-head">
-          <h2>📌 Métricas</h2>
+          <h2>Métricas</h2>
           <span class="section-pill">Mês</span>
         </div>
         <div class="section-body grid grid-cols-2 gap-4 md:gap-6">
-          <div class="glass-card metric-tile p-4 md:p-6"><div class="icon-label-container"><span class="text-2xl">💰</span><span class="text-xs md:text-sm font-semibold text-gray-300">Saldo Atual</span></div><p id="balance" class="text-2xl md:text-4xl font-bold mt-2">R$ 0,00</p></div>
-          <div class="glass-card metric-tile p-4 md:p-6"><div class="icon-label-container"><span class="text-2xl">📈</span><span class="text-xs md:text-sm font-semibold text-gray-300">Receitas (Mês)</span></div><p id="total-income" class="text-2xl md:text-4xl font-bold mt-2 text-green-400">R$ 0,00</p></div>
-          <div class="glass-card metric-tile p-4 md:p-6"><div class="icon-label-container"><span class="text-2xl">📉</span><span class="text-xs md:text-sm font-semibold text-gray-300">Despesas (Mês)</span></div><p id="total-expense" class="text-2xl md:text-4xl font-bold mt-2 text-red-400">R$ 0,00</p></div>
-          <div class="glass-card metric-tile p-4 md:p-6"><div class="icon-label-container"><span class="text-2xl">💎</span><span class="text-xs md:text-sm font-semibold text-gray-300">Lucro (Mês)</span></div><p id="profit" class="text-2xl md:text-4xl font-bold mt-2">R$ 0,00</p></div>
-          <div class="glass-card metric-tile p-4 md:p-6 col-span-2"><h3 class="text-gray-400 text-base md:text-lg">Custo por Peça (Mês Atual) 🏭</h3><p id="cost-per-piece-dashboard" class="text-2xl md:text-4xl font-bold mt-2 text-yellow-400">R$ 0,00</p></div>
+          <div class="glass-card metric-tile p-4 md:p-6"><div class="icon-label-container"><svg class="syt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 1v22m6-18H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></svg><span class="text-xs md:text-sm font-semibold text-gray-300">Saldo Atual</span></div><p id="balance" class="text-2xl md:text-4xl font-bold mt-2">R$ 0,00</p></div>
+          <div class="glass-card metric-tile p-4 md:p-6"><div class="icon-label-container"><svg class="syt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 19h16M6 15l4-4 3 3 5-6"/></svg><span class="text-xs md:text-sm font-semibold text-gray-300">Receitas (Mês)</span></div><p id="total-income" class="text-2xl md:text-4xl font-bold mt-2 text-green-400">R$ 0,00</p></div>
+          <div class="glass-card metric-tile p-4 md:p-6"><div class="icon-label-container"><svg class="syt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 19h16M6 9l4 4 3-3 5 6"/></svg><span class="text-xs md:text-sm font-semibold text-gray-300">Despesas (Mês)</span></div><p id="total-expense" class="text-2xl md:text-4xl font-bold mt-2 text-red-400">R$ 0,00</p></div>
+          <div class="glass-card metric-tile p-4 md:p-6"><div class="icon-label-container"><svg class="syt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3l2.5 5.4 5.9.5-4.4 4 1.2 5.8L12 15.8l-5.2 2.9 1.2-5.8-4.4-4 5.9-.5L12 3z"/></svg><span class="text-xs md:text-sm font-semibold text-gray-300">Lucro (Mês)</span></div><p id="profit" class="text-2xl md:text-4xl font-bold mt-2">R$ 0,00</p></div>
+          <div class="glass-card metric-tile p-4 md:p-6 col-span-2"><h3 class="text-gray-400 text-base md:text-lg inline-flex items-center gap-2"><svg class="syt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21h18M5 18V7l7-4 7 4v11"/></svg>Custo por Peça (Mês Atual)</h3><p id="cost-per-piece-dashboard" class="text-2xl md:text-4xl font-bold mt-2 text-yellow-400">R$ 0,00</p></div>
         </div>
       </section>
       
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <div class="lg:col-span-1 glass-card dashboard-section-card p-6">
-            <h3 class="text-xl font-bold mb-4">🗓️ PRÓXIMOS PRAZOS</h3>
+            <h3 class="text-xl font-bold mb-4 inline-flex items-center gap-2"><svg class="syt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" stroke-width="2"/><path d="M8 2v4m8-4v4M3 10h18" stroke-width="2" stroke-linecap="round"/></svg>PRÓXIMOS PRAZOS</h3>
             <div id="deadlines-list" class="space-y-3"></div>
           </div>
           <!-- BÔNUS: Card de Contas a Pagar -->
           <div class="lg:col-span-1 glass-card dashboard-section-card p-6">
-            <h3 class="text-xl font-bold mb-4">📌 CONTAS DO MÊS</h3>
+            <h3 class="text-xl font-bold mb-4">CONTAS DO MÊS</h3>
             <div id="dashboard-bills-summary" class="space-y-3"></div>
           </div>
           <div class="lg:col-span-1 glass-card dashboard-section-card p-6">
-            <h3 class="text-xl font-bold mb-4">💰 A RECEBER</h3>
+            <h3 class="text-xl font-bold mb-4 inline-flex items-center gap-2"><svg class="syt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 1v22m6-18H9.5a3.5 3.5 0 1 0 0 7h5a3.5 3.5 0 1 1 0 7H6"/></svg>A RECEBER</h3>
             <div id="total-receivables" class="text-2xl font-bold text-yellow-400">R$ 0,00</div>
           </div>
           <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -288,7 +288,7 @@
               <div id="budget-carousel" class="flex transition-transform duration-300 ease-in-out">
                 <!-- Slide 1: Business -->
                 <div class="w-full flex-shrink-0 p-6">
-                  <h3 class="text-lg font-bold mb-2">🏢 ORÇAMENTO EMPRESARIAL</h3>
+                  <h3 class="text-lg font-bold mb-2">ORÇAMENTO EMPRESARIAL</h3>
                   <div class="flex justify-between items-baseline mb-2">
                     <span id="business-spent" class="text-xl font-bold text-red-400">R$ 0,00</span>
                     <span id="business-limit-text" class="text-sm text-gray-400">de R$ 0,00</span>
@@ -297,7 +297,7 @@
                 </div>
                 <!-- Slide 2: Personal -->
                 <div class="w-full flex-shrink-0 p-6">
-                  <h3 class="text-lg font-bold mb-2">👤 LIMITE PESSOAL</h3>
+                  <h3 class="text-lg font-bold mb-2">LIMITE PESSOAL</h3>
                   <div class="flex justify-between items-baseline mb-2">
                     <span id="personal-spent" class="text-xl font-bold text-yellow-400">R$ 0,00</span>
                     <span id="personal-limit-text" class="text-sm text-gray-400">de R$ 0,00</span>
@@ -311,7 +311,7 @@
               </div>
             </div>
             <div class="glass-card p-6">
-              <h3 class="text-lg font-bold mb-2">🎯 PONTO DE EQUILÍBRIO (MÊS)</h3>
+              <h3 class="text-lg font-bold mb-2">PONTO DE EQUILÍBRIO (MÊS)</h3>
                <div class="flex justify-between items-baseline mb-2 text-xs sm:text-sm">
                 <span id="break-even-revenue" class="font-bold text-green-400">Receita: R$ 0,00</span>
                 <span id="break-even-target" class="font-bold text-red-400">Custos: R$ 0,00</span>
@@ -346,8 +346,8 @@
       
       <section class="glass-card launch-panel">
         <div class="head">
-          <strong>🧾 LANÇAMENTOS</strong>
-          <span class="pill teal">FILTRO</span>
+          <strong>LANÇAMENTOS</strong>
+          <button class="pill teal inline-flex items-center gap-1" type="button"><svg class="syt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h18l-7 8v6l-4-2v-4L3 5z"/></svg>FILTRO</button>
         </div>
         <div class="launch-body">
           <div id="syt-filters-container" class="space-y-2">
@@ -374,14 +374,13 @@
 
           <div class="chartbox">
             <!-- Cabeçalho da Tabela (Apenas Desktop) -->
-            <div class="hidden md:grid md:grid-cols-[2fr,3fr,1.5fr,1.5fr,1.5fr,1fr,auto] gap-4 text-sm font-bold text-gray-400 border-b border-white/10 pb-2 mb-4">
-                <span>NOME</span>
-                <span>DESCRIÇÃO</span>
+            <div class="launch-table-head hidden md:grid md:grid-cols-[2.3fr,1.2fr,1.1fr,1fr,1fr,auto] gap-4 text-sm font-bold text-gray-300 border-b border-white/10 pb-3 mb-2">
+                <span>NOME / DESCRIÇÃO</span>
                 <span class="text-left">VALOR</span>
                 <span>ESCOPO</span>
                 <span>CATEGORIA</span>
                 <span>DATA</span>
-                <span class="text-right">AÇÃO</span>
+                <span class="text-right">AÇÕES</span>
             </div>
             <div id="transaction-list" class="space-y-3 md:space-y-0">
                 <!-- Transactions will be rendered here by JS -->
@@ -420,7 +419,7 @@
                     <div class="md:col-span-2"><label for="name" class="block mb-2 text-sm font-medium">Nome (Cliente/Fornecedor)</label><input type="text" id="name" class="w-full p-3 rounded-md bg-white/10 border border-white/20" placeholder="Ex: Cliente Vini"></div>
                     <div><label for="type" class="block mb-2 text-sm font-medium">Tipo</label><select id="type" class="w-full p-3 rounded-md bg-white/10 border border-white/20"><option value="income">Receita</option><option value="expense">Despesa</option></select></div>
                     <div><label for="category" class="block mb-2 text-sm font-medium">Categoria</label><select id="category" class="w-full p-3 rounded-md bg-white/10 border border-white/20"></select></div>
-                    <div id="scope-container" class="hidden md:col-span-2"><label class="block mb-2 text-sm font-medium">Escopo da Despesa</label><div class="grid grid-cols-2 gap-2"><button type="button" data-scope="business" class="scope-btn p-3 rounded-md border-2 bg-white/10">🏢 Empresarial</button><button type="button" data-scope="personal" class="scope-btn p-3 rounded-md border-2 bg-white/10">👤 Pessoal</button></div></div>
+                    <div id="scope-container" class="hidden md:col-span-2"><label class="block mb-2 text-sm font-medium">Escopo da Despesa</label><div class="grid grid-cols-2 gap-2"><button type="button" data-scope="business" class="scope-btn p-3 rounded-md border-2 bg-white/10">Empresarial</button><button type="button" data-scope="personal" class="scope-btn p-3 rounded-md border-2 bg-white/10">Pessoal</button></div></div>
                   </div>
 
                   <!-- Step 3: Extras -->
