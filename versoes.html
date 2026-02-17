@@ -34,14 +34,14 @@
       
                   <article class="glass-card p-5 border border-cyan-500/20">
         <div class="flex items-center justify-between gap-3 mb-2">
-          <h2 class="text-xl font-bold text-cyan-200">Versão 1.5.14</h2>
+          <h2 class="text-xl font-bold text-cyan-200">Versão 1.5.15</h2>
           <span class="text-xs text-gray-400">Atual</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Correção urgente na integração da IA com mensagens de erro mais claras quando o backend Gemini falhar.</li>
-          <li>Endpoint <code>/api/gemini</code> agora possui rota de status segura para validar se a chave de servidor está configurada sem expor o valor.</li>
-          <li>Tela de <strong>Configurações</strong> ganhou bloco <strong>Chaves &amp; Conexões</strong> para visualizar status das chaves com máscara.</li>
-          <li>Firebase público agora é exibido apenas mascarado e a chave privada da IA permanece oculta no servidor.</li>
+          <li>Corrigido erro <em>"The string did not match the expected pattern"</em> no painel de chaves ao abrir o sistema fora de HTTP/HTTPS.</li>
+          <li>Consulta de status Gemini agora usa endpoint absoluto seguro somente quando existe <code>window.location.origin</code> válido.</li>
+          <li>Em ambiente <code>file://</code>, o painel exibe aviso claro de que o endpoint <code>/api</code> não está disponível em vez de quebrar.</li>
+          <li>Mensagens de falha de conexão no status de chaves agora mostram detalhe técnico para diagnóstico mais rápido.</li>
           <li>Histórico de versões atualizado em continuidade da versão anterior.</li>
         </ul>
       </article>
