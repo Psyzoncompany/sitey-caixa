@@ -1820,7 +1820,7 @@ const init = () => {
         const active = order.artControl.versions.find((v) => v.id === order.art.activeVersionId) || order.artControl.versions[order.artControl.versions.length - 1] || null;
         order.art.activeVersionId = active?.id || null;
     };
-    const getClientReviewLink = (order) => `${window.location.origin}/cliente.html?oid=${encodeURIComponent(order.id)}&token=${encodeURIComponent(order.art.clientToken)}`;
+    const getClientReviewLink = (order) => `${window.location.origin}/arteonline.html?oid=${encodeURIComponent(order.id)}&token=${encodeURIComponent(order.art.clientToken)}`;
     const statusChip = (status) => {
         const map = { draft: 'Rascunho', sent: 'Enviada', approved: 'Aprovada', changes_requested: 'Ajustes Solicitados', pending: 'Pendente', done: 'Concluída' };
         return map[status] || status;

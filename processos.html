@@ -148,26 +148,7 @@
 
       <div id="view-afazeres" data-panel="afazeres" class="view-container process-panel hidden"><div id="tasks-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"></div></div>
       <div id="view-artes" data-panel="artes" class="view-container process-panel hidden">
-        <section class="artx-admin-shell space-y-4">
-          <div class="artx-admin-toolbar glass-card p-4">
-            <div class="artx-admin-toolbar-head">
-              <h3 class="artx-admin-title">Controle de Artes 1.5.4</h3>
-              <button id="artx-create-request-btn" class="btn-shine py-2 px-4 rounded-lg text-sm font-bold">Criar Solicitação Manual</button>
-            </div>
-            <div class="artx-admin-filters">
-              <input id="artx-search-input" type="search" placeholder="Buscar por ID ou código" class="artx-input" />
-              <select id="artx-status-filter" class="artx-input">
-                <option value="all">Todos status</option>
-                <option>Aguardando envio do cliente</option>
-                <option>Cliente enviou</option>
-                <option>Em produção</option>
-                <option>Aguardando aprovação</option>
-                <option>Finalizado</option>
-              </select>
-            </div>
-          </div>
-          <div id="art-tasks-container" class="artx-grid"></div>
-        </section>
+        <div id="art-tasks-container" class="space-y-4"></div>
       </div>
       <div id="view-cortes" data-panel="cortes" class="view-container process-panel hidden"><div id="cutting-tasks-container" class="space-y-6"></div></div>
       <!-- grid responsivo: 1 col em mobile, 2 em md, 3 em lg -->
@@ -382,7 +363,6 @@
         }
     }, 100);
   </script>
-  <script type="module" src="processos-art-control.js"></script>
   <script src="theme-toggle.js"></script>
 </body>
 </html>
