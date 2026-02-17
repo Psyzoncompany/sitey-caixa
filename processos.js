@@ -214,6 +214,59 @@ const init = () => {
 
     const checklistItems = { art: "Arte/Design Aprovado", mockup: "Mockup Aprovado", fabric: "Malha/Tecido Comprado", cutting: "Corte Realizado", sewing: "Costura Realizada", printing: "Estampa/Bordado Realizado", finishing: "Acabamento e Embalagem" };
     const sizeOptions = { adulto: ['PP', 'P', 'M', 'G', 'GG', 'EXG', 'G1', 'G2'], infantil: ['1 a 2 anos', '3 a 4 anos', '5 a 6 anos', '7 a 8 anos', '9 a 10 anos'] };
+
+    const VALID_ART_STATUS = new Set(['em_criacao', 'ajuste_interno', 'finalizada']);
+    const LEGACY_STATUS_MAP_V6 = {
+        aprovada: 'finalizada',
+        finalizada: 'finalizada',
+        enviada: 'ajuste_interno',
+        alteracoes_solicitadas: 'ajuste_interno',
+        rascunho: 'em_criacao'
+    };
+    const normalizeText = (value) => String(value || '').trim();
+    const sanitizeHtml = (value) => normalizeText(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    const resolveArtVisualStatus = (status) => VALID_ART_STATUS.has(status) ? status : 'em_criacao';
+    const migrateOrderStatusToV6 = (order) => {
+        if (!order || typeof order !== 'object') return false;
+        if (order.schemaVersion === 6 || order.migratedToV6 === true) return false;
+
+        let changed = false;
+        const current = normalizeText(order?.art?.status);
+        if (!VALID_ART_STATUS.has(current)) {
+            if (!order.art || typeof order.art !== 'object') {
+                order.art = order.art || {};
+                changed = true;
+            }
+            if (!current) {
+                order.art.status = 'em_criacao';
+                changed = true;
+            } else if (LEGACY_STATUS_MAP_V6[current]) {
+                order.art.status = LEGACY_STATUS_MAP_V6[current];
+                changed = true;
+            }
+        }
+
+        order.schemaVersion = 6;
+        order.migratedToV6 = true;
+        return true;
+    };
+    const applyArtChecklistStatusConsistency = (order, nextStatus) => {
+        if (!order?.checklist?.art) return;
+        if (nextStatus === 'finalizada') {
+            order.checklist.art.completed = true;
+            order.checklist.art.completedAt = Date.now();
+            return;
+        }
+        if (nextStatus === 'em_criacao' || nextStatus === 'ajuste_interno') {
+            order.checklist.art.completed = false;
+            order.checklist.art.completedAt = null;
+        }
+    };
     const categoryIcons = {
         art: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg>`,
         mockup: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>`,
@@ -277,6 +330,9 @@ const init = () => {
     };
 
     normalizeHistoryFlags();
+    productionOrders.forEach((order) => {
+        migrateOrderStatusToV6(order);
+    });
     localStorage.setItem('production_orders', JSON.stringify(productionOrders));
 
     const saveOrders = () => {
@@ -1388,36 +1444,53 @@ const init = () => {
         const colorsHtml = colors.length
             ? colors.map(c => {
                 const safeBg = /^#([0-9A-F]{3}){1,2}$/i.test((c || '').trim()) ? `background:${c}` : '';
-                return `<span class="cutting-color-item"><span class="swatch" style="${safeBg}"></span>${c}</span>`;
+                return `<span class="cutting-color-item"><span class="swatch" style="${safeBg}"></span>${sanitizeHtml(c)}</span>`;
             }).join('')
             : '<span class="text-xs text-gray-400">Sem cores</span>';
 
         const cutsHtml = subtasks.length ? subtasks.map((subtask) => {
             const isInf = subtask.gender === 'Infantil';
             const sizeLabel = isInf ? `Idade: ${subtask.age || subtask.size || '-'}` : `Tam: ${subtask.size || '-'}`;
-            const colorLabel = subtask.color || 'Sem cor';
+            const statusOk = parseInt(subtask.cut || 0, 10) >= parseInt(subtask.total || 0, 10) && parseInt(subtask.total || 0, 10) > 0;
+            const note = String(subtask.notes || '');
+            const preview = note ? sanitizeHtml(note).replace(/\n/g, " ") : "";
             return `
                 <article class="cut-card" data-subtask-id="${subtask.id}">
-                    <div class="cut-card-top">
-                        <div class="cut-chips">
-                            <span class="cut-chip">${subtask.gender || 'Sexo'}</span>
-                            <span class="cut-chip">${subtask.variation || 'Estilo'}</span>
-                            <span class="cut-chip">${sizeLabel}</span>
-                            <span class="cut-chip">${colorLabel}</span>
+                    <div class="cut-card-header">
+                        <div class="cut-card-header-main">
+                            <p class="cut-title-row">
+                                <span class="cut-size-title">${sanitizeHtml(sizeLabel)}</span>
+                                ${getCutSectionStatus(statusOk)}
+                            </p>
                         </div>
                         <div class="cut-card-actions">
-                            <button type="button" class="cut-icon-action" data-action="duplicate-cut" aria-label="Duplicar corte">⧉</button>
-                            <button type="button" class="cut-icon-action danger" data-action="delete-cut" aria-label="Excluir corte">✕</button>
+                            <button type="button" class="cut-icon-action" data-action="duplicate-cut" aria-label="Duplicar corte">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><rect x="9" y="9" width="10" height="10" rx="2" stroke-width="1.8"></rect><rect x="5" y="5" width="10" height="10" rx="2" stroke-width="1.8"></rect></svg>
+                            </button>
+                            <button type="button" class="cut-icon-action danger" data-action="delete-cut" aria-label="Excluir corte">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M4 7h16" stroke-width="1.8"/><path d="M10 11v6M14 11v6" stroke-width="1.8"/><path d="M6 7l1 12h10l1-12" stroke-width="1.8"/><path d="M9 7V4h6v3" stroke-width="1.8"/></svg>
+                            </button>
                         </div>
                     </div>
-                    <div class="cut-stepper" data-subtask-id="${subtask.id}">
-                        <button type="button" class="cut-step-btn" data-action="decrease-cut">−</button>
-                        <input type="number" min="0" class="cut-quantity-input" data-subtask-id="${subtask.id}" value="${parseInt(subtask.cut || 0, 10)}">
-                        <span class="cut-step-total">/ ${parseInt(subtask.total || 0, 10)}</span>
-                        <button type="button" class="cut-step-btn" data-action="increase-cut">+</button>
+                    <div class="cut-card-meta">
+                        <span class="cut-chip">${sanitizeHtml(subtask.gender || 'Sexo')}</span>
+                        <span class="cut-chip">${sanitizeHtml(subtask.variation || 'Estilo')}</span>
+                        <span class="cut-chip">${sanitizeHtml(subtask.color || 'Sem cor')}</span>
                     </div>
-                    <input type="text" class="cut-note-input" data-subtask-id="${subtask.id}" value="${subtask.notes || ''}" placeholder="Observação do corte (opcional)">
-                    <p class="cut-subtotal">Subtotal: ${parseInt(subtask.total || 0, 10)} peça(s)</p>
+                    <div class="cut-control-row">
+                        <div class="cut-stepper" data-subtask-id="${subtask.id}">
+                            <button type="button" class="cut-step-btn" data-action="decrease-cut">−</button>
+                            <input type="number" min="0" class="cut-quantity-input" data-subtask-id="${subtask.id}" value="${parseInt(subtask.cut || 0, 10)}">
+                            <button type="button" class="cut-step-btn" data-action="increase-cut">+</button>
+                            <span class="cut-step-total">/ ${parseInt(subtask.total || 0, 10)}</span>
+                        </div>
+                        <p class="cut-subtotal">Subtotal: ${parseInt(subtask.total || 0, 10)} peça(s)</p>
+                    </div>
+                    <div class="cut-note-box ${note ? 'is-expanded has-content' : ''}">
+                        <button type="button" class="cut-note-toggle" data-action="toggle-note">Adicionar observação (opcional)</button>
+                        <p class="cut-note-preview">${preview}</p>
+                        <textarea class="cut-note-input" data-subtask-id="${subtask.id}" rows="2" placeholder="Descreva observações importantes para esse corte">${sanitizeHtml(note)}</textarea>
+                    </div>
                 </article>
             `;
         }).join('') : '<div class="glass-card p-4 text-sm text-gray-300">Nenhum corte adicionado ainda.</div>';
@@ -1459,7 +1532,7 @@ const init = () => {
                     <div class="cut-form-group" id="cut-size-group">
                         <span>Tamanho</span>
                         <div class="size-chips" data-field="size">
-                            ${sizeOptions.adulto.map((s, i) => `<button type="button" class="${i===2?'is-active':''}" data-value="${s}">${s}</button>`).join('')}
+                            ${sizeOptions.adulto.map((size, index) => `<button type="button" class="${index === 2 ? 'is-active' : ''}" data-value="${size}">${size}</button>`).join('')}
                         </div>
                     </div>
                     <div class="cut-form-group hidden" id="cut-age-group">
@@ -1470,7 +1543,7 @@ const init = () => {
                         <span>Cor</span>
                         <div class="color-swatches" data-field="color">
                             <button type="button" class="is-active" data-value="Sem cor">Sem cor</button>
-                            ${colors.map(c => `<button type="button" data-value="${c}" style="${/^#([0-9A-F]{3}){1,2}$/i.test((c||'').trim()) ? `--sw:${c}` : ''}">${c}</button>`).join('')}
+                            ${colors.map(c => `<button type="button" data-value="${sanitizeHtml(c)}" style="${/^#([0-9A-F]{3}){1,2}$/i.test((c||'').trim()) ? `--sw:${c}` : ''}">${sanitizeHtml(c)}</button>`).join('')}
                         </div>
                     </div>
                     <div class="cut-form-row">
@@ -1487,11 +1560,6 @@ const init = () => {
                         <button type="submit">Adicionar</button>
                     </div>
                 </form>
-            </section>
-
-            <section class="cutting-section-card">
-                <div class="cutting-section-head"><h3>Controle de cortes</h3>${getCutSectionStatus(subtasks.length > 0 && totalPieces > 0)}</div>
-                <p class="text-sm text-gray-300">Este painel mostra apenas informações relacionadas aos cortes.</p>
             </section>
         `;
 
@@ -1551,6 +1619,12 @@ const init = () => {
                 return;
             }
 
+            if (action === 'toggle-note') {
+                const noteBox = actionBtn.closest('.cut-note-box');
+                if (noteBox) noteBox.classList.toggle('is-expanded');
+                return;
+            }
+
             if (action === 'form-minus' || action === 'form-plus') {
                 const qty = document.getElementById('cut-form-qty');
                 if (!qty) return;
@@ -1600,7 +1674,13 @@ const init = () => {
             if (e.target.classList.contains('cut-note-input') && e.target.dataset.subtaskId) {
                 const id = parseFloat(e.target.dataset.subtaskId);
                 const subtask = subtasks.find(s => s.id === id);
-                if (subtask) subtask.notes = e.target.value;
+                if (subtask) {
+                    subtask.notes = e.target.value;
+                    const noteBox = e.target.closest('.cut-note-box');
+                    const preview = noteBox?.querySelector('.cut-note-preview');
+                    if (preview) preview.textContent = String(subtask.notes || '').replace(/\n/g, ' ');
+                    if (noteBox) noteBox.classList.toggle('has-content', Boolean(String(subtask.notes || '').trim()));
+                }
             }
 
             saveOrders();
@@ -1806,7 +1886,7 @@ const init = () => {
     };
     const statusChip = (status) => {
         const map = { em_criacao: 'Em criação', ajuste_interno: 'Ajuste interno', finalizada: 'Finalizada' };
-        return map[status] || 'Em criação';
+        return map[resolveArtVisualStatus(status)] || 'Em criação';
     };
     const openArtControlModal = (orderId) => {
         activeArtOrderId = orderId;
@@ -1871,7 +1951,7 @@ const init = () => {
         };
         shell.querySelector('#save-art-btn').onclick = () => {
             order.art.status = 'finalizada';
-            if (order.checklist?.art) order.checklist.art.completed = true;
+            applyArtChecklistStatusConsistency(order, 'finalizada');
             saveOrders();
             renderArtTasks();
             artModal.classList.add('hidden');
@@ -1920,7 +2000,7 @@ const init = () => {
                 ver.status = nextStatus;
                 order.art.status = nextStatus;
                 ver.history.push({ action: 'status', date: Date.now(), user: 'Interno', comment: note });
-                if (nextStatus === 'finalizada' && order.checklist?.art) order.checklist.art.completed = true;
+                applyArtChecklistStatusConsistency(order, nextStatus);
                 saveOrders();
                 renderArtVersionsList(order);
                 renderArtTasks();
