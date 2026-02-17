@@ -2,6 +2,7 @@
   const canUseHttp = window.location.protocol === 'http:' || window.location.protocol === 'https:';
   const API_ENDPOINT = canUseHttp ? `${window.location.origin}/api/gemini` : null;
   const blockedPaths = new Set(['/login.html', '/Arte-Online.html', '/arteonline.html']);
+  const modelFallbacks = ['gemini-2.0-flash-exp', 'gemini-1.5-flash', 'gemini-pro'];
 
   let busy = false;
   const history = [];
@@ -42,35 +43,65 @@
     return div;
   };
 
+  const getAnswerFromGemini = (data) => {
+    return data?.candidates?.[0]?.content?.parts
+      ?.map((p) => (typeof p?.text === 'string' ? p.text : ''))
+      .join(' ')
+      .trim();
+  };
+
+  const parseResponseSafe = async (res) => {
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      return await res.json();
+    }
+
+    const raw = await res.text();
+    return {
+      error: `Resposta inválida do endpoint /api/gemini (${res.status}).`,
+      details: raw?.slice?.(0, 300) || 'Sem conteúdo retornado.'
+    };
+  };
+
   const askModel = async (text) => {
     if (!API_ENDPOINT) throw new Error('A IA exige acesso por URL HTTP/HTTPS.');
 
     history.push({ role: 'user', parts: [{ text }] });
+
+    const prompt = `Você é um assistente curto e objetivo para gestão de confecção. Responda em português BR.\n\nContexto da página: ${window.location.pathname}\nPergunta: ${text}`;
     const payload = {
-      contents: [
-        {
-          role: 'user',
-          parts: [{
-            text: `Você é um assistente curto e objetivo para gestão de confecção. Responda em português BR.\n\nContexto da página: ${window.location.pathname}\nPergunta: ${text}`
-          }]
-        }
-      ],
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
       generationConfig: { temperature: 0.7, maxOutputTokens: 350 }
     };
 
-    const res = await fetch(API_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'gemini-1.5-flash', payload })
-    });
+    let lastErr = 'Não foi possível responder agora.';
 
-    const data = await res.json();
-    const answer = data?.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join(' ').trim();
-    if (!res.ok || !answer) {
-      throw new Error(data?.error?.message || data?.error || 'Não foi possível responder agora.');
+    for (const model of modelFallbacks) {
+      try {
+        const res = await fetch(API_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model, payload })
+        });
+
+        const data = await parseResponseSafe(res);
+        const answer = getAnswerFromGemini(data);
+
+        if (res.ok && answer) {
+          history.push({ role: 'model', parts: [{ text: answer }] });
+          return answer;
+        }
+
+        const serverError = data?.error?.message || data?.error || data?.details;
+        lastErr = typeof serverError === 'string' ? serverError : `Falha no modelo ${model}.`;
+      } catch (error) {
+        lastErr = error?.message || `Erro ao consultar o modelo ${model}.`;
+      }
     }
-    history.push({ role: 'model', parts: [{ text: answer }] });
-    return answer;
+
+    throw new Error(lastErr.includes('GEMINI_API_KEY')
+      ? 'A chave GEMINI_API_KEY não está ativa no servidor. Configure no ambiente da Vercel.'
+      : lastErr);
   };
 
   const init = () => {
@@ -103,7 +134,7 @@
     const messages = panel.querySelector('#nova-ai-messages');
     const input = panel.querySelector('#nova-ai-input');
 
-    addMessage(messages, 'Novo assistente pronto. Conectado ao endpoint seguro usando GEMINI_API_KEY do ambiente.', 'ai');
+    addMessage(messages, 'Assistente pronto. Se houver erro, vou mostrar exatamente o motivo da conexão com /api/gemini.', 'ai');
 
     fab.addEventListener('click', () => {
       panel.classList.toggle('nova-ai-hidden');
