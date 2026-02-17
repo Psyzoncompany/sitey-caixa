@@ -815,7 +815,7 @@ const init = () => {
                 <section>
                     <div class="syt-payment-block">
                         <div class="syt-block-header">
-                            <span class="label">💰 Financeiro</span>
+                            <span class="label">Financeiro</span>
                             <span class="value">${paidPercent.toFixed(0)}%</span>
                         </div>
                         <div class="syt-payment-details">
@@ -834,7 +834,7 @@ const init = () => {
 
                 <section class="syt-meta-item syt-meta-progress">
                     <div class="syt-block-header">
-                        <span class="label">🛠️ Produção</span>
+                        <span class="label">Produção</span>
                         <span class="value">${Math.round(progress)}%</span>
                     </div>
                     <div class="syt-progress-bar-sm-bg">
@@ -1289,7 +1289,7 @@ const init = () => {
         if (allTasks.length === 0) {
             const emptyState = document.createElement('div');
             emptyState.className = 'glass-card p-6 text-center text-gray-400 md:col-span-2 xl:col-span-3';
-            emptyState.innerHTML = 'Nenhuma tarefa com prazo definido encontrada. ✨';
+            emptyState.innerHTML = 'Nenhuma tarefa com prazo definido encontrada.';
             tasksContainer.appendChild(emptyState);
             return;
         }
@@ -1335,7 +1335,7 @@ const init = () => {
             !order.checklist.cutting.completed
         );
         if (pendingCutOrders.length === 0) {
-            cuttingTasksContainer.innerHTML = '<div class="glass-card p-6 text-center text-gray-400">Nenhuma tarefa de corte pendente. ✨</div>';
+            cuttingTasksContainer.innerHTML = '<div class="glass-card p-6 text-center text-gray-400">Nenhuma tarefa de corte pendente.</div>';
             return;
         }
         pendingCutOrders.forEach(order => {
@@ -1705,7 +1705,7 @@ const init = () => {
         });
 
         if (artOrders.length === 0) {
-            artTasksContainer.innerHTML = '<div class="glass-card p-6 text-center text-gray-400">Nenhum pedido pendente para arte. ✨</div>';
+            artTasksContainer.innerHTML = '<div class="glass-card p-6 text-center text-gray-400">Nenhum pedido pendente para arte.</div>'; 
             return;
         }
 
@@ -1742,8 +1742,7 @@ const init = () => {
                 ? deadlineDate.toLocaleDateString('pt-BR').slice(0, 5)
                 : 'Sem prazo';
             const isLate = deadlineDate && deadlineDate < new Date() && (!lastVersion || lastVersion.status !== 'approved');
-            const hasApprovalLink = Boolean(order?.art?.clientToken || order?.clientToken);
-
+            
             // New Compact Card HTML
             const card = document.createElement('div');
             card.className = `art-card-compact`;
@@ -1774,9 +1773,7 @@ const init = () => {
 
                 <div class="art-card-actions">
                     <button data-order-id="${order.id}" class="open-art-modal-btn art-btn-action primary">Gerenciar</button>
-                    <button class="art-btn-action copy-art-link-btn" data-order-id="${order.id}" ${hasApprovalLink ? '' : 'disabled'}>
-                        ${hasApprovalLink ? 'Copiar Link' : 'Sem Link'}
-                    </button>
+                    <button class="art-btn-action copy-art-link-btn" data-order-id="${order.id}">Copiar Link</button>
                 </div>
             `;
             return card;
@@ -1819,8 +1816,23 @@ const init = () => {
         }));
         const active = order.artControl.versions.find((v) => v.id === order.art.activeVersionId) || order.artControl.versions[order.artControl.versions.length - 1] || null;
         order.art.activeVersionId = active?.id || null;
+        if (window.firebaseAuth?.upsertOrderClientBridge && order.art.clientToken) {
+            window.firebaseAuth.upsertOrderClientBridge(order, order.art.clientToken).catch((err) => {
+                console.warn('Não foi possível sincronizar order_clients/orders:', err);
+            });
+        }
     };
-    const getClientReviewLink = (order) => `${window.location.origin}/arteonline.html?oid=${encodeURIComponent(order.id)}&token=${encodeURIComponent(order.art.clientToken)}`;
+    const getClientReviewLink = (order) => `${window.location.origin}/arteonline.html?token=${encodeURIComponent(order.art.clientToken)}`;
+    const ensureOrderClientBridge = async (order) => {
+        try {
+            ensureArtStructure(order);
+            if (window.firebaseAuth?.upsertOrderClientBridge) {
+                await window.firebaseAuth.upsertOrderClientBridge(order, order.art.clientToken);
+            }
+        } catch (err) {
+            console.warn('Falha ao atualizar ponte do cliente:', err);
+        }
+    };
     const statusChip = (status) => {
         const map = { draft: 'Rascunho', sent: 'Enviada', approved: 'Aprovada', changes_requested: 'Ajustes Solicitados', pending: 'Pendente', done: 'Concluída' };
         return map[status] || status;
@@ -1832,6 +1844,7 @@ const init = () => {
         const client = clients.find((c) => c.id === order.clientId);
         if (!order) return;
         ensureArtStructure(order);
+        ensureOrderClientBridge(order);
 
         const shell = document.getElementById('art-modal-shell');
         shell.innerHTML = `
@@ -1842,7 +1855,7 @@ const init = () => {
                 </div>
                 <div class="flex items-center gap-2">
                     <span id="art-global-status" class="artx-badge-pill">${statusChip(order.art.status)}</span>
-                    <button id="close-art-modal-btn" class="artx-icon-btn" type="button">✕</button>
+                    <button id="close-art-modal-btn" class="artx-icon-btn" type="button"><svg class="syt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 6l12 12M18 6L6 18"/></svg></button>
                 </div>
             </div>
             <div class="artx-modal-content">
@@ -1889,6 +1902,7 @@ const init = () => {
             openArtControlModal(order.id);
         };
         shell.querySelector('#btn-export-link').onclick = async () => {
+            await ensureOrderClientBridge(order);
             const link = getClientReviewLink(order);
             const text = `Olá! Aqui está seu link de aprovação: ${link}`;
             const ok = await copyTextSafe(text);
@@ -1917,7 +1931,9 @@ const init = () => {
 
         versions.forEach((ver) => {
             const link = getClientReviewLink(order);
+            ensureOrderClientBridge(order);
             const feedbackText = ver.clientFeedback?.message || 'Sem feedback do cliente.';
+            const hasClientUpdate = Boolean(ver.clientFeedback?.message) || (order.art.lastClientActivity && ['changes_requested','approved'].includes(order.art.lastClientActivity.type));
             const last = Array.isArray(ver.history) && ver.history.length ? ver.history[ver.history.length - 1] : null;
             const card = document.createElement('article');
             card.className = 'artx-version-card';
@@ -1929,7 +1945,7 @@ const init = () => {
                             <h4 class="text-xl font-bold">Versão ${ver.versionNumber}</h4>
                             <p class="text-xs text-gray-400">Criada em ${formatArtDate(ver.createdAt)}</p>
                         </div>
-                        <span class="artx-badge-pill">${statusChip(ver.status)}</span>
+                        <div class="flex items-center gap-2">${hasClientUpdate ? '<span class=\"artx-badge-pill artx-badge-new\">Novo</span>' : ''}<span class="artx-badge-pill">${statusChip(ver.status)}</span></div>
                     </div>
                     <p class="text-xs text-gray-400 mt-2">Última atividade: ${last ? `${last.action} · ${last.comment || ''}` : 'created'}</p>
                     <div class="artx-version-actions">
@@ -2015,6 +2031,7 @@ const init = () => {
                 const order = productionOrders.find(o => o.id === orderId);
                 if (!order) return;
                 ensureArtStructure(order);
+                ensureOrderClientBridge(order);
                 const approvalLink = getClientReviewLink(order);
                 copyTextSafe(approvalLink).then((ok) => {
                     if (!ok) {
@@ -2060,7 +2077,7 @@ const init = () => {
         if (dtfOrders.length === 0) {
             const empty = document.createElement('div');
             empty.className = 'glass-card p-6 text-center text-gray-400';
-            empty.textContent = 'Nenhum pedido DTF pendente. ✨';
+            empty.textContent = 'Nenhum pedido DTF pendente.';
             dtfTasksContainer.appendChild(empty);
             return;
         }
