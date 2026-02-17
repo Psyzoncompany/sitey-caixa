@@ -22,3 +22,11 @@ Se usar login Google popup/redirect:
   - valida `order_clients/{token}` -> `oid`
   - lê `orders_public/{oid}`
   - envia feedback para `order_feedback/{token}/items/*`.
+
+### 4) Permissões do Firestore no modo sem login
+- Se o painel admin estiver sem autenticação Firebase, ele **precisa** de permissão de escrita em:
+  - `orders/{oid}`
+  - `orders_public/{oid}`
+  - `order_clients/{token}`
+- Use temporariamente as regras abertas do arquivo `FIRESTORE_RULES.md` para remover os erros de permissão no fluxo atual.
+- Depois que estabilizar, faça hardening com Auth ou Cloud Functions.
