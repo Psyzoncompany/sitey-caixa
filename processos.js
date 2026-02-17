@@ -1610,16 +1610,6 @@ const init = () => {
                 if (subtask) subtask.notes = e.target.value;
             }
 
-            if (e.target.id === 'cut-personalization-names') {
-                order.checklist.cutting.personalization = order.checklist.cutting.personalization || { hasNames: false, names: '' };
-                order.checklist.cutting.personalization.names = e.target.value;
-            }
-
-            if (e.target.id === 'cut-finishing-note') {
-                order.checklist.finishing = order.checklist.finishing || { completed: false, deadline: '' };
-                order.checklist.finishing.note = e.target.value;
-            }
-
             saveOrders();
             syncCuttingMeta(order);
         });
@@ -1627,15 +1617,6 @@ const init = () => {
         cuttingChecklistContainer.addEventListener('change', (e) => {
             const order = productionOrders.find(o => o.id === activeCuttingOrderId);
             if (!order) return;
-            if (e.target.id === 'cut-personalization-toggle') {
-                order.checklist.cutting.personalization = order.checklist.cutting.personalization || { hasNames: false, names: '' };
-                order.checklist.cutting.personalization.hasNames = e.target.checked;
-                renderCutCards(order);
-            }
-            if (e.target.id === 'cut-finishing-check') {
-                order.checklist.finishing = order.checklist.finishing || { completed: false, deadline: '' };
-                order.checklist.finishing.completed = e.target.checked;
-            }
             saveOrders();
             syncCuttingMeta(order);
         });
