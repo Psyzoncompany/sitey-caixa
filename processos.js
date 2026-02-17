@@ -45,9 +45,12 @@ const init = () => {
     const ordersHistoryContainer = document.getElementById('orders-history-container');
     const cuttingModal = document.getElementById('cutting-modal');
     const cuttingModalTitle = document.getElementById('cutting-modal-title');
+    const cuttingModalSubtitle = document.getElementById('cutting-modal-subtitle');
     const closeCuttingModalBtn = document.getElementById('close-cutting-modal-btn');
     const cuttingChecklistContainer = document.getElementById('cutting-checklist-container');
     const saveCutsBtn = document.getElementById('save-cuts-btn');
+    const saveCutsFooterBtn = document.getElementById('save-cuts-footer-btn');
+    const cuttingFooterTotal = document.getElementById('cutting-footer-total');
     const orderPrintTypeSelect = document.getElementById('order-print-type');
     const orderColorsContainer = document.getElementById('order-colors-container');
     const addColorBtn = document.getElementById('add-color-btn');
@@ -1381,85 +1384,335 @@ const init = () => {
         });
     }
 
+    const getCuttingTotalPieces = (subtasks = []) => subtasks.reduce((acc, sub) => acc + (parseInt(sub.total, 10) || 0), 0);
+
+    const getCutSectionStatus = (ok) => ok ? '<span class="cutting-status-chip is-ok">Completo</span>' : '<span class="cutting-status-chip">Pendente</span>';
+
+    const renderCutCards = (order) => {
+        const subtasks = order?.checklist?.cutting?.subtasks || [];
+        const colors = order.colors || [];
+        const colorsHtml = colors.length
+            ? colors.map(c => {
+                const safeBg = /^#([0-9A-F]{3}){1,2}$/i.test((c || '').trim()) ? `background:${c}` : '';
+                return `<span class="cutting-color-item"><span class="swatch" style="${safeBg}"></span>${c}</span>`;
+            }).join('')
+            : '<span class="text-xs text-gray-400">Sem cores</span>';
+
+        const cutsHtml = subtasks.length ? subtasks.map((subtask) => {
+            const isInf = subtask.gender === 'Infantil';
+            const sizeLabel = isInf ? `Idade: ${subtask.age || subtask.size || '-'}` : `Tam: ${subtask.size || '-'}`;
+            const colorLabel = subtask.color || 'Sem cor';
+            return `
+                <article class="cut-card" data-subtask-id="${subtask.id}">
+                    <div class="cut-card-top">
+                        <div class="cut-chips">
+                            <span class="cut-chip">${subtask.gender || 'Sexo'}</span>
+                            <span class="cut-chip">${subtask.variation || 'Estilo'}</span>
+                            <span class="cut-chip">${sizeLabel}</span>
+                            <span class="cut-chip">${colorLabel}</span>
+                        </div>
+                        <div class="cut-card-actions">
+                            <button type="button" class="cut-icon-action" data-action="duplicate-cut" aria-label="Duplicar corte">⧉</button>
+                            <button type="button" class="cut-icon-action danger" data-action="delete-cut" aria-label="Excluir corte">✕</button>
+                        </div>
+                    </div>
+                    <div class="cut-stepper" data-subtask-id="${subtask.id}">
+                        <button type="button" class="cut-step-btn" data-action="decrease-cut">−</button>
+                        <input type="number" min="0" class="cut-quantity-input" data-subtask-id="${subtask.id}" value="${parseInt(subtask.cut || 0, 10)}">
+                        <span class="cut-step-total">/ ${parseInt(subtask.total || 0, 10)}</span>
+                        <button type="button" class="cut-step-btn" data-action="increase-cut">+</button>
+                    </div>
+                    <input type="text" class="cut-note-input" data-subtask-id="${subtask.id}" value="${subtask.notes || ''}" placeholder="Observação do corte (opcional)">
+                    <p class="cut-subtotal">Subtotal: ${parseInt(subtask.total || 0, 10)} peça(s)</p>
+                </article>
+            `;
+        }).join('') : '<div class="glass-card p-4 text-sm text-gray-300">Nenhum corte adicionado ainda.</div>';
+
+        const personalization = order?.checklist?.cutting?.personalization || { hasNames: false, names: '' };
+        const namesCount = (personalization.names || '').split('\n').filter(v => v.trim()).length;
+        const totalPieces = getCuttingTotalPieces(subtasks);
+
+        cuttingChecklistContainer.innerHTML = `
+            <section class="cutting-section-card">
+                <div class="cutting-section-head"><h3>Resumo</h3>${getCutSectionStatus(totalPieces > 0)}</div>
+                <p class="text-sm text-gray-300">${subtasks.length} cortes • ${totalPieces} peças</p>
+            </section>
+
+            <section class="cutting-section-card">
+                <div class="cutting-section-head"><h3>Cores</h3>${getCutSectionStatus(colors.length > 0)}</div>
+                <div class="cutting-color-list">${colorsHtml}</div>
+            </section>
+
+            <section class="cutting-section-card">
+                <div class="cutting-section-head"><h3>Cortes</h3>${getCutSectionStatus(subtasks.length > 0)}</div>
+                <div class="cut-cards-list">${cutsHtml}</div>
+                <button type="button" class="cutting-add-btn" data-action="toggle-add-cut">+ Adicionar corte</button>
+                <form id="add-cut-form" class="cut-form hidden">
+                    <div class="cut-form-group">
+                        <span>Estilo</span>
+                        <div class="segmented" data-field="variation">
+                            <button type="button" class="is-active" data-value="Gola Polo">Gola Polo</button>
+                            <button type="button" data-value="Comum">Comum</button>
+                            <button type="button" data-value="Regata">Regata</button>
+                        </div>
+                    </div>
+                    <div class="cut-form-group">
+                        <span>Sexo</span>
+                        <div class="segmented" data-field="gender">
+                            <button type="button" class="is-active" data-value="Feminino">Feminino</button>
+                            <button type="button" data-value="Masculino">Masculino</button>
+                            <button type="button" data-value="Infantil">Infantil</button>
+                        </div>
+                    </div>
+                    <div class="cut-form-group" id="cut-size-group">
+                        <span>Tamanho</span>
+                        <div class="size-chips" data-field="size">
+                            ${sizeOptions.adulto.map((s, i) => `<button type="button" class="${i===2?'is-active':''}" data-value="${s}">${s}</button>`).join('')}
+                        </div>
+                    </div>
+                    <div class="cut-form-group hidden" id="cut-age-group">
+                        <span>Idade</span>
+                        <input type="text" id="cut-age-input" class="cut-inline-input" placeholder="Ex.: 7 a 8 anos">
+                    </div>
+                    <div class="cut-form-group">
+                        <span>Cor</span>
+                        <div class="color-swatches" data-field="color">
+                            <button type="button" class="is-active" data-value="Sem cor">Sem cor</button>
+                            ${colors.map(c => `<button type="button" data-value="${c}" style="${/^#([0-9A-F]{3}){1,2}$/i.test((c||'').trim()) ? `--sw:${c}` : ''}">${c}</button>`).join('')}
+                        </div>
+                    </div>
+                    <div class="cut-form-row">
+                        <label>Quantidade</label>
+                        <div class="cut-stepper compact">
+                            <button type="button" data-action="form-minus">−</button>
+                            <input id="cut-form-qty" type="number" min="1" value="1">
+                            <button type="button" data-action="form-plus">+</button>
+                        </div>
+                    </div>
+                    <input type="text" id="cut-form-note" class="cut-inline-input" placeholder="Observação (opcional)">
+                    <div class="cut-form-actions">
+                        <button type="button" data-action="cancel-add-cut">Cancelar</button>
+                        <button type="submit">Adicionar</button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="cutting-section-card">
+                <div class="cutting-section-head"><h3>Personalização (nomes)</h3>${getCutSectionStatus(!personalization.hasNames || namesCount === totalPieces)}</div>
+                <label class="flex items-center gap-2 text-sm"><input id="cut-personalization-toggle" type="checkbox" ${personalization.hasNames ? 'checked' : ''}> Ativar nomes</label>
+                <textarea id="cut-personalization-names" class="cut-note-input mt-2 ${personalization.hasNames ? '' : 'hidden'}" rows="4" placeholder="Um nome por linha">${personalization.names || ''}</textarea>
+            </section>
+
+            <section class="cutting-section-card">
+                <div class="cutting-section-head"><h3>Estampa</h3>${getCutSectionStatus(Boolean(order.printType))}</div>
+                <p class="text-sm text-gray-300">Tipo: ${order.printType || 'Não definido'}</p>
+                <p class="text-sm text-gray-400">${(order.printing && order.printing.notes) ? order.printing.notes : 'Sem observações de estampa.'}</p>
+            </section>
+
+            <section class="cutting-section-card">
+                <div class="cutting-section-head"><h3>Acabamento / Embalagem</h3>${getCutSectionStatus(Boolean(order.checklist?.finishing?.completed))}</div>
+                <label class="flex items-center gap-2 text-sm"><input id="cut-finishing-check" type="checkbox" ${order.checklist?.finishing?.completed ? 'checked' : ''}> Finalizado</label>
+                <input id="cut-finishing-note" type="text" class="cut-note-input mt-2" placeholder="Observações" value="${order.checklist?.finishing?.note || ''}">
+            </section>
+        `;
+
+        if (cuttingFooterTotal) cuttingFooterTotal.textContent = String(totalPieces);
+    };
+
+    const syncCuttingMeta = (order) => {
+        const subtasks = order?.checklist?.cutting?.subtasks || [];
+        const totalPieces = getCuttingTotalPieces(subtasks);
+        const client = clients.find(c => c.id === order.clientId);
+        cuttingModalTitle.textContent = `Pedido: ${order.description} (${client ? client.name : 'Cliente'})`;
+        if (cuttingModalSubtitle) {
+            const prazo = order.deadline ? new Date(order.deadline + 'T03:00:00').toLocaleDateString('pt-BR') : '-';
+            cuttingModalSubtitle.textContent = `Prazo ${prazo} • ${totalPieces} peças`;
+        }
+        if (cuttingFooterTotal) cuttingFooterTotal.textContent = String(totalPieces);
+    };
+
     const openCuttingModal = (orderId) => {
         activeCuttingOrderId = orderId;
         const order = productionOrders.find(o => o.id === orderId);
-        const client = clients.find(c => c.id === order.clientId);
-        cuttingModalTitle.textContent = `Pedido: ${order.description} (${client.name})`;
-
-        // remove existing details display (avoid duplicates)
-        const existingDetails = document.getElementById('cutting-details-display');
-        if (existingDetails) existingDetails.remove();
-
-        // build details card with colors and insert above checklist (tipo de camisa removido)
-        const colors = order.colors || [];
-        const colorsHtml = colors.map(c => {
-            const safeBg = /^#([0-9A-F]{3}){1,2}$/i.test((c || '').trim()) ? `background:${c}` : '';
-            return `<div class="flex items-center gap-2"><div class="w-6 h-6 rounded-sm border" style="${safeBg}"></div><span class="text-xs text-gray-300">${c}</span></div>`;
-        }).join('');
-        const detailsHtml = `
-            <div id="cutting-details-display" class="glass-card p-4 mb-4">
-                <div>
-                    <p class="text-sm text-gray-300">Cores</p>
-                    <div class="flex gap-3 mt-2 flex-wrap">
-                        ${colorsHtml || '<span class="text-xs text-gray-500">Sem cores</span>'}
-                    </div>
-                </div>
-            </div>
-        `;
-        if (cuttingChecklistContainer && cuttingChecklistContainer.parentElement) {
-            cuttingChecklistContainer.insertAdjacentHTML('beforebegin', detailsHtml);
-        }
-
-        renderCuttingChecklist(order.checklist.cutting.subtasks);
+        if (!order) return;
+        syncCuttingMeta(order);
+        renderCutCards(order);
         cuttingModal.classList.remove('hidden');
-        const closeBtn = document.getElementById('close-cutting-modal-btn');
-        if (closeBtn) {
-            closeBtn.onclick = function (e) {
-                e.preventDefault();
-                closeCuttingModal();
-            };
-        }
-    };
-
-    const renderCuttingChecklist = (subtasks) => {
-        cuttingChecklistContainer.innerHTML = '';
-        subtasks.forEach(subtask => {
-            const isCompleted = subtask.cut >= subtask.total;
-            const label = `${subtask.gender || subtask.type || ''} ${subtask.variation || subtask.style || ''} - ${subtask.size} ${subtask.notes ? '('+subtask.notes+')' : ''}`;
-            const item = document.createElement('div');
-            item.className = `p-3 rounded-md flex justify-between items-center bg-white/5 ${isCompleted ? 'border-l-4 border-green-500' : ''}`;
-            item.innerHTML = `<div class="font-semibold">${label}</div><div class="flex items-center gap-4"><input type="number" value="${subtask.cut}" min="0" max="${subtask.total}" class="cut-quantity-input w-20 p-2 text-center rounded-md bg-white/10" data-subtask-id="${subtask.id}"><span class="text-gray-400">/ ${subtask.total}</span></div>`;
-            cuttingChecklistContainer.appendChild(item);
-        });
     };
 
     const saveCuts = () => {
         const order = productionOrders.find(o => o.id === activeCuttingOrderId);
         if (!order) return;
-        let allSubtasksCompleted = true;
-        document.querySelectorAll('.cut-quantity-input').forEach(input => {
-            const subtaskId = parseFloat(input.dataset.subtaskId);
-            const newCutAmount = parseInt(input.value);
-            const subtask = order.checklist.cutting.subtasks.find(s => s.id === subtaskId);
-            if (subtask) {
-                subtask.cut = newCutAmount;
-                if (subtask.cut < subtask.total) allSubtasksCompleted = false;
-            }
-        });
-        if (allSubtasksCompleted) {
-            if (confirm("Todos os itens foram cortados. Deseja marcar a tarefa de corte como concluída?")) {
-                order.checklist.cutting.completed = true;
-            }
-        }
+        const subtasks = order?.checklist?.cutting?.subtasks || [];
+        order.checklist.cutting.completed = subtasks.length > 0 && subtasks.every(s => (parseInt(s.cut || 0, 10) >= parseInt(s.total || 0, 10)));
         saveOrders();
         closeCuttingModal();
         renderCuttingTasks();
         renderKanban();
     };
 
+    if (cuttingChecklistContainer) {
+        cuttingChecklistContainer.addEventListener('click', (e) => {
+            const order = productionOrders.find(o => o.id === activeCuttingOrderId);
+            if (!order) return;
+            const subtasks = order.checklist.cutting.subtasks || [];
+            const actionBtn = e.target.closest('[data-action]');
+            if (!actionBtn) return;
+            const action = actionBtn.dataset.action;
+
+            if (action === 'toggle-add-cut') {
+                const form = document.getElementById('add-cut-form');
+                if (form) form.classList.toggle('hidden');
+                return;
+            }
+
+            if (action === 'cancel-add-cut') {
+                const form = document.getElementById('add-cut-form');
+                if (form) form.classList.add('hidden');
+                return;
+            }
+
+            if (action === 'form-minus' || action === 'form-plus') {
+                const qty = document.getElementById('cut-form-qty');
+                if (!qty) return;
+                const now = parseInt(qty.value || '1', 10);
+                qty.value = String(action === 'form-plus' ? now + 1 : Math.max(1, now - 1));
+                return;
+            }
+
+            const card = e.target.closest('.cut-card');
+            if (!card) return;
+            const subtaskId = parseFloat(card.dataset.subtaskId);
+            const subtask = subtasks.find(s => s.id === subtaskId);
+            if (!subtask) return;
+
+            if (action === 'duplicate-cut') {
+                subtasks.push({ ...subtask, id: Date.now() + Math.random() });
+            }
+
+            if (action === 'delete-cut') {
+                order.checklist.cutting.subtasks = subtasks.filter(s => s.id !== subtaskId);
+            }
+
+            if (action === 'increase-cut' || action === 'decrease-cut') {
+                const val = parseInt(subtask.cut || 0, 10);
+                const next = action === 'increase-cut' ? val + 1 : Math.max(0, val - 1);
+                subtask.cut = Math.min(next, parseInt(subtask.total || 0, 10));
+            }
+
+            saveOrders();
+            syncCuttingMeta(order);
+            renderCutCards(order);
+            renderCuttingTasks();
+        });
+
+        cuttingChecklistContainer.addEventListener('input', (e) => {
+            const order = productionOrders.find(o => o.id === activeCuttingOrderId);
+            if (!order) return;
+            const subtasks = order.checklist.cutting.subtasks || [];
+
+            if (e.target.classList.contains('cut-quantity-input')) {
+                const id = parseFloat(e.target.dataset.subtaskId);
+                const subtask = subtasks.find(s => s.id === id);
+                if (!subtask) return;
+                subtask.cut = Math.max(0, parseInt(e.target.value || 0, 10));
+            }
+
+            if (e.target.classList.contains('cut-note-input') && e.target.dataset.subtaskId) {
+                const id = parseFloat(e.target.dataset.subtaskId);
+                const subtask = subtasks.find(s => s.id === id);
+                if (subtask) subtask.notes = e.target.value;
+            }
+
+            if (e.target.id === 'cut-personalization-names') {
+                order.checklist.cutting.personalization = order.checklist.cutting.personalization || { hasNames: false, names: '' };
+                order.checklist.cutting.personalization.names = e.target.value;
+            }
+
+            if (e.target.id === 'cut-finishing-note') {
+                order.checklist.finishing = order.checklist.finishing || { completed: false, deadline: '' };
+                order.checklist.finishing.note = e.target.value;
+            }
+
+            saveOrders();
+            syncCuttingMeta(order);
+        });
+
+        cuttingChecklistContainer.addEventListener('change', (e) => {
+            const order = productionOrders.find(o => o.id === activeCuttingOrderId);
+            if (!order) return;
+            if (e.target.id === 'cut-personalization-toggle') {
+                order.checklist.cutting.personalization = order.checklist.cutting.personalization || { hasNames: false, names: '' };
+                order.checklist.cutting.personalization.hasNames = e.target.checked;
+                renderCutCards(order);
+            }
+            if (e.target.id === 'cut-finishing-check') {
+                order.checklist.finishing = order.checklist.finishing || { completed: false, deadline: '' };
+                order.checklist.finishing.completed = e.target.checked;
+            }
+            saveOrders();
+            syncCuttingMeta(order);
+        });
+
+        cuttingChecklistContainer.addEventListener('submit', (e) => {
+            if (e.target.id !== 'add-cut-form') return;
+            e.preventDefault();
+            const order = productionOrders.find(o => o.id === activeCuttingOrderId);
+            if (!order) return;
+
+            const getActiveValue = (selector) => {
+                const el = e.target.querySelector(`${selector} .is-active`);
+                return el ? el.dataset.value : '';
+            };
+
+            const gender = getActiveValue('.segmented[data-field="gender"]') || 'Feminino';
+            const variation = getActiveValue('.segmented[data-field="variation"]') || 'Comum';
+            const size = gender === 'Infantil'
+                ? (document.getElementById('cut-age-input')?.value || 'Infantil')
+                : (getActiveValue('.size-chips[data-field="size"]') || 'M');
+            const color = getActiveValue('.color-swatches[data-field="color"]') || 'Sem cor';
+            const total = Math.max(1, parseInt(document.getElementById('cut-form-qty')?.value || '1', 10));
+            const notes = document.getElementById('cut-form-note')?.value || '';
+
+            order.checklist.cutting.subtasks = order.checklist.cutting.subtasks || [];
+            order.checklist.cutting.subtasks.push({
+                id: Date.now() + Math.random(),
+                gender,
+                variation,
+                size,
+                total,
+                cut: 0,
+                color,
+                age: gender === 'Infantil' ? size : '',
+                notes
+            });
+
+            saveOrders();
+            syncCuttingMeta(order);
+            renderCutCards(order);
+            renderCuttingTasks();
+        });
+
+        cuttingChecklistContainer.addEventListener('click', (e) => {
+            const segmentedBtn = e.target.closest('.segmented button, .size-chips button, .color-swatches button');
+            if (!segmentedBtn) return;
+            const group = segmentedBtn.parentElement;
+            Array.from(group.children).forEach(btn => btn.classList.remove('is-active'));
+            segmentedBtn.classList.add('is-active');
+
+            if (group.dataset.field === 'gender') {
+                const isInf = segmentedBtn.dataset.value === 'Infantil';
+                const sizeGroup = document.getElementById('cut-size-group');
+                const ageGroup = document.getElementById('cut-age-group');
+                if (sizeGroup) sizeGroup.classList.toggle('hidden', isInf);
+                if (ageGroup) ageGroup.classList.toggle('hidden', !isInf);
+            }
+        });
+    }
+
     // Listener para salvar cortes
     if (saveCutsBtn) saveCutsBtn.addEventListener('click', saveCuts);
+    if (saveCutsFooterBtn) saveCutsFooterBtn.addEventListener('click', saveCuts);
 
     const closeCuttingModal = () => {
         cuttingModal.classList.add('hidden');
