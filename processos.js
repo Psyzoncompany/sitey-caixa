@@ -3100,19 +3100,8 @@ const init = () => {
     // Evita erro de TDZ: "Cannot access 'renderArtTasks' before initialization"
     setActiveTab(currentTab);
 
-    // Inicializa o Chat (Sempre visível para facilitar configuração)
-    createChatInterface();
+    // Chat antigo desativado: substituído por novo widget global em cerebro_ia.js
 
-    if (!GEMINI_PROXY_ENDPOINT) {
-        const msgsArea = document.getElementById('ai-chat-messages');
-        if (msgsArea) {
-            const warning = document.createElement('div');
-            warning.className = 'chat-msg ai';
-            warning.style.cssText = 'border: 1px solid rgba(239, 68, 68, 0.5); background: rgba(239, 68, 68, 0.1); color: #fca5a5;';
-            warning.innerHTML = "⚠️ <b>Configuração Necessária</b><br>Configure o endpoint <code>/api/gemini</code> com a variável <code>GEMINI_API_KEY</code> no ambiente da Vercel.";
-            msgsArea.appendChild(warning);
-        }
-    }
 }; // end init
 
 if (document.readyState === 'loading') {
