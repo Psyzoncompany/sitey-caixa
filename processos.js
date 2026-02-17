@@ -2549,9 +2549,46 @@ const init = () => {
     }
 }; // end init
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-} else {
+let processosInitialized = false;
+
+const bootProcessos = (reason = '') => {
+    if (processosInitialized) return;
+    processosInitialized = true;
+    if (reason) {
+        console.warn(`[processos] Inicialização em modo fallback: ${reason}`);
+    }
     init();
+};
+
+const startWhenBackendIsReady = () => {
+    if (window.BackendInitialized === true) {
+        bootProcessos();
+        return;
+    }
+
+    // Fallback defensivo: se o backend não sinalizar pronto, não deixa a página congelada.
+    // Isso mantém a aba utilizável e evita travamento em caso de erro de rede/Firebase.
+    const MAX_WAIT_MS = 8000;
+    const startAt = Date.now();
+
+    const checkSync = setInterval(() => {
+        if (window.BackendInitialized === true) {
+            clearInterval(checkSync);
+            bootProcessos();
+            return;
+        }
+
+        if (Date.now() - startAt < MAX_WAIT_MS) return;
+
+        clearInterval(checkSync);
+        const backendFlagMissing = typeof window.BackendInitialized === 'undefined';
+        bootProcessos(backendFlagMissing ? 'BackendInitialized ausente.' : 'timeout aguardando BackendInitialized.');
+    }, 100);
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startWhenBackendIsReady);
+} else {
+    startWhenBackendIsReady();
 }
 //
