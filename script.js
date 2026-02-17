@@ -1,3 +1,12 @@
+(() => {
+    document.documentElement.classList.add('app', 'theme-dark');
+    document.documentElement.style.colorScheme = 'dark';
+    const pathname = (window.location.pathname.split('/').pop() || 'index.html');
+    document.querySelectorAll('[data-page]').forEach((item) => {
+        if (item.dataset.page === pathname) item.classList.add('is-active');
+    });
+})();
+
 const init = () => {
     const mobileMenuButton = document.getElementById('mobile-menu-button');
     const mobileMenu = document.getElementById('mobile-menu');
