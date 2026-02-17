@@ -6,8 +6,7 @@ const init = () => {
     const addOrderBtn = document.getElementById('add-order-btn');
     const processTabButtons = Array.from(document.querySelectorAll('.process-tab-btn[data-tab]'));
     const processPanels = Array.from(document.querySelectorAll('.process-panel[data-panel]'));
-    const persistedTab = localStorage.getItem('processos_tab');
-    let currentTab = typeof persistedTab === 'string' && persistedTab.trim() ? persistedTab : 'quadro';
+    let currentTab = 'quadro';
 
     const columns = { 
         todo: document.getElementById('column-todo'), 
@@ -315,10 +314,10 @@ const init = () => {
         }
     };
 
-    const setActiveTab = (tabName) => {
+    const setActiveTab = (tabName, persist = true) => {
         if (!validTabs.has(tabName)) return;
         currentTab = tabName;
-        localStorage.setItem('processos_tab', currentTab);
+        if (persist) localStorage.setItem('processos_tab', currentTab);
 
         processTabButtons.forEach((btn) => {
             const active = btn.dataset.tab === tabName;
@@ -2531,9 +2530,41 @@ const init = () => {
         }
     };
 
-    // Inicializa a aba selecionada (persistida) após registrar todos os renderizadores
-    // Evita erro de TDZ: "Cannot access 'renderArtTasks' before initialization"
-    setActiveTab(currentTab);
+    const getPersistedTab = () => {
+        const raw = localStorage.getItem('processos_tab');
+        if (typeof raw !== 'string') return null;
+        const normalized = raw.trim();
+        return validTabs.has(normalized) ? normalized : null;
+    };
+
+    const restoreInitialTab = () => {
+        const persisted = getPersistedTab();
+        setActiveTab(persisted || 'quadro', false);
+    };
+
+    const waitForCloudAndRestoreTab = () => {
+        const maxAttempts = 60;
+        let attempts = 0;
+
+        const applyWhenReady = () => {
+            const cloudReady = window.BackendInitialized === true;
+            const hasPersistedTab = Boolean(getPersistedTab());
+
+            if (cloudReady || hasPersistedTab || attempts >= maxAttempts) {
+                restoreInitialTab();
+                return;
+            }
+
+            attempts += 1;
+            setTimeout(applyWhenReady, 100);
+        };
+
+        applyWhenReady();
+    };
+
+    // Inicializa a aba selecionada após os renderizadores,
+    // aguardando os dados em nuvem (Firecloud/Firebase) quando necessário.
+    waitForCloudAndRestoreTab();
 
     // Inicializa o Chat (Sempre visível para facilitar configuração)
     createChatInterface();
