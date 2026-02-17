@@ -307,15 +307,30 @@ Object.defineProperty(window, 'localStorage', {
 
 // --- AUTENTICAÇÃO E CARREGAMENTO INICIAL ---
 
-const sanitizeOrderForClient = (order) => ({
-    id: String(order?.id || ''),
-    clientId: order?.clientId || null,
-    description: order?.description || '',
-    deadline: order?.deadline || null,
-    status: order?.status || 'pending',
-    art: order?.art || {},
-    artControl: order?.artControl || { versions: [] }
-});
+const sanitizeOrderForClient = (order) => {
+    const oid = String(order?.id || '');
+    const versions = Array.isArray(order?.artControl?.versions) ? order.artControl.versions : [];
+    const normalizedVersions = versions.map((ver, idx) => ({
+        id: ver?.id || `v_${oid}_${idx + 1}`,
+        versionNumber: ver?.versionNumber || ver?.version || idx + 1,
+        previewUrl: ver?.previewUrl || (Array.isArray(ver?.images) ? ver.images[0] : '') || '',
+        status: ver?.status || 'draft',
+        createdAt: ver?.createdAt || Date.now()
+    }));
+    const activeVersionId = order?.art?.activeVersionId;
+    const activeVersion = normalizedVersions.find((v) => v.id === activeVersionId) || normalizedVersions[normalizedVersions.length - 1] || null;
+
+    return {
+        oid,
+        title: order?.description || `Pedido #${oid}`,
+        customer: order?.clientName || order?.customerName || '',
+        deadline: order?.deadline || null,
+        status: order?.art?.status || 'pending',
+        activeVersion: activeVersion || null,
+        versions: normalizedVersions,
+        updatedAt: serverTimestamp()
+    };
+};
 
 const upsertOrderClientBridge = async (order, token) => {
     const oid = String(order?.id || '');
@@ -327,7 +342,7 @@ const upsertOrderClientBridge = async (order, token) => {
         updatedAt: serverTimestamp()
     }, { merge: true });
 
-    await setDoc(doc(db, 'orders', oid), sanitizeOrderForClient(order), { merge: true });
+    await setDoc(doc(db, 'orders_public', oid), sanitizeOrderForClient(order), { merge: true });
     return { oid, token };
 };
 
@@ -340,19 +355,19 @@ const appendClientFeedbackByToken = async (token, payload = {}) => {
     const oid = String(data.oid || '');
     if (!oid) throw new Error('OID não encontrado no token');
 
-    await addDoc(collection(db, `orders/${oid}/clientFeedback`), {
-        token,
-        oid,
-        createdAt: serverTimestamp(),
-        ...payload
-    });
-
     await setDoc(doc(db, 'order_feedback', token), {
         token,
         oid,
         lastEventAt: serverTimestamp(),
         lastEventType: payload?.type || 'feedback'
     }, { merge: true });
+
+    await addDoc(collection(db, 'order_feedback', token, 'items'), {
+        token,
+        oid,
+        createdAt: serverTimestamp(),
+        ...payload
+    });
 
     return { oid };
 };

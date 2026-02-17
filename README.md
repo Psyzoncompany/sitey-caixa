@@ -18,7 +18,7 @@ Se usar login Google popup/redirect:
 ### 3) Firestore sem login para cliente
 - Regras recomendadas estão em `FIRESTORE_RULES.md`.
 - Fluxo público do cliente:
-  - URL: `/arteonline.html?token=<TOKEN>`
-  - resolve `order_clients/{token}` -> `oid`
-  - lê `orders/{oid}`
-  - envia feedback para `orders/{oid}/clientFeedback/*` e `order_feedback/{token}/events/*`.
+  - URL: `/arteonline.html?oid=<OID>&token=<TOKEN>`
+  - valida `order_clients/{token}` -> `oid`
+  - lê `orders_public/{oid}`
+  - envia feedback para `order_feedback/{token}/items/*`.

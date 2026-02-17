@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Revisão da Arte</title>
+  <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body class="cliente-page">
@@ -60,6 +61,7 @@
 
     const params = new URLSearchParams(location.search);
     const token = params.get('token');
+    const oidFromUrl = params.get('oid');
 
     const quickTexts = ['Trocar cor', 'Aumentar logo', 'Diminuir texto', 'Reposicionar elementos', 'Outro'];
     const el = (id) => document.getElementById(id);
@@ -70,9 +72,10 @@
     }
 
     function getActiveVersion(order) {
-      const versions = Array.isArray(order?.artControl?.versions) ? order.artControl.versions : [];
+      const versions = Array.isArray(order?.versions) ? order.versions : [];
       return versions.find((v) => v.id === state.selectedVersionId)
-        || versions.find((v) => v.id === order?.art?.activeVersionId)
+        || versions.find((v) => v.id === order?.activeVersion?.id)
+        || order?.activeVersion
         || versions[versions.length - 1]
         || null;
     }
@@ -80,9 +83,9 @@
     function render() {
       const order = state.order;
       const active = getActiveVersion(order);
-      el('order-title').textContent = order.description || `Pedido #${order.id}`;
-      el('order-subtitle').textContent = `Pedido ${order.id}`;
-      const currentStatus = order?.art?.status || active?.status || 'pending';
+      el('order-title').textContent = order.title || `Pedido #${order.oid}`;
+      el('order-subtitle').textContent = `Pedido ${order.oid}`;
+      const currentStatus = order?.status || active?.status || 'pending';
       el('order-status').textContent = statusLabel(currentStatus);
       const isDone = currentStatus === 'done';
       el('btn-send-feedback').disabled = isDone;
@@ -94,7 +97,7 @@
 
       const list = el('versions-list');
       list.innerHTML = '';
-      const versions = [...(order?.artControl?.versions || [])].sort((a,b)=>(b.versionNumber||b.version)-(a.versionNumber||a.version));
+      const versions = [...(order?.versions || [])].sort((a,b)=>(b.versionNumber||b.version)-(a.versionNumber||a.version));
       versions.forEach((ver) => {
         const item = document.createElement('button');
         item.type = 'button';
@@ -146,13 +149,13 @@
       });
     }
 
-    async function uploadSelectedImages(versionId) {
+    async function uploadSelectedImages() {
       if (!state.files.length) return [];
       const uploads = [];
       let uploadedCount = 0;
       for (const file of state.files) {
         const compressed = await compressImage(file);
-        const path = `art-feedback/${state.oid}/${versionId}/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
+        const path = `client_uploads/${token}/${Date.now()}-${Math.random().toString(36).slice(2)}-${compressed.name}`;
         const task = uploadBytesResumable(ref(storage, path), compressed);
         const url = await new Promise((resolve, reject) => {
           task.on('state_changed', (snap) => {
@@ -175,7 +178,7 @@
       const msg = el('feedback-message').value.trim();
       if (type === 'changes_requested' && !msg) return alert('Escreva o feedback antes de enviar.');
 
-      const images = await uploadSelectedImages(active.id || 'v1');
+      const images = await uploadSelectedImages();
       const payload = {
         type,
         token,
@@ -187,11 +190,7 @@
         createdAtClient: Date.now()
       };
 
-      await addDoc(collection(db, `orders/${state.oid}/clientFeedback`), {
-        ...payload,
-        createdAt: serverTimestamp()
-      });
-      await addDoc(collection(db, 'order_feedback', token, 'events'), {
+      await addDoc(collection(db, 'order_feedback', token, 'items'), {
         ...payload,
         createdAt: serverTimestamp()
       });
@@ -221,7 +220,13 @@
         return;
       }
 
-      const orderSnap = await getDoc(doc(db, 'orders', state.oid));
+      if (oidFromUrl && oidFromUrl !== state.oid) {
+        el('cliente-loading').classList.add('hidden');
+        el('invalid-link').classList.remove('hidden');
+        return;
+      }
+
+      const orderSnap = await getDoc(doc(db, 'orders_public', state.oid));
       if (!orderSnap.exists()) {
         el('cliente-loading').classList.add('hidden');
         el('invalid-link').classList.remove('hidden');
@@ -229,10 +234,8 @@
       }
 
       const found = orderSnap.data() || {};
-      found.id = found.id || state.oid;
-      found.art = found.art || {};
-      found.artControl = found.artControl || { versions: [] };
-      found.artControl.versions = Array.isArray(found.artControl.versions) ? found.artControl.versions : [];
+      found.oid = found.oid || state.oid;
+      found.versions = Array.isArray(found.versions) ? found.versions : [];
       state.order = found;
 
       mountChips();

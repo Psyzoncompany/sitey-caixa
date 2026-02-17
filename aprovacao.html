@@ -10,7 +10,8 @@
   <script>
     const params = new URLSearchParams(location.search);
     const token = params.get('token') || '';
-    const target = `/arteonline.html?token=${encodeURIComponent(token)}`;
+    const oid = params.get('oid') || '';
+    const target = `/arteonline.html?oid=${encodeURIComponent(oid)}&token=${encodeURIComponent(token)}`;
     location.replace(target);
   </script>
   <p>Redirecionando para página do cliente…</p>
