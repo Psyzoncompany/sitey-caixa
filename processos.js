@@ -6,7 +6,8 @@ const init = () => {
     const addOrderBtn = document.getElementById('add-order-btn');
     const processTabButtons = Array.from(document.querySelectorAll('.process-tab-btn[data-tab]'));
     const processPanels = Array.from(document.querySelectorAll('.process-panel[data-panel]'));
-    let currentTab = 'quadro';
+    const persistedTab = localStorage.getItem('processos_tab');
+    let currentTab = typeof persistedTab === 'string' && persistedTab.trim() ? persistedTab : 'quadro';
 
     const columns = { 
         todo: document.getElementById('column-todo'), 
