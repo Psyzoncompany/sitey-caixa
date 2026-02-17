@@ -565,10 +565,10 @@ const init = () => {
 
             <div class="data-action">
                 <div class="flex items-center justify-end gap-2">
-                    <button class="action-toggle-btn text-gray-500 hover:text-cyan-400 p-1 rounded-full" data-action="edit" data-id="${id}" title="Editar">
+                    <button class="action-toggle-btn text-gray-500 hover:text-cyan-400 p-1 rounded-full" data-action="edit" data-id="${id}" title="Editar" aria-label="Editar">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
                     </button>
-                    <button class="action-toggle-btn text-gray-500 hover:text-red-400 p-1 rounded-full" data-action="delete" data-id="${id}" title="Excluir">
+                    <button class="action-toggle-btn text-gray-500 hover:text-red-400 p-1 rounded-full" data-action="delete" data-id="${id}" title="Excluir" aria-label="Excluir">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 7h12M9 7V5h6v2m-7 4v6m4-6v6m4-10v12a1 1 0 01-1 1H8a1 1 0 01-1-1V7h10z"></path></svg>
                     </button>
                 </div>
