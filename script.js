@@ -133,7 +133,7 @@ const init = () => {
     };
 
     // --- Generic Carousel Logic ---
-    const setupCarousel = (trackId, dotsId, intervalMs = 5000) => {
+    const setupCarousel = (trackId, dotsId) => {
         const carousel = document.getElementById(trackId);
         const carouselDots = document.getElementById(dotsId);
 
@@ -143,10 +143,14 @@ const init = () => {
         if (slides.length <= 1) return;
 
         let currentIndex = 0;
-        let carouselInterval;
+        let isDragging = false;
+        let dragStartX = 0;
+        let dragDeltaX = 0;
+
+        carousel.style.touchAction = 'pan-y';
 
         const goToSlide = (index) => {
-            currentIndex = index;
+            currentIndex = Math.max(0, Math.min(index, slides.length - 1));
             carousel.style.transform = `translateX(-${currentIndex * 100}%)`;
             const dots = carouselDots.querySelectorAll('button');
             dots.forEach((dot, i) => {
@@ -155,9 +159,28 @@ const init = () => {
             });
         };
 
-        const autoSlide = () => {
-            const nextIndex = (currentIndex + 1) % slides.length;
-            goToSlide(nextIndex);
+        const onDragStart = (clientX) => {
+            isDragging = true;
+            dragStartX = clientX;
+            dragDeltaX = 0;
+        };
+
+        const onDragMove = (clientX) => {
+            if (!isDragging) return;
+            dragDeltaX = clientX - dragStartX;
+        };
+
+        const onDragEnd = () => {
+            if (!isDragging) return;
+            isDragging = false;
+            const dragThreshold = 50;
+            if (dragDeltaX <= -dragThreshold) {
+                goToSlide(currentIndex + 1);
+            } else if (dragDeltaX >= dragThreshold) {
+                goToSlide(currentIndex - 1);
+            } else {
+                goToSlide(currentIndex);
+            }
         };
 
         carouselDots.innerHTML = '';
@@ -167,13 +190,21 @@ const init = () => {
             if (index === 0) dot.classList.replace('bg-white/30', 'bg-white');
             dot.addEventListener('click', () => {
                 goToSlide(index);
-                clearInterval(carouselInterval);
-                carouselInterval = setInterval(autoSlide, intervalMs);
             });
             carouselDots.appendChild(dot);
         });
 
-        carouselInterval = setInterval(autoSlide, intervalMs);
+        carousel.addEventListener('pointerdown', (event) => onDragStart(event.clientX));
+        carousel.addEventListener('pointermove', (event) => onDragMove(event.clientX));
+        carousel.addEventListener('pointerup', onDragEnd);
+        carousel.addEventListener('pointercancel', onDragEnd);
+        carousel.addEventListener('pointerleave', onDragEnd);
+
+        carousel.addEventListener('touchstart', (event) => onDragStart(event.touches[0].clientX), { passive: true });
+        carousel.addEventListener('touchmove', (event) => onDragMove(event.touches[0].clientX), { passive: true });
+        carousel.addEventListener('touchend', onDragEnd);
+
+        goToSlide(0);
     };
 
     const toggleQuantityField = () => {

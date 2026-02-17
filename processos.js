@@ -1321,6 +1321,46 @@ const init = () => {
         });
     }
 
+
+    const normalizeCuttingSubtasks = (order) => {
+        const rawSubtasks = order?.checklist?.cutting?.subtasks;
+        const normalized = Array.isArray(rawSubtasks)
+            ? rawSubtasks.map((subtask, index) => {
+                const total = parseInt(subtask?.total ?? subtask?.qty ?? subtask?.quantity ?? subtask?.qtd ?? 0, 10) || 0;
+                const cut = parseInt(subtask?.cut ?? subtask?.cortado ?? 0, 10) || 0;
+                const id = parseFloat(subtask?.id) || (Date.now() + index + Math.random());
+                return {
+                    id,
+                    gender: subtask?.gender || subtask?.type || 'Masculina',
+                    variation: subtask?.variation || subtask?.style || 'Normal',
+                    size: subtask?.size || subtask?.tamanho || 'Único',
+                    total,
+                    cut: Math.min(cut, total),
+                    notes: subtask?.notes || ''
+                };
+            }).filter(item => item.total > 0)
+            : [];
+
+        if (normalized.length > 0) {
+            return normalized;
+        }
+
+        const fallbackTotal = parseInt(order?.printing?.total ?? 0, 10) || 0;
+        if (fallbackTotal > 0) {
+            return [{
+                id: Date.now() + Math.random(),
+                gender: 'Masculina',
+                variation: 'Normal',
+                size: 'Único',
+                total: fallbackTotal,
+                cut: 0,
+                notes: 'Gerado automaticamente pela quantidade do pedido'
+            }];
+        }
+
+        return [];
+    };
+
     const renderCuttingTasks = () => {
         cuttingTasksContainer.innerHTML = '';
         // Show orders even if subtasks are not defined yet, so user can open checklist and add them
@@ -1336,7 +1376,7 @@ const init = () => {
         }
         pendingCutOrders.forEach(order => {
             const client = clients.find(c => c.id === order.clientId);
-            const subtasks = order.checklist.cutting.subtasks || [];
+            const subtasks = normalizeCuttingSubtasks(order);
             const totalToCut = subtasks.reduce((acc, sub) => acc + sub.total, 0);
             const totalCut = subtasks.reduce((acc, sub) => acc + sub.cut, 0);
 
@@ -1411,7 +1451,16 @@ const init = () => {
             cuttingChecklistContainer.insertAdjacentHTML('beforebegin', detailsHtml);
         }
 
-        renderCuttingChecklist(order.checklist.cutting.subtasks);
+        const normalizedSubtasks = normalizeCuttingSubtasks(order);
+        if (!Array.isArray(order.checklist.cutting.subtasks) || order.checklist.cutting.subtasks.length !== normalizedSubtasks.length) {
+            order.checklist.cutting.subtasks = normalizedSubtasks;
+            if (normalizedSubtasks.length > 0 && order.checklist.cutting.completed) {
+                order.checklist.cutting.completed = false;
+            }
+            saveOrders();
+        }
+
+        renderCuttingChecklist(normalizedSubtasks);
         cuttingModal.classList.remove('hidden');
         const closeBtn = document.getElementById('close-cutting-modal-btn');
         if (closeBtn) {
@@ -1424,12 +1473,17 @@ const init = () => {
 
     const renderCuttingChecklist = (subtasks) => {
         cuttingChecklistContainer.innerHTML = '';
+        if (!Array.isArray(subtasks) || subtasks.length === 0) {
+            cuttingChecklistContainer.innerHTML = '<div class="glass-card p-4 text-sm text-gray-300">Nenhum tamanho/quantidade encontrado para corte neste pedido. Edite o pedido e adicione os itens de corte.</div>';
+            return;
+        }
+
         subtasks.forEach(subtask => {
             const isCompleted = subtask.cut >= subtask.total;
-            const label = `${subtask.gender || subtask.type || ''} ${subtask.variation || subtask.style || ''} - ${subtask.size} ${subtask.notes ? '('+subtask.notes+')' : ''}`;
+            const label = `${subtask.gender || subtask.type || ''} ${subtask.variation || subtask.style || ''} • Tam. ${subtask.size} ${subtask.notes ? '('+subtask.notes+')' : ''}`;
             const item = document.createElement('div');
             item.className = `p-3 rounded-md flex justify-between items-center bg-white/5 ${isCompleted ? 'border-l-4 border-green-500' : ''}`;
-            item.innerHTML = `<div class="font-semibold">${label}</div><div class="flex items-center gap-4"><input type="number" value="${subtask.cut}" min="0" max="${subtask.total}" class="cut-quantity-input w-20 p-2 text-center rounded-md bg-white/10" data-subtask-id="${subtask.id}"><span class="text-gray-400">/ ${subtask.total}</span></div>`;
+            item.innerHTML = `<div class="font-semibold">${label}</div><div class="flex items-center gap-4"><input type="number" value="${subtask.cut}" min="0" max="${subtask.total}" class="cut-quantity-input w-20 p-2 text-center rounded-md bg-white/10" data-subtask-id="${subtask.id}"><span class="text-gray-400">${subtask.cut} / ${subtask.total}</span></div>`;
             cuttingChecklistContainer.appendChild(item);
         });
     };
@@ -1438,7 +1492,13 @@ const init = () => {
         const order = productionOrders.find(o => o.id === activeCuttingOrderId);
         if (!order) return;
         let allSubtasksCompleted = true;
-        document.querySelectorAll('.cut-quantity-input').forEach(input => {
+        const cutInputs = document.querySelectorAll('.cut-quantity-input');
+        if (cutInputs.length === 0) {
+            alert('Este pedido ainda não possui tamanhos/quantidades de corte cadastrados.');
+            return;
+        }
+
+        cutInputs.forEach(input => {
             const subtaskId = parseFloat(input.dataset.subtaskId);
             const newCutAmount = parseInt(input.value);
             const subtask = order.checklist.cutting.subtasks.find(s => s.id === subtaskId);
