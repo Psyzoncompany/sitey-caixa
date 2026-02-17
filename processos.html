@@ -17,7 +17,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
     <link href="style.css" rel="stylesheet">
-    <link href="arte-online.css" rel="stylesheet">
     <!-- Firebase Config -->
     <script type="module" src="firebase-config.js"></script>
     <!-- Force unregister any service workers from future versions -->
@@ -111,9 +110,6 @@
           <h1 class="text-2xl md:text-3xl font-bold">Central de Produção</h1>
           <button id="add-order-btn" class="btn-shine py-2 px-4 font-bold rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-600">+ Novo Pedido</button>
       </div>
-      <button onclick="window.HipocampoIA.openDashboard()" class="btn-ghost py-2 px-3 rounded-lg border border-cyan-500/30 text-cyan-400 hover:bg-cyan-500/10" title="Inteligência Artificial">
-    🧠
-</button>
 
       <div class="process-tabs-wrap mb-8 border-b border-white/10 overflow-x-auto pb-1">
         <nav class="process-tabs -mb-px flex space-x-3 min-w-max px-1" aria-label="Tabs de processos">
@@ -321,7 +317,7 @@
   <!-- Barra de Navegação Inferior (Mobile) -->
 
   <footer class="version-footer">
-    <a href="versoes.html" class="version-footer-link">Versão 1.5.6</a>
+    <a href="versoes.html" class="version-footer-link">Versão 6.0.0</a>
   </footer>
 
   <nav class="bottom-nav">
@@ -358,7 +354,7 @@
         if (window.BackendInitialized) {
             clearInterval(checkSync);
             const s = document.createElement('script'); s.src = "processos.js"; document.body.appendChild(s);
-            const ai = document.createElement('script'); ai.src = "cerebro_ia.js"; document.body.appendChild(ai);
+            
         }
     }, 100);
   </script>

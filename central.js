@@ -294,15 +294,14 @@ document.addEventListener('DOMContentLoaded', () => {
         renderList(artesPendentesContent, items, item => {
             const client = clients.find(c => c.id === item.clientId);
             const lastVersion = item.artControl.versions[item.artControl.versions.length - 1];
-            const uid = window.firebaseAuth.currentUser?.uid || 'some-user-id'; // Placeholder
-            const link = `${window.location.origin}/aprovacao.html?uid=${uid}&oid=${item.id}&token=${lastVersion.token}`;
+
             return `
                 <div class="boss-card-list-item">
                     <div>
                         <p class="font-semibold">${item.description}</p>
                         <p class="text-xs text-gray-400">${client?.name || 'Sem cliente'}</p>
                     </div>
-                    <button data-action="copy-link" data-link="${link}" class="action-button-sm">Copiar Link</button>
+                    <a href="processos.html" class="action-button-sm">Abrir</a>
                 </div>
             `;
         });
@@ -390,12 +389,6 @@ document.addEventListener('DOMContentLoaded', () => {
             updateDashboard();
         }
 
-        if (action === 'copy-link') {
-            navigator.clipboard.writeText(e.target.dataset.link).then(() => {
-                e.target.textContent = 'Copiado!';
-                setTimeout(() => e.target.textContent = 'Copiar Link', 2000);
-            });
-        }
     });
 
     // --- INITIALIZATION ---

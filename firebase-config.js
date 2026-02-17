@@ -2,7 +2,7 @@
 
 // Importa as funções do Firebase (versão compat para facilitar o uso com scripts existentes)
 import { onAuthStateChanged, setPersistence, browserLocalPersistence, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc, addDoc, collection, serverTimestamp, deleteField } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp, deleteField } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 import { app, auth, db } from "./js/firebase-init.js";
 
@@ -307,70 +307,6 @@ Object.defineProperty(window, 'localStorage', {
 
 // --- AUTENTICAÇÃO E CARREGAMENTO INICIAL ---
 
-const sanitizeOrderForClient = (order) => {
-    const oid = String(order?.id || '');
-    const versions = Array.isArray(order?.artControl?.versions) ? order.artControl.versions : [];
-    const normalizedVersions = versions.map((ver, idx) => ({
-        id: ver?.id || `v_${oid}_${idx + 1}`,
-        versionNumber: ver?.versionNumber || ver?.version || idx + 1,
-        previewUrl: ver?.previewUrl || (Array.isArray(ver?.images) ? ver.images[0] : '') || '',
-        status: ver?.status || 'draft',
-        createdAt: ver?.createdAt || Date.now()
-    }));
-    const activeVersionId = order?.art?.activeVersionId;
-    const activeVersion = normalizedVersions.find((v) => v.id === activeVersionId) || normalizedVersions[normalizedVersions.length - 1] || null;
-
-    return {
-        oid,
-        title: order?.description || `Pedido #${oid}`,
-        customer: order?.clientName || order?.customerName || '',
-        deadline: order?.deadline || null,
-        status: order?.art?.status || 'pending',
-        activeVersion: activeVersion || null,
-        versions: normalizedVersions,
-        updatedAt: serverTimestamp()
-    };
-};
-
-const upsertOrderClientBridge = async (order, token) => {
-    const oid = String(order?.id || '');
-    if (!oid || !token) return null;
-
-    await setDoc(doc(db, 'order_clients', token), {
-        oid,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-    }, { merge: true });
-
-    await setDoc(doc(db, 'orders_public', oid), sanitizeOrderForClient(order), { merge: true });
-    return { oid, token };
-};
-
-const appendClientFeedbackByToken = async (token, payload = {}) => {
-    if (!token) throw new Error('Token obrigatório');
-    const bridgeRef = doc(db, 'order_clients', token);
-    const bridgeSnap = await getDoc(bridgeRef);
-    if (!bridgeSnap.exists()) throw new Error('Token inválido');
-    const data = bridgeSnap.data() || {};
-    const oid = String(data.oid || '');
-    if (!oid) throw new Error('OID não encontrado no token');
-
-    await setDoc(doc(db, 'order_feedback', token), {
-        token,
-        oid,
-        lastEventAt: serverTimestamp(),
-        lastEventType: payload?.type || 'feedback'
-    }, { merge: true });
-
-    await addDoc(collection(db, 'order_feedback', token, 'items'), {
-        token,
-        oid,
-        createdAt: serverTimestamp(),
-        ...payload
-    });
-
-    return { oid };
-};
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         // Se estivermos na página de login, redireciona para index
@@ -443,6 +379,5 @@ window.firebaseAuth = {
     },
     logout: () => signOut(auth),
     currentUser: () => auth.currentUser,
-    upsertOrderClientBridge,
-    appendClientFeedbackByToken
+
 };
