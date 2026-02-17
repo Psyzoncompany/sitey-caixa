@@ -1742,7 +1742,7 @@ const init = () => {
                 ? deadlineDate.toLocaleDateString('pt-BR').slice(0, 5)
                 : 'Sem prazo';
             const isLate = deadlineDate && deadlineDate < new Date() && (!lastVersion || lastVersion.status !== 'approved');
-            const hasApprovalLink = Boolean(lastVersion && lastVersion.token);
+            const hasApprovalLink = Boolean(order?.art?.clientToken || order?.clientToken);
 
             // New Compact Card HTML
             const card = document.createElement('div');
@@ -1790,132 +1790,184 @@ const init = () => {
     };
 
     // --- NOVO CONTROLE DE ARTES (VERSÕES) ---
+    const createClientToken = () => `ct_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;
+    const formatArtDate = (value) => {
+        const d = new Date(value || Date.now());
+        if (Number.isNaN(d.getTime())) return '—';
+        return d.toLocaleString('pt-BR');
+    };
+    const ensureArtStructure = (order) => {
+        order.art = order.art || {};
+        order.artControl = order.artControl || {};
+        order.art.clientToken = order.art.clientToken || order.clientToken || createClientToken();
+        order.clientToken = order.art.clientToken;
+        order.art.notes = order.art.notes || order.notes || '';
+        order.art.status = order.art.status || 'pending';
+        order.art.activeVersionId = order.art.activeVersionId || null;
+        order.art.lastClientActivity = order.art.lastClientActivity || null;
+        order.artControl.versions = Array.isArray(order.artControl.versions) ? order.artControl.versions : [];
+        order.artControl.versions = order.artControl.versions.map((ver, idx) => ({
+            id: ver.id || `v_${order.id}_${ver.version || idx + 1}`,
+            version: ver.version || ver.versionNumber || idx + 1,
+            versionNumber: ver.versionNumber || ver.version || idx + 1,
+            createdAt: ver.createdAt || Date.now(),
+            status: ver.status || 'draft',
+            previewUrl: ver.previewUrl || (Array.isArray(ver.images) ? ver.images[0] : ver.imageUrl) || '',
+            images: Array.isArray(ver.images) ? ver.images : (ver.previewUrl ? [ver.previewUrl] : []),
+            clientFeedback: ver.clientFeedback || { message: '', images: [], createdAt: null },
+            history: Array.isArray(ver.history) ? ver.history : []
+        }));
+        const active = order.artControl.versions.find((v) => v.id === order.art.activeVersionId) || order.artControl.versions[order.artControl.versions.length - 1] || null;
+        order.art.activeVersionId = active?.id || null;
+    };
+    const getClientReviewLink = (order) => `${window.location.origin}/arteonline.html?oid=${encodeURIComponent(order.id)}&token=${encodeURIComponent(order.art.clientToken)}`;
+    const statusChip = (status) => {
+        const map = { draft: 'Rascunho', sent: 'Enviada', approved: 'Aprovada', changes_requested: 'Ajustes Solicitados', pending: 'Pendente', done: 'Concluída' };
+        return map[status] || status;
+    };
+
     const openArtControlModal = (orderId) => {
         activeArtOrderId = orderId;
-        const order = productionOrders.find(o => o.id === orderId);
-        const client = clients.find(c => c.id === order.clientId);
-        
-        // Inicializa estrutura se não existir
-        if (!order.artControl) order.artControl = { versions: [] };
+        const order = productionOrders.find((o) => o.id === orderId);
+        const client = clients.find((c) => c.id === order.clientId);
+        if (!order) return;
+        ensureArtStructure(order);
 
-        artModalTitle.textContent = `Gestão de Arte: ${order.description}`;
-        
-        // Renderiza o modal customizado para controle de versões
-        const modalBody = artModal.querySelector('.grid'); // Container principal do modal
-        modalBody.innerHTML = `
-            <div class="col-span-1 lg:col-span-2 flex flex-col h-full">
-                <!-- Header com Briefing -->
-                <div class="bg-white/5 p-4 rounded-lg mb-4">
-                    <h3 class="text-sm font-bold text-gray-400 mb-1">Briefing / Notas</h3>
-                    <p class="text-sm text-white">${order.notes || 'Sem anotações no pedido.'}</p>
+        const shell = document.getElementById('art-modal-shell');
+        shell.innerHTML = `
+            <div class="artx-modal-header">
+                <div>
+                    <h2 class="text-3xl font-bold">Gestão de Arte: ${order.description}</h2>
+                    <p class="text-sm text-gray-300">${client?.name || 'Cliente'} · Prazo ${order.deadline || 'não definido'}</p>
                 </div>
-
-                <!-- Lista de Versões -->
-                <div id="art-versions-list" class="flex-1 overflow-y-auto space-y-4 mb-4 pr-2">
-                    <!-- Versões renderizadas aqui -->
-                </div>
-
-                <!-- Ações -->
-                <div class="border-t border-white/10 pt-4 flex justify-between items-center">
-                    <input type="file" id="new-version-input" class="hidden" accept="image/*">
-                    <button id="btn-new-version" class="btn-shine py-2 px-4 text-sm">+ Nova Versão</button>
-                    <button id="btn-close-art" class="text-gray-400 hover:text-white">Fechar</button>
+                <div class="flex items-center gap-2">
+                    <span id="art-global-status" class="artx-badge-pill">${statusChip(order.art.status)}</span>
+                    <button id="close-art-modal-btn" class="artx-icon-btn" type="button">✕</button>
                 </div>
             </div>
+            <div class="artx-modal-content">
+                <section class="glass-card artx-glass-card artx-brief-card">
+                    <div class="flex items-center justify-between gap-3 mb-3">
+                        <h3 class="font-semibold">Briefing / Notas</h3>
+                        <div class="flex gap-2">
+                            <button id="btn-copy-brief" class="artx-btn-soft">Copiar briefing</button>
+                            <button id="btn-edit-notes" class="artx-btn-soft">Editar notas</button>
+                        </div>
+                    </div>
+                    <p id="art-notes-text" class="text-sm text-gray-200">${order.art.notes || 'Sem anotações ainda.'}</p>
+                </section>
+                <section class="artx-versions-wrap">
+                    <div class="artx-versions-head"><h3 class="font-semibold">Timeline de Versões</h3></div>
+                    <div id="art-versions-list" class="artx-versions-list"></div>
+                </section>
+            </div>
+            <footer class="artx-modal-footer">
+                <div class="text-xs text-gray-400">Link do cliente é único e não muda.</div>
+                <div class="artx-footer-actions">
+                    <input type="file" id="new-version-input" class="hidden" accept="image/*">
+                    <button id="btn-new-version" class="btn-shine py-3 px-5 rounded-xl">+ Nova Versão</button>
+                    <button id="btn-export-link" class="artx-btn-soft">Copiar mensagem WhatsApp</button>
+                    <button id="save-art-btn" class="btn-shine py-3 px-5 rounded-xl">Salvar e Concluir Arte</button>
+                </div>
+            </footer>
         `;
 
         renderArtVersionsList(order);
-
-        // Listeners
-        document.getElementById('btn-new-version').onclick = () => document.getElementById('new-version-input').click();
-        document.getElementById('new-version-input').onchange = (e) => handleNewVersionUpload(e, order);
-        document.getElementById('btn-close-art').onclick = () => artModal.classList.add('hidden');
+        shell.querySelector('#close-art-modal-btn').onclick = () => artModal.classList.add('hidden');
+        shell.querySelector('#btn-new-version').onclick = () => shell.querySelector('#new-version-input').click();
+        shell.querySelector('#new-version-input').onchange = (e) => handleNewVersionUpload(e, order);
+        shell.querySelector('#btn-copy-brief').onclick = async () => {
+            const ok = await copyTextSafe(order.art.notes || 'Sem briefing cadastrado.');
+            alert(ok ? 'Briefing copiado.' : 'Não foi possível copiar.');
+        };
+        shell.querySelector('#btn-edit-notes').onclick = () => {
+            const value = prompt('Atualizar briefing/notas:', order.art.notes || '');
+            if (value === null) return;
+            order.art.notes = value.trim();
+            order.notes = order.art.notes;
+            saveOrders();
+            openArtControlModal(order.id);
+        };
+        shell.querySelector('#btn-export-link').onclick = async () => {
+            const link = getClientReviewLink(order);
+            const text = `Olá! Aqui está seu link de aprovação: ${link}`;
+            const ok = await copyTextSafe(text);
+            alert(ok ? 'Mensagem copiada!' : text);
+        };
+        shell.querySelector('#save-art-btn').onclick = () => {
+            order.art.status = 'done';
+            if (order.checklist?.art) order.checklist.art.completed = true;
+            saveOrders();
+            renderArtTasks();
+            artModal.classList.add('hidden');
+        };
 
         artModal.classList.remove('hidden');
     };
 
     const renderArtVersionsList = (order) => {
         const container = document.getElementById('art-versions-list');
+        if (!container) return;
         container.innerHTML = '';
-
-        if (order.artControl.versions.length === 0) {
-            container.innerHTML = '<div class="text-center text-gray-500 py-8">Nenhuma versão criada ainda.</div>';
+        const versions = [...order.artControl.versions].sort((a, b) => (b.versionNumber || b.version) - (a.versionNumber || a.version));
+        if (!versions.length) {
+            container.innerHTML = '<div class="glass-card artx-glass-card p-6 text-gray-400">Nenhuma versão criada ainda.</div>';
             return;
         }
 
-        // Renderiza em ordem decrescente (mais nova primeiro)
-        [...order.artControl.versions].reverse().forEach((ver) => {
-            const isApproved = ver.status === 'approved';
-            const statusColors = {
-                draft: 'text-gray-400 border-gray-600',
-                sent: 'text-yellow-400 border-yellow-500 bg-yellow-500/10',
-                approved: 'text-green-400 border-green-500 bg-green-500/10',
-                changes_requested: 'text-red-400 border-red-500 bg-red-500/10'
-            };
-            const statusLabels = {
-                draft: 'Rascunho', sent: 'Enviada', approved: 'Aprovada', changes_requested: 'Ajustes Solicitados'
-            };
-
-            const card = document.createElement('div');
-            card.className = `p-4 rounded-lg border ${statusColors[ver.status] || 'border-white/10'} bg-white/5 relative`;
-            
-            let historyHtml = '';
-            if (ver.history && ver.history.length > 0) {
-                const lastEvent = ver.history[ver.history.length - 1];
-                historyHtml = `<div class="text-xs text-gray-400 mt-2 pt-2 border-t border-white/10">Última atividade: ${lastEvent.action} - ${lastEvent.comment || ''}</div>`;
-            }
-
-            // Link de Aprovação
-            // Assumindo que o usuário está logado e o UID está disponível via auth.currentUser
-            const uid = getAuthenticatedUid();
-            const approvalLink = `${window.location.origin}/aprovacao.html?uid=${uid}&oid=${order.id}&token=${ver.token}`;
-
+        versions.forEach((ver) => {
+            const link = getClientReviewLink(order);
+            const feedbackText = ver.clientFeedback?.message || 'Sem feedback do cliente.';
+            const last = Array.isArray(ver.history) && ver.history.length ? ver.history[ver.history.length - 1] : null;
+            const card = document.createElement('article');
+            card.className = 'artx-version-card';
             card.innerHTML = `
-                <div class="flex gap-4">
-                    <div class="w-24 h-24 bg-black/50 rounded flex-shrink-0 overflow-hidden">
-                        <img src="${ver.images[0]}" class="w-full h-full object-cover cursor-pointer" onclick="window.open('${ver.images[0]}', '_blank')">
+                <div class="artx-version-thumb">${ver.previewUrl ? `<img src="${ver.previewUrl}" alt="Versão ${ver.versionNumber}">` : '<span>Sem preview</span>'}</div>
+                <div class="artx-version-main">
+                    <div class="flex items-start justify-between gap-2">
+                        <div>
+                            <h4 class="text-xl font-bold">Versão ${ver.versionNumber}</h4>
+                            <p class="text-xs text-gray-400">Criada em ${formatArtDate(ver.createdAt)}</p>
+                        </div>
+                        <span class="artx-badge-pill">${statusChip(ver.status)}</span>
                     </div>
-                    <div class="flex-1">
-                        <div class="flex justify-between items-start">
-                            <h4 class="font-bold text-lg">Versão ${ver.version}</h4>
-                            <span class="px-2 py-0.5 rounded text-xs border ${statusColors[ver.status]}">${statusLabels[ver.status]}</span>
-                        </div>
-                        <p class="text-xs text-gray-400 mb-2">Criada em: ${new Date(ver.createdAt).toLocaleString()}</p>
-                        
-                        <div class="flex gap-2 mt-2">
-                            <button class="btn-copy-link text-xs bg-cyan-600/20 text-cyan-400 px-2 py-1 rounded hover:bg-cyan-600/40" data-link="${approvalLink}">🔗 Copiar Link</button>
-                            ${!isApproved ? `<button class="btn-approve-manual text-xs bg-green-600/20 text-green-400 px-2 py-1 rounded hover:bg-green-600/40" data-ver="${ver.version}">✅ Aprovar Manual</button>` : ''}
-                        </div>
-                        ${historyHtml}
+                    <p class="text-xs text-gray-400 mt-2">Última atividade: ${last ? `${last.action} · ${last.comment || ''}` : 'created'}</p>
+                    <div class="artx-version-actions">
+                        <button class="artx-btn-soft" data-action="copy-link">Copiar Link</button>
+                        <a class="artx-btn-soft" href="${link}" target="_blank" rel="noopener">Abrir Página do Cliente</a>
+                        ${ver.status === 'draft' ? '<button class="artx-btn-soft" data-action="mark-sent">Marcar como Enviada</button>' : ''}
+                        ${ver.status !== 'approved' ? '<button class="artx-btn-soft" data-action="approve">Aprovar Manual</button>' : ''}
+                        <button class="artx-btn-soft" data-action="details">Ver detalhes</button>
+                    </div>
+                    <div class="artx-version-details hidden">
+                        <p class="text-sm text-gray-200"><strong>Feedback:</strong> ${feedbackText}</p>
                     </div>
                 </div>
             `;
-
-            // Handlers
-            card.querySelector('.btn-copy-link').onclick = (e) => {
-                copyTextSafe(e.target.dataset.link).then((ok) => {
-                    alert(ok ? 'Link copiado! Envie para o cliente.' : 'Não foi possível copiar automaticamente.');
-                });
+            card.querySelector('[data-action="copy-link"]').onclick = async () => {
+                const ok = await copyTextSafe(link);
+                alert(ok ? 'Link copiado.' : 'Não foi possível copiar.');
             };
-            const approveBtn = card.querySelector('.btn-approve-manual');
-            if (approveBtn) {
-                approveBtn.onclick = () => {
-                    if(confirm('Marcar esta versão como APROVADA manualmente?')) {
-                        ver.status = 'approved';
-                        ver.history.push({ action: 'approved', date: Date.now(), user: 'Admin', comment: 'Aprovação manual' });
-                        order.checklist.art.completed = true; // Marca tarefa como feita
-                        saveOrders();
-                        renderArtVersionsList(order);
-                        renderArtTasks();
-
-                        // Dispara automação da IA (Parabéns + Sugestão de Mover)
-                        if (window.PsyzonAI && window.PsyzonAI.triggerArtApprovalAutomation) {
-                            window.PsyzonAI.triggerArtApprovalAutomation(order.id);
-                        }
-                    }
-                };
-            }
-
+            const sentBtn = card.querySelector('[data-action="mark-sent"]');
+            if (sentBtn) sentBtn.onclick = () => {
+                ver.status = 'sent';
+                order.art.status = 'sent';
+                ver.history.push({ action: 'sent', date: Date.now(), user: 'Admin' });
+                saveOrders();
+                renderArtVersionsList(order);
+                renderArtTasks();
+            };
+            const approveBtn = card.querySelector('[data-action="approve"]');
+            if (approveBtn) approveBtn.onclick = () => {
+                ver.status = 'approved';
+                order.art.status = 'approved';
+                ver.history.push({ action: 'approved', date: Date.now(), user: 'Admin', comment: 'Aprovação manual' });
+                if (order.checklist?.art) order.checklist.art.completed = true;
+                saveOrders();
+                renderArtVersionsList(order);
+                renderArtTasks();
+            };
+            card.querySelector('[data-action="details"]').onclick = () => card.querySelector('.artx-version-details').classList.toggle('hidden');
             container.appendChild(card);
         });
     };
@@ -1923,19 +1975,25 @@ const init = () => {
     const handleNewVersionUpload = (e, order) => {
         const file = e.target.files[0];
         if (!file) return;
-
+        ensureArtStructure(order);
         const reader = new FileReader();
         reader.onload = (ev) => {
-            const newVerNum = order.artControl.versions.length + 1;
+            const num = order.artControl.versions.length + 1;
+            const id = `v_${order.id}_${num}_${Date.now()}`;
             const newVersion = {
-                version: newVerNum,
+                id,
+                version: num,
+                versionNumber: num,
                 images: [ev.target.result],
-                status: 'sent', // Já nasce como enviada/pronta
-                token: Math.random().toString(36).substring(2) + Date.now().toString(36),
+                previewUrl: ev.target.result,
+                status: 'draft',
                 createdAt: Date.now(),
+                clientFeedback: { message: '', images: [], createdAt: null },
                 history: [{ action: 'created', date: Date.now(), user: 'Admin' }]
             };
             order.artControl.versions.push(newVersion);
+            order.art.activeVersionId = id;
+            order.art.status = 'pending';
             saveOrders();
             renderArtVersionsList(order);
             renderArtTasks();
@@ -1955,14 +2013,9 @@ const init = () => {
             if (e.target.classList.contains('copy-art-link-btn')) {
                 const orderId = parseInt(e.target.dataset.orderId);
                 const order = productionOrders.find(o => o.id === orderId);
-                const lastVersion = order?.artControl?.versions?.length
-                    ? order.artControl.versions[order.artControl.versions.length - 1]
-                    : null;
-                const uid = getAuthenticatedUid();
-
-                if (!lastVersion || !lastVersion.token) return;
-
-                const approvalLink = `${window.location.origin}/aprovacao.html?uid=${uid}&oid=${order.id}&token=${lastVersion.token}`;
+                if (!order) return;
+                ensureArtStructure(order);
+                const approvalLink = getClientReviewLink(order);
                 copyTextSafe(approvalLink).then((ok) => {
                     if (!ok) {
                         alert('Não foi possível copiar o link automaticamente.');
@@ -1977,7 +2030,6 @@ const init = () => {
         });
     }
     // closeArtModalBtn agora é tratado dentro de openArtControlModal dinamicamente ou via delegate global
-
 
     const checkPrefillData = () => {
         const urlParams = new URLSearchParams(window.location.search);

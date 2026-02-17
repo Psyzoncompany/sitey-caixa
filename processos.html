@@ -148,26 +148,7 @@
 
       <div id="view-afazeres" data-panel="afazeres" class="view-container process-panel hidden"><div id="tasks-container" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6"></div></div>
       <div id="view-artes" data-panel="artes" class="view-container process-panel hidden">
-        <section class="artx-admin-shell space-y-4">
-          <div class="artx-admin-toolbar glass-card p-4">
-            <div class="artx-admin-toolbar-head">
-              <h3 class="artx-admin-title">Controle de Artes 1.5.4</h3>
-              <button id="artx-create-request-btn" class="btn-shine py-2 px-4 rounded-lg text-sm font-bold">Criar Solicitação Manual</button>
-            </div>
-            <div class="artx-admin-filters">
-              <input id="artx-search-input" type="search" placeholder="Buscar por ID ou código" class="artx-input" />
-              <select id="artx-status-filter" class="artx-input">
-                <option value="all">Todos status</option>
-                <option>Aguardando envio do cliente</option>
-                <option>Cliente enviou</option>
-                <option>Em produção</option>
-                <option>Aguardando aprovação</option>
-                <option>Finalizado</option>
-              </select>
-            </div>
-          </div>
-          <div id="art-tasks-container" class="artx-grid"></div>
-        </section>
+        <div id="art-tasks-container" class="space-y-4"></div>
       </div>
       <div id="view-cortes" data-panel="cortes" class="view-container process-panel hidden"><div id="cutting-tasks-container" class="space-y-6"></div></div>
       <!-- grid responsivo: 1 col em mobile, 2 em md, 3 em lg -->
@@ -334,22 +315,7 @@
     </div>
 
     <div id="art-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-0 md:p-4">
-        <div class="glass-card w-full max-w-4xl h-[95vh] md:h-auto md:max-h-[90vh] rounded-t-2xl md:rounded-xl flex flex-col overflow-x-hidden">
-            <div class="flex justify-between items-center mb-4"><h2 id="art-modal-title" class="text-3xl font-bold">Detalhes da Arte</h2><button type="button" id="close-art-modal-btn" class="p-2 rounded-full hover:bg-white/10 text-3xl leading-none">&times;</button></div>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 flex-1 overflow-y-auto">
-                <div>
-                    <h3 class="text-lg font-semibold mb-3">Briefing do Cliente</h3>
-                    <textarea id="art-briefing" rows="10" class="w-full p-3 rounded-md bg-white/10 border border-white/20" placeholder="Anote aqui todos os detalhes que o cliente pediu..."></textarea>
-                </div>
-                <div>
-                    <h3 class="text-lg font-semibold mb-3">Imagens de Referência</h3>
-                    <div id="art-references-container" class="grid grid-cols-2 md:grid-cols-3 gap-4"></div>
-                    <input type="file" id="art-image-input" class="hidden" accept="image/*" multiple>
-                    <button type="button" id="add-art-image-btn" class="mt-4 w-full p-3 rounded-md bg-white/10 border-2 border-dashed border-gray-600 hover:border-cyan-400">Adicionar Imagem</button>
-                </div>
-            </div>
-            <div class="flex-shrink-0 flex justify-end gap-4 pt-4 mt-auto border-t border-white/10"><button id="save-art-btn" class="btn-shine py-3 px-8 font-bold rounded-lg text-lg">Salvar e Concluir Arte</button></div>
-        </div>
+        <div id="art-modal-shell" class="glass-card artx-modal-shell w-full max-w-6xl h-[95vh] md:h-auto md:max-h-[92vh] rounded-t-2xl md:rounded-2xl flex flex-col overflow-hidden"></div>
     </div>
 
   <!-- Barra de Navegação Inferior (Mobile) -->
@@ -397,7 +363,6 @@
         }
     }, 100);
   </script>
-  <script type="module" src="processos-art-control.js"></script>
   <script src="theme-toggle.js"></script>
 </body>
 </html>
