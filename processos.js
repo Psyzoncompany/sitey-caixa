@@ -111,6 +111,21 @@ const init = () => {
         }
     };
 
+    const pickColorWithEyeDropper = async () => {
+        if (!window.EyeDropper) {
+            alert('EyeDropper API não disponível no seu navegador.');
+            return null;
+        }
+        try {
+            const eye = new EyeDropper();
+            const result = await eye.open();
+            return result?.sRGBHex ? result.sRGBHex.toUpperCase() : null;
+        } catch (err) {
+            console.warn('Eyedropper cancelado/falhou', err);
+            return null;
+        }
+    };
+
     // Toggle Art Only Mode
     const toggleArtOnlyMode = () => {
         if (!isArtOnlyCheckbox) return;
@@ -534,7 +549,7 @@ const init = () => {
         item.dataset.subtaskId = subtaskId;
 
         const genders = ['Feminina', 'Masculina', 'Infantil'];
-        const variations = ['Normal', 'Babylook', 'Oversized', 'Regata', 'Manga Longa'];
+        const variations = ['Normal', 'Babylook', 'Oversized', 'Regata', 'Manga Longa', 'Gola Polo'];
         
         // Compatibilidade com dados antigos
         const currentGender = subtask.gender || (genders.includes(subtask.type) ? subtask.type : 'Masculina');
@@ -548,6 +563,11 @@ const init = () => {
                 <select class="subtask-gender cut-select">${genders.map(g => `<option ${currentGender === g ? 'selected' : ''}>${g}</option>`).join('')}</select>
                 <select class="subtask-size cut-select">${currentSizeList.map(s => `<option ${subtask.size === s ? 'selected' : ''}>${s}</option>`).join('')}</select>
                 <select class="subtask-variation cut-select">${variations.map(v => `<option ${currentVariation === v ? 'selected' : ''}>${v}</option>`).join('')}</select>
+            </div>
+            <div class="mt-2 flex items-center gap-2">
+                <input type="color" class="subtask-color-picker w-10 h-10 p-0 border-0" value="${isHex(subtask.color) ? subtask.color.toUpperCase() : '#000000'}" title="Selecionar cor do corte">
+                <input type="text" class="subtask-color-hex cut-inline-input !w-28" value="${isHex(subtask.color) ? subtask.color.toUpperCase() : ''}" placeholder="#RRGGBB">
+                <button type="button" class="subtask-eye-dropper-btn px-2 py-1 rounded bg-white/5 text-xs" title="Capturar cor da tela">${window.EyeDropper ? '🎯' : '🔍'}</button>
             </div>
             <div class="flex items-center justify-between mt-2">
                 <div class="qty-control">
@@ -565,9 +585,28 @@ const init = () => {
 
         // Event Listeners do Card
         const qtyInput = item.querySelector('.subtask-total');
+        const colorPickerInput = item.querySelector('.subtask-color-picker');
+        const colorHexInput = item.querySelector('.subtask-color-hex');
         item.querySelector('.plus').onclick = () => { qtyInput.value = parseInt(qtyInput.value||0) + 1; updateCuttingTotals(); };
         item.querySelector('.minus').onclick = () => { qtyInput.value = Math.max(0, parseInt(qtyInput.value||0) - 1); updateCuttingTotals(); };
         qtyInput.oninput = updateCuttingTotals;
+
+        colorPickerInput.oninput = () => {
+            colorHexInput.value = (colorPickerInput.value || '').toUpperCase();
+        };
+        colorHexInput.oninput = () => {
+            let value = (colorHexInput.value || '').trim();
+            if (value && !value.startsWith('#')) value = `#${value}`;
+            value = value.toUpperCase();
+            colorHexInput.value = value;
+            if (isHex(value)) colorPickerInput.value = value;
+        };
+        item.querySelector('.subtask-eye-dropper-btn').onclick = async () => {
+            const pickedColor = await pickColorWithEyeDropper();
+            if (!pickedColor) return;
+            colorHexInput.value = pickedColor;
+            colorPickerInput.value = pickedColor;
+        };
         
         item.querySelector('.del-btn').onclick = () => {
             if(confirm('Excluir este item de corte?')) { item.remove(); updateCuttingTotals(); }
@@ -578,6 +617,7 @@ const init = () => {
                 gender: item.querySelector('.subtask-gender').value,
                 size: item.querySelector('.subtask-size').value,
                 variation: item.querySelector('.subtask-variation').value,
+                color: item.querySelector('.subtask-color-hex').value,
                 total: parseInt(qtyInput.value),
                 notes: item.querySelector('.subtask-notes').value
             };
@@ -699,6 +739,7 @@ const init = () => {
                         id: parseFloat(row.dataset.subtaskId) || Date.now() + Math.random(),
                         gender: row.querySelector('.subtask-gender').value,
                         variation: row.querySelector('.subtask-variation').value,
+                        color: row.querySelector('.subtask-color-hex').value,
                         size: row.querySelector('.subtask-size').value,
                         total: parseInt(totalInput.value) || 0,
                         cut: existingSubtask ? existingSubtask.cut : 0,
@@ -2437,30 +2478,19 @@ const init = () => {
                 const hexInput = entry.querySelector('.color-hex');
                 const colorPicker = entry.querySelector('.color-picker');
 
-                if (window.EyeDropper) {
-                    try {
-                        const eye = new EyeDropper();
-                        const result = await eye.open();
-                        if (result && result.sRGBHex) {
-                            const picked = result.sRGBHex.toUpperCase();
-                            if (hexInput) hexInput.value = picked;
-                            if (colorPicker) colorPicker.value = picked;
-                            // update swatch + CMYK
-                            const sw = entry.querySelector('.color-swatch');
-                            if (sw) sw.style.background = picked;
-                            const cmykEl = entry.querySelector('.cmyk');
-                            if (cmykEl) {
-                                const rgb = hexToRgb(picked);
-                                const cmyk = rgb ? rgbToCmyk(rgb.r, rgb.g, rgb.b) : { c: 0, m: 0, y: 0, k: 100 };
-                                cmykEl.textContent = formatCMYK(cmyk);
-                            }
-                        }
-                    } catch (err) {
-                        console.warn('Eyedropper canceled/failed', err);
-                        alert('Eyedropper cancelado ou não suportado neste contexto.');
+                const picked = await pickColorWithEyeDropper();
+                if (picked) {
+                    if (hexInput) hexInput.value = picked;
+                    if (colorPicker) colorPicker.value = picked;
+                    // update swatch + CMYK
+                    const sw = entry.querySelector('.color-swatch');
+                    if (sw) sw.style.background = picked;
+                    const cmykEl = entry.querySelector('.cmyk');
+                    if (cmykEl) {
+                        const rgb = hexToRgb(picked);
+                        const cmyk = rgb ? rgbToCmyk(rgb.r, rgb.g, rgb.b) : { c: 0, m: 0, y: 0, k: 100 };
+                        cmykEl.textContent = formatCMYK(cmyk);
                     }
-                } else {
-                    alert('EyeDropper API não disponível no seu navegador.');
                 }
                 return;
             }
