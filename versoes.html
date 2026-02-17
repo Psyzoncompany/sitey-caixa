@@ -30,174 +30,16 @@
     </div>
 
     <section class="space-y-4">
-
-      
-                  <article class="glass-card p-5 border border-cyan-500/20">
+      <article class="glass-card p-5 border border-cyan-500/20">
         <div class="flex items-center justify-between gap-3 mb-2">
-          <h2 class="text-xl font-bold text-cyan-200">Versão 1.5.19</h2>
+          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.0</h2>
           <span class="text-xs text-gray-400">Atual</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>No bloco <strong>Financeiro</strong> dos cards de Processos, os chips <strong>Total, Pago e Falta</strong> voltaram a funcionar em carrossel no mobile para leitura organizada dos valores.</li>
-          <li>No desktop, o bloco financeiro agora aproveita a largura total do card e exibe os três chips fixos sem arraste.</li>
-          <li>Layout visual do <strong>Controle de Cortes</strong> foi refinado com melhor alinhamento, contraste, espaçamento e estilo para um resultado mais moderno e profissional.</li>
-          <li>Histórico de versões atualizado em continuidade da versão anterior.</li>
-        </ul>
-      </article>
-
-      <article class="glass-card p-5 border border-cyan-500/20">
-        <div class="flex items-center justify-between gap-3 mb-2">
-          <h2 class="text-xl font-bold text-cyan-200">Versão 1.5.18</h2>
-          <span class="text-xs text-gray-400">Anterior</span>
-        </div>
-        <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>No <strong>Controle de Cortes</strong>, foram removidos os blocos de personalização, estampa e acabamento para manter somente itens ligados ao corte.</li>
-          <li>No quadro de <strong>Processos</strong>, o resumo deixou de usar carrossel e o bloco <strong>Financeiro</strong> agora aparece direto no card sem arraste lateral.</li>
-          <li>Ordem do resumo do card prioriza financeiro antes de produção para mostrar os valores principais de cara.</li>
-          <li>Histórico de versões atualizado em continuidade da versão anterior.</li>
-        </ul>
-      </article>
-
-      <article class="glass-card p-5 border border-cyan-500/20">
-        <div class="flex items-center justify-between gap-3 mb-2">
-          <h2 class="text-xl font-bold text-cyan-200">Versão 1.5.17</h2>
-          <span class="text-xs text-gray-400">Anterior</span>
-        </div>
-        <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Aba de <strong>Processos</strong> foi restaurada para a base estável da versão <strong>1.5.15</strong>, trazendo de volta os fluxos e blocos que tinham sido removidos.</li>
-          <li>Revertida a recriação recente do <strong>Controle de Cortes</strong> para eliminar falhas e manter o comportamento que já estava funcionando sem bugs.</li>
-          <li>Estrutura de <code>index.html</code>, <code>processos.html</code>, <code>processos.js</code> e <code>script.js</code> alinhada novamente com a versão estável anterior.</li>
-          <li>Histórico de versões atualizado em continuidade da versão anterior.</li>
-        </ul>
-      </article>
-
-      <article class="glass-card p-5 border border-cyan-500/20">
-        <div class="flex items-center justify-between gap-3 mb-2">
-          <h2 class="text-xl font-bold text-cyan-200">Versão 1.5.16</h2>
-          <span class="text-xs text-gray-400">Anterior</span>
-        </div>
-        <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Checklist do <strong>Controle de Cortes</strong> agora normaliza automaticamente os dados de tamanhos/quantidades salvos em formatos antigos, evitando tela vazia.</li>
-          <li>Quando o pedido não possui grade de corte mas tem quantidade total cadastrada, o sistema cria um item padrão <strong>Tam. Único</strong> para não perder a referência do que cortar.</li>
-          <li>Salvar cortes passou a validar ausência de itens e exibir alerta claro para editar o pedido antes de concluir.</li>
-          <li>Histórico de versões atualizado em continuidade da versão anterior.</li>
-        </ul>
-      </article>
-
-      <article class="glass-card p-5 border border-cyan-500/20">
-        <div class="flex items-center justify-between gap-3 mb-2">
-          <h2 class="text-xl font-bold text-cyan-200">Versão 1.5.15</h2>
-          <span class="text-xs text-gray-400">Anterior</span>
-        </div>
-        <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Corrigido erro <em>"The string did not match the expected pattern"</em> no painel de chaves ao abrir o sistema fora de HTTP/HTTPS.</li>
-          <li>Consulta de status Gemini agora usa endpoint absoluto seguro somente quando existe <code>window.location.origin</code> válido.</li>
-          <li>Em ambiente <code>file://</code>, o painel exibe aviso claro de que o endpoint <code>/api</code> não está disponível em vez de quebrar.</li>
-          <li>Mensagens de falha de conexão no status de chaves agora mostram detalhe técnico para diagnóstico mais rápido.</li>
-          <li>Histórico de versões atualizado em continuidade da versão anterior.</li>
-        </ul>
-      </article>
-
-<article class="glass-card p-5 border border-cyan-500/20">
-        <div class="flex items-center justify-between gap-3 mb-2">
-          <h2 class="text-xl font-bold text-cyan-200">Versão 1.5.12</h2>
-          <span class="text-xs text-gray-400">Anterior</span>
-        </div>
-        <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Integração Gemini migrada para endpoint seguro em <code>/api/gemini</code>, evitando exposição de chave no front-end.</li>
-          <li>Adicionado handler server-side que lê <code>GEMINI_API_KEY</code> por variável de ambiente.</li>
-          <li>Projeto preparado com <code>.env</code> local ignorado no Git e <code>.env.example</code> para facilitar configuração.</li>
-          <li>Histórico de versões atualizado em continuidade da versão anterior.</li>
-        </ul>
-      </article>
-
-<article class="glass-card p-5 border border-cyan-500/20">
-        <div class="flex items-center justify-between gap-3 mb-2">
-          <h2 class="text-xl font-bold text-cyan-200">Versão 1.5.11</h2>
-          <span class="text-xs text-gray-400">Anterior</span>
-        </div>
-        <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Corrigido o loop de autenticação que retornava para a tela de login após clicar em <strong>Entrar</strong>.</li>
-          <li>As chaves internas do Firebase Auth agora permanecem no <code>localStorage</code> nativo para manter sessão entre páginas.</li>
-          <li>Histórico de versões atualizado mantendo continuidade da versão anterior.</li>
-        </ul>
-      </article>
-
-<article class="glass-card p-5 border border-cyan-500/20">
-        <div class="flex items-center justify-between gap-3 mb-2">
-          <h2 class="text-xl font-bold text-cyan-200">Versão 1.5.10</h2>
-          <span class="text-xs text-gray-400">Anterior</span>
-        </div>
-        <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Cards de Processos voltaram a manter o bloco de resumo no estilo de <strong>carrossel interno</strong>.</li>
-          <li>No slide financeiro, os chips <strong>Total</strong>, <strong>Pago</strong> e <strong>Falta</strong> ficam lado a lado com <strong>arraste lateral</strong>.</li>
-          <li>Tela de login inicial recebeu redesign mais profissional com visual premium (glass + gradientes).</li>
-          <li>Login com Google reforçado com persistência local, fallback por redirect e mensagens mais claras em caso de erro de configuração no Firebase.</li>
-        </ul>
-      </article>
-
-<article class="glass-card p-5 border border-cyan-500/20">
-        <div class="flex items-center justify-between gap-3 mb-2">
-          <h2 class="text-xl font-bold text-cyan-200">Versão 1.5.9</h2>
-          <span class="text-xs text-gray-400">Anterior</span>
-        </div>
-        <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Cards de Processos voltaram ao layout padrão de resumo, sem carrossel interno.</li>
-          <li>Bloco financeiro mantém os chips <strong>Total</strong>, <strong>Pago</strong> e <strong>Falta</strong> fixos no mesmo card.</li>
-          <li>Comportamento de cards iniciando fechados e expandindo ao toque/clique foi mantido.</li>
-          <li>Tela de login ganhou botão funcional para autenticação com <strong>Google</strong> via Firebase Auth.</li>
-        </ul>
-      </article>
-
-<article class="glass-card p-5 border border-cyan-500/20">
-        <div class="flex items-center justify-between gap-3 mb-2">
-          <h2 class="text-xl font-bold text-cyan-200">Versão 1.5.8</h2>
-          <span class="text-xs text-gray-400">Anterior</span>
-        </div>
-        <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Bloco financeiro dos cards de Processos deixou de usar carrossel interno.</li>
-          <li>Os chips <strong>Total</strong>, <strong>Pago</strong> e <strong>Falta</strong> agora ficam fixos lado a lado no mesmo bloco.</li>
-          <li>Mantido o comportamento dos cards começarem fechados e expandirem no toque/clique.</li>
-        </ul>
-      </article>
-
-      
-      <article class="glass-card p-5 border border-cyan-500/20">
-        <div class="flex items-center justify-between gap-3 mb-2">
-          <h2 class="text-xl font-bold text-cyan-200">Versão 1.5.7</h2>
-          <span class="text-xs text-gray-400">Anterior</span>
-        </div>
-        <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Cards de Processos agora iniciam <strong>fechados</strong>, exibindo apenas nome do pedido, cliente e data de entrega para economizar espaço.</li>
-          <li>Toque/clique no card (ou na seta) para <strong>abrir/fechar</strong> os detalhes completos do processo.</li>
-          <li>Bloco financeiro manteve estilo em carrossel e os valores (<strong>Total, Pago e Falta</strong>) agora ficam em chips lado a lado com arraste lateral.</li>
-        </ul>
-      </article>
-<article class="glass-card p-5 border border-cyan-500/20">
-        <div class="flex items-center justify-between gap-3 mb-2">
-          <h2 class="text-xl font-bold text-cyan-200">Versão 1.5.6</h2>
-          <span class="text-xs text-gray-400">Anterior</span>
-        </div>
-        <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Link de versões mantido apenas na <strong>Dashboard</strong> e em <strong>Processos</strong>, evitando ajustes em todas as páginas.</li>
-          <li>Métricas da Dashboard agora mostram <strong>2 cards por linha</strong> para melhor aproveitamento do espaço.</li>
-          <li>Os ícones com <strong>"?"</strong> nas métricas foram trocados por textos diretos (ex.: Saldo Anterior, Receitas e Despesas).</li>
-          <li>Botão <strong>"Ver mais métricas"</strong> removido e métricas exibidas direto no bloco principal.</li>
-          <li>Card de processos voltou ao layout anterior com bloco financeiro, agora dentro de <strong>carrossel por arraste lateral</strong>.</li>
-        </ul>
-      </article>
-      <article class="glass-card p-5 border border-cyan-500/20">
-        <div class="flex items-center justify-between gap-3 mb-2">
-          <h2 class="text-xl font-bold text-cyan-200">Versão 1.5.5</h2>
-          <span class="text-xs text-gray-400">Anterior</span>
-        </div>
-        <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Fluxo de aprovação reforçado com validações defensivas para <code>uid</code>, <code>oid</code> e <code>token</code>.</li>
-          <li>Compatibilidade entre os campos <code>productionOrders</code> e <code>production_orders</code> durante leitura e gravação.</li>
-          <li>Fallback de imagem na aprovação com placeholder + tratamento de <code>onload/onerror</code>.</li>
-          <li>Funções globais <code>approveArt</code> e <code>submitChanges</code> com tratamento de erro para evitar quebra do fluxo.</li>
-          <li>Inicialização centralizada do Firebase em <code>js/firebase-init.js</code> para evitar <em>duplicate-app</em>.</li>
-          <li>Cópia de texto/link com fallback para <code>execCommand</code> quando <code>navigator.clipboard</code> falhar.</li>
+          <li>Reestruturação completa do sistema com foco em estabilidade.</li>
+          <li>Removida integração de IA online e chamadas externas associadas.</li>
+          <li>Removidos fluxos externos de cliente e links públicos de aprovação.</li>
+          <li>Controle de artes atualizado para operação 100% interna com histórico, observações e status de produção.</li>
         </ul>
       </article>
     </section>
@@ -233,6 +75,5 @@
   </nav>
 
   <script src="theme-toggle.js"></script>
-  <script src="cerebro_ia.js"></script>
 </body>
 </html>

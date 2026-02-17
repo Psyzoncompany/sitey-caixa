@@ -193,7 +193,7 @@ const init = () => {
     let activeCuttingOrderId = null;
     let activeArtOrderId = null;
 
-    // --- EXPOR API PARA CEREBRO_IA.JS ---
+    // API interna da página
     window.PsyzonApp = {
         productionOrders,
         clients,
@@ -703,13 +703,6 @@ const init = () => {
                 productionOrders.push(newOrder);
                 
                 // HOOK HIPOCAMPO: Pedido Criado
-                if (window.HipocampoIA) {
-                    window.HipocampoIA.recordEvent('order_created', {
-                        totalValue: newOrder.totalValue,
-                        totalItems: (newOrder.checklist.cutting?.subtasks || []).reduce((a,b)=>a+b.total,0) || newOrder.printing?.total || 1,
-                        printType: newOrder.printType
-                    }, { orderId: newOrder.id, customerId: newOrder.clientId });
-                }
             }
             saveOrders();
             renderKanban();
@@ -1727,12 +1720,11 @@ const init = () => {
             const lastVersion = artControl.versions.length > 0 ? artControl.versions[artControl.versions.length - 1] : null;
             
             let statusClass = 'bg-gray-700 text-gray-300';
-            let statusText = 'Rascunho';
+            let statusText = 'Em criação';
             
             if (lastVersion) {
-                if (lastVersion.status === 'approved') { statusClass = 'bg-green-500/20 text-green-400 border border-green-500/30'; statusText = `Aprovada V${lastVersion.version}`; }
-                else if (lastVersion.status === 'sent') { statusClass = 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'; statusText = `Enviada V${lastVersion.version}`; }
-                else if (lastVersion.status === 'changes_requested') { statusClass = 'bg-red-500/20 text-red-400 border border-red-500/30'; statusText = `Ajustes V${lastVersion.version}`; }
+                if (lastVersion.status === 'finalizada') { statusClass = 'bg-green-500/20 text-green-400 border border-green-500/30'; statusText = `Finalizada V${lastVersion.version}`; }
+                else if (lastVersion.status === 'ajuste_interno') { statusClass = 'bg-amber-500/20 text-amber-300 border border-amber-500/30'; statusText = `Ajuste interno V${lastVersion.version}`; }
             }
 
             // Thumb logic
@@ -1773,7 +1765,7 @@ const init = () => {
 
                 <div class="art-card-actions">
                     <button data-order-id="${order.id}" class="open-art-modal-btn art-btn-action primary">Gerenciar</button>
-                    <button class="art-btn-action copy-art-link-btn" data-order-id="${order.id}">Copiar Link</button>
+                    
                 </div>
             `;
             return card;
@@ -1786,8 +1778,7 @@ const init = () => {
         artTasksContainer.appendChild(container);
     };
 
-    // --- NOVO CONTROLE DE ARTES (VERSÕES) ---
-    const createClientToken = () => `ct_${Math.random().toString(36).slice(2, 10)}${Date.now().toString(36)}`;
+    // --- NOVO CONTROLE DE ARTES (INTERNO) ---
     const formatArtDate = (value) => {
         const d = new Date(value || Date.now());
         if (Number.isNaN(d.getTime())) return '—';
@@ -1796,55 +1787,33 @@ const init = () => {
     const ensureArtStructure = (order) => {
         order.art = order.art || {};
         order.artControl = order.artControl || {};
-        order.art.clientToken = order.art.clientToken || order.clientToken || createClientToken();
-        order.clientToken = order.art.clientToken;
         order.art.notes = order.art.notes || order.notes || '';
-        order.art.status = order.art.status || 'pending';
+        order.art.status = order.art.status || 'em_criacao';
         order.art.activeVersionId = order.art.activeVersionId || null;
-        order.art.lastClientActivity = order.art.lastClientActivity || null;
         order.artControl.versions = Array.isArray(order.artControl.versions) ? order.artControl.versions : [];
         order.artControl.versions = order.artControl.versions.map((ver, idx) => ({
             id: ver.id || `v_${order.id}_${ver.version || idx + 1}`,
             version: ver.version || ver.versionNumber || idx + 1,
             versionNumber: ver.versionNumber || ver.version || idx + 1,
             createdAt: ver.createdAt || Date.now(),
-            status: ver.status || 'draft',
+            status: ['em_criacao', 'ajuste_interno', 'finalizada'].includes(ver.status) ? ver.status : 'em_criacao',
             previewUrl: ver.previewUrl || (Array.isArray(ver.images) ? ver.images[0] : ver.imageUrl) || '',
             images: Array.isArray(ver.images) ? ver.images : (ver.previewUrl ? [ver.previewUrl] : []),
-            clientFeedback: ver.clientFeedback || { message: '', images: [], createdAt: null },
             history: Array.isArray(ver.history) ? ver.history : []
         }));
         const active = order.artControl.versions.find((v) => v.id === order.art.activeVersionId) || order.artControl.versions[order.artControl.versions.length - 1] || null;
         order.art.activeVersionId = active?.id || null;
-        if (window.firebaseAuth?.upsertOrderClientBridge && order.art.clientToken) {
-            window.firebaseAuth.upsertOrderClientBridge(order, order.art.clientToken).catch((err) => {
-                console.warn('Não foi possível sincronizar order_clients/orders_public:', err);
-            });
-        }
-    };
-    const getClientReviewLink = (order) => `${window.location.origin}/arteonline.html?oid=${encodeURIComponent(order.id)}&token=${encodeURIComponent(order.art.clientToken)}`;
-    const ensureOrderClientBridge = async (order) => {
-        try {
-            ensureArtStructure(order);
-            if (window.firebaseAuth?.upsertOrderClientBridge) {
-                await window.firebaseAuth.upsertOrderClientBridge(order, order.art.clientToken);
-            }
-        } catch (err) {
-            console.warn('Falha ao atualizar ponte do cliente:', err);
-        }
     };
     const statusChip = (status) => {
-        const map = { draft: 'Rascunho', sent: 'Enviada', approved: 'Aprovada', changes_requested: 'Ajustes Solicitados', pending: 'Pendente', done: 'Concluída' };
-        return map[status] || status;
+        const map = { em_criacao: 'Em criação', ajuste_interno: 'Ajuste interno', finalizada: 'Finalizada' };
+        return map[status] || 'Em criação';
     };
-
     const openArtControlModal = (orderId) => {
         activeArtOrderId = orderId;
         const order = productionOrders.find((o) => o.id === orderId);
         const client = clients.find((c) => c.id === order.clientId);
         if (!order) return;
         ensureArtStructure(order);
-        ensureOrderClientBridge(order);
 
         const shell = document.getElementById('art-modal-shell');
         shell.innerHTML = `
@@ -1875,12 +1844,11 @@ const init = () => {
                 </section>
             </div>
             <footer class="artx-modal-footer">
-                <div class="text-xs text-gray-400">Link do cliente é único e não muda.</div>
+                <div class="text-xs text-gray-400">Fluxo interno de produção sem compartilhamento externo.</div>
                 <div class="artx-footer-actions">
                     <input type="file" id="new-version-input" class="hidden" accept="image/*">
-                    <button id="btn-new-version" class="btn-shine py-3 px-5 rounded-xl">+ Nova Versão</button>
-                    <button id="btn-export-link" class="artx-btn-soft">Copiar mensagem WhatsApp</button>
-                    <button id="save-art-btn" class="btn-shine py-3 px-5 rounded-xl">Salvar e Concluir Arte</button>
+                    <button id="btn-new-version" class="btn-shine py-3 px-5 rounded-xl">Nova versão</button>
+                    <button id="save-art-btn" class="btn-shine py-3 px-5 rounded-xl">Salvar como finalizada</button>
                 </div>
             </footer>
         `;
@@ -1901,15 +1869,8 @@ const init = () => {
             saveOrders();
             openArtControlModal(order.id);
         };
-        shell.querySelector('#btn-export-link').onclick = async () => {
-            await ensureOrderClientBridge(order);
-            const link = getClientReviewLink(order);
-            const text = `Olá! Aqui está seu link de aprovação: ${link}`;
-            const ok = await copyTextSafe(text);
-            alert(ok ? 'Mensagem copiada!' : text);
-        };
         shell.querySelector('#save-art-btn').onclick = () => {
-            order.art.status = 'done';
+            order.art.status = 'finalizada';
             if (order.checklist?.art) order.checklist.art.completed = true;
             saveOrders();
             renderArtTasks();
@@ -1930,10 +1891,6 @@ const init = () => {
         }
 
         versions.forEach((ver) => {
-            const link = getClientReviewLink(order);
-            ensureOrderClientBridge(order);
-            const feedbackText = ver.clientFeedback?.message || 'Sem feedback do cliente.';
-            const hasClientUpdate = Boolean(ver.clientFeedback?.message) || (order.art.lastClientActivity && ['changes_requested','approved'].includes(order.art.lastClientActivity.type));
             const last = Array.isArray(ver.history) && ver.history.length ? ver.history[ver.history.length - 1] : null;
             const card = document.createElement('article');
             card.className = 'artx-version-card';
@@ -1945,44 +1902,35 @@ const init = () => {
                             <h4 class="text-xl font-bold">Versão ${ver.versionNumber}</h4>
                             <p class="text-xs text-gray-400">Criada em ${formatArtDate(ver.createdAt)}</p>
                         </div>
-                        <div class="flex items-center gap-2">${hasClientUpdate ? '<span class=\"artx-badge-pill artx-badge-new\">Novo</span>' : ''}<span class="artx-badge-pill">${statusChip(ver.status)}</span></div>
+                        <div class="flex items-center gap-2"><span class="artx-badge-pill">${statusChip(ver.status)}</span></div>
                     </div>
                     <p class="text-xs text-gray-400 mt-2">Última atividade: ${last ? `${last.action} · ${last.comment || ''}` : 'created'}</p>
                     <div class="artx-version-actions">
-                        <button class="artx-btn-soft" data-action="copy-link">Copiar Link</button>
-                        <a class="artx-btn-soft" href="${link}" target="_blank" rel="noopener">Abrir Página do Cliente</a>
-                        ${ver.status === 'draft' ? '<button class="artx-btn-soft" data-action="mark-sent">Marcar como Enviada</button>' : ''}
-                        ${ver.status !== 'approved' ? '<button class="artx-btn-soft" data-action="approve">Aprovar Manual</button>' : ''}
-                        <button class="artx-btn-soft" data-action="details">Ver detalhes</button>
+                        ${ver.status !== 'em_criacao' ? '<button class="artx-btn-soft" data-action="set-creating">Em criação</button>' : ''}
+                        ${ver.status !== 'ajuste_interno' ? '<button class="artx-btn-soft" data-action="set-adjust">Ajuste interno</button>' : ''}
+                        ${ver.status !== 'finalizada' ? '<button class="artx-btn-soft" data-action="set-final">Finalizada</button>' : ''}
+                        <button class="artx-btn-soft" data-action="details">Ver histórico</button>
                     </div>
                     <div class="artx-version-details hidden">
-                        <p class="text-sm text-gray-200"><strong>Feedback:</strong> ${feedbackText}</p>
+                        <p class="text-sm text-gray-200"><strong>Última atividade:</strong> ${last ? `${last.action} · ${last.comment || ''}` : 'criação da versão'}</p>
                     </div>
                 </div>
             `;
-            card.querySelector('[data-action="copy-link"]').onclick = async () => {
-                const ok = await copyTextSafe(link);
-                alert(ok ? 'Link copiado.' : 'Não foi possível copiar.');
-            };
-            const sentBtn = card.querySelector('[data-action="mark-sent"]');
-            if (sentBtn) sentBtn.onclick = () => {
-                ver.status = 'sent';
-                order.art.status = 'sent';
-                ver.history.push({ action: 'sent', date: Date.now(), user: 'Admin' });
+            const setStatus = (nextStatus, note) => {
+                ver.status = nextStatus;
+                order.art.status = nextStatus;
+                ver.history.push({ action: 'status', date: Date.now(), user: 'Interno', comment: note });
+                if (nextStatus === 'finalizada' && order.checklist?.art) order.checklist.art.completed = true;
                 saveOrders();
                 renderArtVersionsList(order);
                 renderArtTasks();
             };
-            const approveBtn = card.querySelector('[data-action="approve"]');
-            if (approveBtn) approveBtn.onclick = () => {
-                ver.status = 'approved';
-                order.art.status = 'approved';
-                ver.history.push({ action: 'approved', date: Date.now(), user: 'Admin', comment: 'Aprovação manual' });
-                if (order.checklist?.art) order.checklist.art.completed = true;
-                saveOrders();
-                renderArtVersionsList(order);
-                renderArtTasks();
-            };
+            const btnCreating = card.querySelector('[data-action="set-creating"]');
+            if (btnCreating) btnCreating.onclick = () => setStatus('em_criacao', 'Retornada para criação');
+            const btnAdjust = card.querySelector('[data-action="set-adjust"]');
+            if (btnAdjust) btnAdjust.onclick = () => setStatus('ajuste_interno', 'Ajuste interno solicitado');
+            const btnFinal = card.querySelector('[data-action="set-final"]');
+            if (btnFinal) btnFinal.onclick = () => setStatus('finalizada', 'Versão finalizada internamente');
             card.querySelector('[data-action="details"]').onclick = () => card.querySelector('.artx-version-details').classList.toggle('hidden');
             container.appendChild(card);
         });
@@ -2002,14 +1950,13 @@ const init = () => {
                 versionNumber: num,
                 images: [ev.target.result],
                 previewUrl: ev.target.result,
-                status: 'draft',
+                status: 'em_criacao',
                 createdAt: Date.now(),
-                clientFeedback: { message: '', images: [], createdAt: null },
                 history: [{ action: 'created', date: Date.now(), user: 'Admin' }]
             };
             order.artControl.versions.push(newVersion);
             order.art.activeVersionId = id;
-            order.art.status = 'pending';
+            order.art.status = 'em_criacao';
             saveOrders();
             renderArtVersionsList(order);
             renderArtTasks();
@@ -2024,25 +1971,6 @@ const init = () => {
         artTasksContainer.addEventListener('click', (e) => {
             if (e.target.classList.contains('open-art-modal-btn')) {
                 openArtControlModal(parseInt(e.target.dataset.orderId));
-            }
-
-            if (e.target.classList.contains('copy-art-link-btn')) {
-                const orderId = parseInt(e.target.dataset.orderId);
-                const order = productionOrders.find(o => o.id === orderId);
-                if (!order) return;
-                ensureArtStructure(order);
-                ensureOrderClientBridge(order);
-                const approvalLink = getClientReviewLink(order);
-                copyTextSafe(approvalLink).then((ok) => {
-                    if (!ok) {
-                        alert('Não foi possível copiar o link automaticamente.');
-                        return;
-                    }
-                    e.target.textContent = 'Copiado!';
-                    setTimeout(() => {
-                        e.target.textContent = 'Copiar Link';
-                    }, 1500);
-                });
             }
         });
     }
@@ -2513,594 +2441,13 @@ const init = () => {
         }, true);
     } // end if (orderColorsContainer)
 
-    // --- INTEGRAÇÃO GOOGLE GEMINI AI (ASSISTENTE PSYZON) ---
-    
-    // Configuração da API via endpoint seguro no servidor (Vercel API)
-    const GEMINI_PROXY_ENDPOINT = (window.location.protocol === "http:" || window.location.protocol === "https:")
-        ? `${window.location.origin}/api/gemini`
-        : null;
-
-    console.log("🔒 Gemini configurado via endpoint seguro:", GEMINI_PROXY_ENDPOINT);
-
-    const getPageContext = () => {
-        const title = document.title || 'Sem título';
-        const heading = document.querySelector('h1')?.textContent?.trim() || '';
-        const visibleText = (document.body?.innerText || '')
-            .replace(/\s+/g, ' ')
-            .trim()
-            .slice(0, 4000);
-        return `Página atual: ${window.location.pathname}\nTítulo: ${title}\nCabeçalho: ${heading}\nConteúdo visível (resumo): ${visibleText}`;
-    };
-
-    const ensureGeminiEndpoint = () => {
-        if (GEMINI_PROXY_ENDPOINT) return;
-        throw new Error('Ambiente inválido para IA. Abra o site por URL HTTP/HTTPS (ex: Vercel), não por arquivo local.');
-    };
-
-    // Estado do Chat
-    let chatHistory = [];
-    let isAiProcessing = false;
-
-    // Definição das Ferramentas (Function Calling)
-    const aiTools = [
-        {
-            name: "createOrder",
-            description: "Cria pedido e cliente (se não existir). Suporta grade de tamanhos (sizes).",
-            parameters: {
-                type: "OBJECT",
-                properties: {
-                    description: { type: "STRING", description: "Descrição curta do pedido (ex: 30 Camisas 3A)" },
-                    clientName: { type: "STRING", description: "Nome do cliente para buscar ou criar" },
-                    deadline: { type: "STRING", description: "Data de entrega no formato YYYY-MM-DD" },
-                    totalValue: { type: "NUMBER", description: "Valor total do pedido" },
-                    notes: { type: "STRING", description: "Observações gerais" },
-                    printType: { type: "STRING", description: "Técnica: 'silk', 'dtf', 'sublimacao' ou 'art'" },
-                    sizes: {
-                        type: "ARRAY",
-                        description: "Lista de tamanhos e quantidades (Grade)",
-                        items: {
-                            type: "OBJECT",
-                            properties: {
-                                size: { type: "STRING" },
-                                qty: { type: "NUMBER" },
-                                gender: { type: "STRING", description: "Masculina, Feminina ou Infantil" }
-                            }
-                        }
-                    }
-                },
-                required: ["description", "clientName"]
-            }
-        },
-        {
-            name: "updateOrder",
-            description: "Atualiza um pedido existente.",
-            parameters: {
-                type: "OBJECT",
-                properties: {
-                    orderId: { type: "NUMBER", description: "ID do pedido" },
-                    updates: { type: "OBJECT", description: "Objeto com campos a atualizar (status, totalValue, notes, etc)" }
-                },
-                required: ["orderId", "updates"]
-            }
-        },
-        {
-            name: "listOrders",
-            description: "Lista pedidos filtrando por status ou busca textual.",
-            parameters: {
-                type: "OBJECT",
-                properties: {
-                    status: { type: "STRING", description: "todo, doing, done" },
-                    search: { type: "STRING", description: "Termo de busca (nome cliente ou descrição)" }
-                }
-            }
-        },
-        {
-            name: "calculateOrder",
-            description: "Calcula o total do pedido baseado em quantidade e preço unitário.",
-            parameters: {
-                type: "OBJECT",
-                properties: {
-                    quantity: { type: "NUMBER" },
-                    unitPrice: { type: "NUMBER" },
-                    extras: { type: "NUMBER", description: "Valor extra (frete, arte)" },
-                    discount: { type: "NUMBER" }
-                },
-                required: ["quantity", "unitPrice"]
-            }
-        },
-        {
-            name: "calculateDeadline",
-            description: "Calcula data de entrega considerando dias úteis e feriados.",
-            parameters: {
-                type: "OBJECT",
-                properties: {
-                    days: { type: "NUMBER", description: "Quantidade de dias" },
-                    isBusinessDays: { type: "BOOLEAN", description: "Se true, conta apenas dias úteis (seg-sex e exclui feriados)" },
-                    startDate: { type: "STRING", description: "Data inicial YYYY-MM-DD (opcional, default hoje)" }
-                },
-                required: ["days"]
-            }
-        },
-        {
-            name: "emplacarPedido",
-            description: "Gera o resumo operacional (emplacamento), valida dados e move para produção.",
-            parameters: {
-                type: "OBJECT",
-                properties: {
-                    orderId: { type: "NUMBER" },
-                    checklistData: { type: "OBJECT", description: "Dados técnicos: cores, tamanhos, estampa" }
-                },
-                required: ["orderId"]
-            }
-        }
-    ];
-
-    // Prompt do Sistema
-    const systemInstruction = `
-    VOCÊ É O SISTEMA OPERACIONAL DA CONFECÇÃO (PSYZON).
-    SUA FUNÇÃO É AGIR, NÃO CONVERSAR.
-
-    ✅ REGRAS DE TAMANHOS (GRADE):
-    - Identifique grades no texto (ex: "6P, 10M, 10G").
-    - Converta para o array 'sizes' na ferramenta createOrder: [{size: "P", qty: 6}, ...].
-    - NUNCA crie pedido sem grade se ela foi informada no texto.
-    - Distribua as quantidades corretamente.
-    - Se o gênero não for informado, assuma "Masculina" ou infira pelo contexto.
-
-    ✅ REGRAS DE PRAZO (DIAS ÚTEIS):
-    - Se o usuário disser "dias úteis", OBRIGATORIAMENTE use a ferramenta calculateDeadline com isBusinessDays=true.
-    - Se disser apenas "dias", assuma corridos (isBusinessDays=false).
-    - Use a data retornada pela ferramenta como 'deadline' ao criar o pedido.
-    - Mostre no chat: Data Inicial, Data Final Calculada e Dias Considerados.
-
-    ⚠️ REGRAS GERAIS:
-    1. Cliente não encontrado? CRIE AUTOMATICAMENTE.
-    2. Preço não informado? CRIE COM VALOR 0.
-    3. Dados incompletos? CRIE O PEDIDO COM O QUE TEM.
-
-    PADRÃO DE RESPOSTA (HTML):
-    <b>🧾 Pedido Criado</b>
-    <ul class="chat-list">
-      <li><b>Cliente:</b> [Nome]</li>
-      <li><b>Item:</b> [Descrição]</li>
-      <li><b>Grade:</b> [Resumo ex: 10P, 10M]</li>
-      <li><b>Prazo:</b> [Data] ([X] dias úteis/corridos)</li>
-      <li><b>Status:</b> A Fazer</li>
-    </ul>
-    `;
-
-    // --- UI DO CHAT ---
-    const createChatInterface = () => {
-        if (document.getElementById('ai-chat-widget')) return; // Previne duplicação se chamado múltiplas vezes
-
-        const chatHTML = `
-            <button id="ai-toggle-btn" title="Assistente PSYZON">✨</button>
-            <div id="ai-chat-widget" class="hidden">
-                <div id="ai-chat-header">
-                    <div class="flex items-center gap-2">
-                        <span class="text-xl">🤖</span>
-                        <h3 class="font-bold text-white">Assistente PSYZON</h3>
-                    </div>
-                    <button id="ai-close-btn" class="text-gray-400 hover:text-white">&times;</button>
-                </div>
-                <div id="ai-chat-messages">
-                    <div class="chat-msg ai">Olá! Sou seu assistente de produção. Posso criar pedidos, calcular orçamentos ou fazer o emplacamento. Como posso ajudar hoje? 👕</div>
-                </div>
-                <div id="ai-chat-input-area">
-                    <input type="text" id="ai-input" class="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-500" placeholder="Ex: Novo pedido João, 30 camisas...">
-                    <button id="ai-send-btn" class="bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg px-3 py-2">➤</button>
-                </div>
-            </div>
-        `;
-        document.body.insertAdjacentHTML('beforeend', chatHTML);
-
-        // Event Listeners
-        const widget = document.getElementById('ai-chat-widget');
-        const toggleBtn = document.getElementById('ai-toggle-btn');
-        const closeBtn = document.getElementById('ai-close-btn');
-        const sendBtn = document.getElementById('ai-send-btn');
-        const input = document.getElementById('ai-input');
-        const msgsArea = document.getElementById('ai-chat-messages');
-
-        const toggleChat = () => {
-            widget.classList.toggle('hidden');
-            if (!widget.classList.contains('hidden')) input.focus();
-        };
-
-        toggleBtn.onclick = toggleChat;
-        closeBtn.onclick = toggleChat;
-
-        const addMessage = (text, sender, isHtml = false) => {
-            const div = document.createElement('div');
-            div.className = `chat-msg ${sender}`;
-            if (isHtml) div.innerHTML = text;
-            else div.textContent = text;
-            msgsArea.appendChild(div);
-            msgsArea.scrollTop = msgsArea.scrollHeight;
-            return div;
-        };
-
-        const addActionCard = (toolName, args, confirmCallback) => {
-            const div = document.createElement('div');
-            div.className = 'chat-action-card';
-            
-            let summary = '';
-            if (toolName === 'createOrder') summary = `Criando: <b>${args.description}</b><br>Cliente: ${args.clientName}`;
-            else if (toolName === 'updateOrder') summary = `Atualizar Pedido #${args.orderId}`;
-            else if (toolName === 'emplacarPedido') summary = `Emplacar Pedido #${args.orderId}`;
-            else summary = `Executar: ${toolName}`;
-
-            div.innerHTML = `
-                <h4>⚡ Ação Pendente</h4>
-                <p class="mb-2">${summary}</p>
-                <div class="flex gap-2 justify-end">
-                    <button class="cancel-action-btn text-xs px-2 py-1 rounded border border-red-500/50 text-red-400 hover:bg-red-500/10">Cancelar</button>
-                    <button class="confirm-action-btn text-xs px-3 py-1 rounded bg-green-600 text-white hover:bg-green-500 font-bold">Confirmar</button>
-                </div>
-            `;
-            
-            div.querySelector('.confirm-action-btn').onclick = () => {
-                div.remove();
-                confirmCallback();
-            };
-            div.querySelector('.cancel-action-btn').onclick = () => {
-                div.remove();
-                addMessage("❌ Ação cancelada pelo usuário.", 'user');
-            };
-            
-            msgsArea.appendChild(div);
-            msgsArea.scrollTop = msgsArea.scrollHeight;
-        };
-
-        const handleSend = async () => {
-            const text = input.value.trim();
-            if (!text || isAiProcessing) return;
-            
-            input.value = '';
-            addMessage(text, 'user');
-            isAiProcessing = true;
-            
-            // Loading indicator
-            const loadingDiv = addMessage("Thinking...", 'ai');
-            loadingDiv.innerHTML = `<svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
-
-            try {
-                // 1. Enviar para Gemini
-                const response = await callGemini(text);
-                loadingDiv.remove();
-
-                // 2. Processar Resposta
-                if (response.text) {
-                    addMessage(response.text, 'ai');
-                }
-
-                // 3. Processar Tool Calls (Ações)
-                if (response.toolCalls) {
-                    for (const tool of response.toolCalls) {
-                        addActionCard(tool.name, tool.args, async () => {
-                            // Executa a ação real
-                            const result = await executeLocalAction(tool.name, tool.args);
-                            // Envia resultado de volta para a IA
-                            const followUp = await callGemini(null, {
-                                functionResponse: {
-                                    name: tool.name,
-                                    response: { result: result }
-                                }
-                            });
-                            if (followUp.text) addMessage(followUp.text, 'ai');
-                        });
-                    }
-                }
-
-            } catch (err) {
-                loadingDiv.remove();
-                // Mostra o erro real na tela para ajudar a descobrir o problema
-                addMessage(`⚠️ <b>Erro na conexão:</b><br>${err.message}`, 'ai', true);
-                console.error("Erro detalhado do Assistente:", err);
-            } finally {
-                isAiProcessing = false;
-            }
-        };
-
-        sendBtn.onclick = handleSend;
-        input.onkeydown = (e) => { if (e.key === 'Enter') handleSend(); };
-    };
-
-    // --- LÓGICA DE COMUNICAÇÃO COM GEMINI ---
-    const callGemini = async (userText, context = null) => {
-        // Constrói o histórico para a API
-        let contents = chatHistory.map(msg => ({
-            role: msg.role,
-            parts: msg.parts
-        }));
-
-        if (userText) {
-            const userMsg = { role: "user", parts: [{ text: userText }] };
-            contents.push(userMsg);
-            chatHistory.push(userMsg);
-        }
-
-        if (context && context.functionResponse) {
-            const fnMsg = {
-                role: "function",
-                parts: [{
-                    functionResponse: {
-                        name: context.functionResponse.name,
-                        response: { name: context.functionResponse.name, content: context.functionResponse.response }
-                    }
-                }]
-            };
-            contents.push(fnMsg);
-            chatHistory.push(fnMsg);
-        }
-
-        const pageContext = getPageContext();
-
-        const payload = {
-            contents: contents,
-            tools: [{ functionDeclarations: aiTools }],
-            systemInstruction: { parts: [{ text: `${systemInstruction}\n\n${pageContext}` }] }
-        };
-
-        // Lista de modelos para tentar (Fallback automático)
-        // Se o 1.5 Flash falhar, tenta o Pro (mais estável)
-        const modelsToTry = [
-            'gemini-2.0-flash-exp',     // Experimental mais recente (Rápido e Inteligente)
-            'gemini-1.5-flash',         // Padrão atual (Estável)
-            'gemini-1.5-pro',           // Alta inteligência
-            'gemini-1.5-flash-8b',      // Versão leve e rápida
-            'gemini-1.5-flash-001',     // Versão específica (compatibilidade)
-            'gemini-pro',               // Fallback (v1.0 - funciona em quase todas as contas)
-            'gemini-3-flash-preview'    // Futuro (conforme sua nota de 2026)
-        ];
-
-        let successData = null;
-        let lastError = null;
-
-        ensureGeminiEndpoint();
-
-        for (const model of modelsToTry) {
-            try {
-                const res = await fetch(GEMINI_PROXY_ENDPOINT, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ model, payload })
-                });
-                const data = await res.json();
-
-                if (res.ok && Array.isArray(data?.candidates) && data.candidates.length > 0) {
-                    successData = data;
-                    break; // Sucesso!
-                }
-                // Se falhar, registra erro e tenta o próximo
-                let msg = data.error?.message || res.statusText;
-                if (res.status === 404) msg = "Modelo não encontrado (404). A API 'Generative Language' pode não estar ativa nesta chave.";
-                lastError = new Error(msg);
-            } catch (e) {
-                lastError = e;
-            }
-        }
-
-        if (!successData) {
-            // Se o erro for 404, dá a dica exata
-            if (lastError && lastError.message.includes('404')) throw new Error("⚠️ <b>Erro de Permissão (404)</b><br>Sua chave de API pode estar sem acesso ao modelo.<br><br>👉 Verifique a chave <code>GEMINI_API_KEY</code> no ambiente da Vercel e as permissões no <b>aistudio.google.com</b>.");
-            throw lastError || new Error("Não foi possível conectar com nenhum modelo da IA.");
-        }
-
-        const content = successData.candidates[0].content;
-        const parts = content.parts || [];
-        
-        // Salva resposta no histórico
-        chatHistory.push({ role: "model", parts: parts });
-
-        // Extrai texto e chamadas de função
-        let textResponse = "";
-        let toolCalls = [];
-
-        parts.forEach(part => {
-            if (part.text) textResponse += part.text;
-            if (part.functionCall) {
-                toolCalls.push({
-                    name: part.functionCall.name,
-                    args: part.functionCall.args
-                });
-            }
-        });
-
-        return { text: textResponse, toolCalls: toolCalls };
-    };
-
-    // --- EXECUTOR DE AÇÕES LOCAIS (A "Mão" da IA) ---
-    const executeLocalAction = async (name, args) => {
-        console.log(`🤖 Executando ação: ${name}`, args);
-        
-        try {
-            if (name === 'calculateDeadline') {
-                const start = args.startDate ? new Date(args.startDate + "T00:00:00") : new Date();
-                const days = args.days;
-                const isBusiness = args.isBusinessDays;
-                
-                // Lista de Feriados Nacionais (Fixos e Móveis aproximados para 2025/2026)
-                const holidays = [
-                    "01-01", "04-21", "05-01", "09-07", "10-12", "11-02", "11-15", "12-25",
-                    // 2025
-                    "2025-03-04", "2025-04-18", "2025-06-19",
-                    // 2026
-                    "2026-02-17", "2026-04-03", "2026-06-04"
-                ];
-
-                let current = new Date(start);
-                let added = 0;
-                
-                while (added < days) {
-                    current.setDate(current.getDate() + 1);
-                    if (isBusiness) {
-                        const day = current.getDay(); // 0=Dom, 6=Sab
-                        const dateStr = current.toISOString().split('T')[0];
-                        const mmdd = dateStr.substring(5);
-                        
-                        // Pula Fim de Semana e Feriados
-                        if (day === 0 || day === 6) continue;
-                        if (holidays.includes(mmdd) || holidays.includes(dateStr)) continue;
-                    }
-                    added++;
-                }
-                return { finalDate: current.toISOString().split('T')[0], startDate: start.toISOString().split('T')[0], daysCounted: days, type: isBusiness ? "dias úteis" : "dias corridos" };
-            }
-
-            if (name === 'createOrder') {
-                // Busca ou cria cliente
-                let client = clients.find(c => c.name.toLowerCase().includes(args.clientName.toLowerCase()));
-                let clientId;
-                if (client) {
-                    clientId = client.id;
-                } else {
-                    clientId = Date.now();
-                    const newClient = { id: clientId, name: args.clientName, gender: 'not_informed' };
-                    clients.push(newClient);
-                    localStorage.setItem('clients', JSON.stringify(clients));
-                }
-
-                // Processa Grade de Tamanhos (Sizes)
-                let subtasks = [];
-                if (args.sizes && Array.isArray(args.sizes)) {
-                    subtasks = args.sizes.map(s => ({
-                        id: Date.now() + Math.random(),
-                        type: s.gender || 'Masculina', // Default se não informado
-                        style: 'Normal',
-                        size: s.size,
-                        total: s.qty,
-                        cut: 0
-                    }));
-                }
-
-                const newOrder = {
-                    id: Date.now(),
-                    status: 'todo',
-                    description: args.description,
-                    clientId: clientId,
-                    deadline: args.deadline || new Date().toISOString().split('T')[0],
-                    totalValue: args.totalValue || 0,
-                    amountPaid: 0,
-                    isPaid: false,
-                    notes: args.notes || '',
-                    printType: args.printType || 'dtf',
-                    checklist: {
-                        art: { completed: false, deadline: '' },
-                        mockup: { completed: false, deadline: '' },
-                        fabric: { completed: false, deadline: '' },
-                        cutting: { completed: false, deadline: '', subtasks: subtasks },
-                        sewing: { completed: false, deadline: '' },
-                        printing: { completed: false, deadline: '' },
-                        finishing: { completed: false, deadline: '' }
-                    },
-                    colors: []
-                };
-
-                productionOrders.push(newOrder);
-                saveOrders();
-                renderKanban();
-                return { success: true, orderId: newOrder.id, clientName: args.clientName, description: args.description, status: 'todo' };
-            }
-
-            if (name === 'updateOrder') {
-                const idx = productionOrders.findIndex(o => o.id === args.orderId);
-                if (idx === -1) return { success: false, message: "Pedido não encontrado." };
-                
-                productionOrders[idx] = { ...productionOrders[idx], ...args.updates };
-                saveOrders();
-                renderKanban();
-                return { success: true, message: "Pedido atualizado." };
-            }
-
-            if (name === 'listOrders') {
-                let found = productionOrders;
-                if (args.status) found = found.filter(o => o.status === args.status);
-                if (args.search) {
-                    const term = args.search.toLowerCase();
-                    found = found.filter(o => {
-                        const c = clients.find(cl => cl.id === o.clientId);
-                        return o.description.toLowerCase().includes(term) || (c && c.name.toLowerCase().includes(term));
-                    });
-                }
-                // Retorna resumo para economizar tokens
-                return found.map(o => ({
-                    id: o.id,
-                    desc: o.description,
-                    status: o.status,
-                    total: o.totalValue
-                }));
-            }
-
-            if (name === 'calculateOrder') {
-                const total = (args.quantity * args.unitPrice) + (args.extras || 0) - (args.discount || 0);
-                return {
-                    total: total,
-                    breakdown: `${args.quantity}x ${formatCurrency(args.unitPrice)} + Extras ${formatCurrency(args.extras||0)}`
-                };
-            }
-
-            if (name === 'emplacarPedido') {
-                const idx = productionOrders.findIndex(o => o.id === args.orderId);
-                if (idx === -1) return { success: false, message: "Pedido não encontrado." };
-                
-                const order = productionOrders[idx];
-                
-                // Validação básica de emplacamento
-                const missing = [];
-                if (!order.totalValue) missing.push("Valor Total");
-                if (!order.deadline) missing.push("Prazo");
-                
-                // Se a IA passou dados de checklist, atualiza
-                if (args.checklistData) {
-                    if (args.checklistData.colors) order.colors = args.checklistData.colors;
-                    // Lógica para adicionar subtasks de corte se fornecidas
-                    if (args.checklistData.sizes) {
-                        // Exemplo simplificado: sizes = [{"size": "P", "qty": 10}]
-                        order.checklist.cutting.subtasks = args.checklistData.sizes.map(s => ({
-                            id: Date.now() + Math.random(),
-                            type: 'Feminina', // Default
-                            style: 'Normal',
-                            size: s.size,
-                            total: s.qty,
-                            cut: 0
-                        }));
-                    }
-                }
-
-                if (missing.length > 0) {
-                    return { success: false, message: `Faltam dados para emplacar: ${missing.join(', ')}` };
-                }
-
-                // Move para Doing (Em Produção)
-                order.status = 'doing';
-                saveOrders();
-                renderKanban();
-                
-                return { 
-                    success: true, 
-                    message: "Pedido emplacado e movido para produção!",
-                    summary: {
-                        client: clients.find(c => c.id === order.clientId)?.name,
-                        desc: order.description,
-                        total: order.totalValue
-                    }
-                };
-            }
-
-            return { success: false, message: "Ferramenta desconhecida." };
-
-        } catch (e) {
-            console.error(e);
-            return { success: false, error: e.message };
-        }
-    };
+    // Assistentes externos removidos na versão 6.0.0.
 
     // Inicializa a aba selecionada (persistida) após registrar todos os renderizadores
     // Evita erro de TDZ: "Cannot access 'renderArtTasks' before initialization"
     setActiveTab(currentTab);
 
-    // Chat antigo desativado: substituído por novo widget global em cerebro_ia.js
+    // Assistentes externos removidos na versão 6.0.0
 
 }; // end init
 

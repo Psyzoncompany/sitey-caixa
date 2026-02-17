@@ -15,8 +15,6 @@ const init = () => {
     const saveLimitsBtn = document.getElementById('save-limits-btn');
     const keysStatus = document.getElementById('keys-status');
     const refreshKeysStatusBtn = document.getElementById('refresh-keys-status-btn');
-    const canUseHttpEndpoint = window.location.protocol === 'http:' || window.location.protocol === 'https:';
-    const geminiStatusEndpoint = canUseHttpEndpoint ? `${window.location.origin}/api/gemini?status=1` : null;
 
     let incomeCategories = JSON.parse(localStorage.getItem('incomeCategories')) || ['Venda de Produto', 'Adiantamento', 'Serviços', 'Outros'];
     let expenseCategories = JSON.parse(localStorage.getItem('expenseCategories')) || ['Matéria-Prima (Custo Direto)', 'Aluguel', 'Contas (Água, Luz, Internet)', 'Marketing e Vendas', 'Salários e Pró-labore', 'Impostos', 'Software e Ferramentas', 'Manutenção', 'Despesas Pessoais', 'Outros'];
@@ -47,7 +45,6 @@ const init = () => {
 
     const loadKeysStatus = async () => {
         if (!keysStatus) return;
-
         const firebaseApiKey = window.firebasePublicConfig?.apiKey || '';
         const cards = [];
 
@@ -59,36 +56,6 @@ const init = () => {
                 ? 'Chave pública visível no front-end por design do Firebase.'
                 : 'Configuração não carregada no cliente.'
         }));
-
-        if (!geminiStatusEndpoint) {
-            cards.push(renderKeyCard({
-                title: 'Gemini (servidor)',
-                value: 'Status indisponível fora de HTTP/HTTPS',
-                status: 'warn',
-                hint: 'Abra o sistema por URL web (ex: Vercel). Em file:// o endpoint /api não existe.'
-            }));
-        } else {
-            try {
-                const res = await fetch(geminiStatusEndpoint, { method: 'GET' });
-                const data = await res.json();
-                const configured = Boolean(data?.configured);
-                cards.push(renderKeyCard({
-                    title: 'Gemini (servidor)',
-                    value: configured ? 'Configurada no servidor (oculta)' : 'Não configurada',
-                    status: configured ? 'ok' : 'warn',
-                    hint: configured
-                        ? 'A chave GEMINI_API_KEY está segura no backend e não é exibida.'
-                        : 'Defina GEMINI_API_KEY no ambiente (Vercel/servidor).'
-                }));
-            } catch (error) {
-                cards.push(renderKeyCard({
-                    title: 'Gemini (servidor)',
-                    value: 'Não foi possível consultar o endpoint /api/gemini',
-                    status: 'warn',
-                    hint: `Detalhe: ${error?.message || 'falha de conexão'}`
-                }));
-            }
-        }
 
         keysStatus.innerHTML = cards.join('');
     };
