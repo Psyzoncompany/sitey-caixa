@@ -18,7 +18,15 @@ Se usar login Google popup/redirect:
 ### 3) Firestore sem login para cliente
 - Regras recomendadas estão em `FIRESTORE_RULES.md`.
 - Fluxo público do cliente:
-  - URL: `/arteonline.html?token=<TOKEN>`
-  - resolve `order_clients/{token}` -> `oid`
-  - lê `orders/{oid}`
-  - envia feedback para `orders/{oid}/clientFeedback/*` e `order_feedback/{token}/events/*`.
+  - URL: `/arteonline.html?oid=<OID>&token=<TOKEN>`
+  - valida `order_clients/{token}` -> `oid`
+  - lê `orders_public/{oid}`
+  - envia feedback para `order_feedback/{token}/items/*`.
+
+### 4) Permissões do Firestore no modo sem login
+- Se o painel admin estiver sem autenticação Firebase, ele **precisa** de permissão de escrita em:
+  - `orders/{oid}`
+  - `orders_public/{oid}`
+  - `order_clients/{token}`
+- Use temporariamente as regras abertas do arquivo `FIRESTORE_RULES.md` para remover os erros de permissão no fluxo atual.
+- Depois que estabilizar, faça hardening com Auth ou Cloud Functions.

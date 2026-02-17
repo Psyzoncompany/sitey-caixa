@@ -1,4 +1,4 @@
-# Firestore Rules (cliente sem login)
+# Firestore Rules (modo sem login no admin e no cliente)
 
 Cole as regras abaixo no **Firebase Console → Firestore Database → Rules**.
 
@@ -7,52 +7,39 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Bloqueia tudo por padrão
-    match /{document=**} {
-      allow read, write: if false;
-    }
-
-    // Ponte token -> oid (somente leitura de documento específico)
-    match /order_clients/{token} {
-      allow get: if true;
-      allow list: if false;
-      allow create, update, delete: if request.auth != null;
-    }
-
-    // Pedido público por oid (somente leitura do doc)
+    // =========================
+    // ADMIN (painel sem login Firebase)
+    // =========================
+    // Como não há auth no painel, precisa permitir escrita.
     match /orders/{oid} {
-      allow get: if true;
-      allow list: if false;
-      allow create, update, delete: if request.auth != null;
-
-      // Feedback do cliente sem login, sem listar
-      match /clientFeedback/{feedbackId} {
-        allow create: if true;
-        allow get, list, update, delete: if request.auth != null;
-      }
+      allow read, write: if true;
     }
 
-    // Registro seguro por token (sem listar)
+    match /orders_public/{oid} {
+      allow read, write: if true;
+    }
+
+    match /order_clients/{token} {
+      allow read, write: if true;
+    }
+
+    // =========================
+    // CLIENTE (link com token)
+    // =========================
     match /order_feedback/{token} {
-      allow get: if false;
-      allow list: if false;
-      allow create, update: if true;
-      allow delete: if request.auth != null;
+      allow read: if true;
 
-      match /events/{eventId} {
-        allow create: if true;
-        allow get, list, update, delete: if request.auth != null;
+      match /items/{itemId} {
+        allow create, read: if true;
+        allow update, delete: if false;
+        allow list: if false;
       }
-    }
-
-    // Dados internos do app
-    match /users/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
     }
   }
 }
 ```
 
-## Observação
-- O fluxo público usa token em URL e **não exige login** para cliente.
-- O token precisa existir em `order_clients/{token}` (gerado no admin ao abrir/copiar link de arte).
+## Observações
+- Este conjunto resolve imediatamente os erros `Missing or insufficient permissions` ao criar/atualizar `order_clients` e `orders_public` no painel.
+- Como está sem autenticação, as coleções de admin ficam abertas para leitura/escrita.
+- Próximo passo recomendado (hardening): migrar escrita de admin para usuário autenticado ou Cloud Functions.

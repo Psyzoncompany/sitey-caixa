@@ -1818,11 +1818,11 @@ const init = () => {
         order.art.activeVersionId = active?.id || null;
         if (window.firebaseAuth?.upsertOrderClientBridge && order.art.clientToken) {
             window.firebaseAuth.upsertOrderClientBridge(order, order.art.clientToken).catch((err) => {
-                console.warn('Não foi possível sincronizar order_clients/orders:', err);
+                console.warn('Não foi possível sincronizar order_clients/orders_public:', err);
             });
         }
     };
-    const getClientReviewLink = (order) => `${window.location.origin}/arteonline.html?token=${encodeURIComponent(order.art.clientToken)}`;
+    const getClientReviewLink = (order) => `${window.location.origin}/arteonline.html?oid=${encodeURIComponent(order.id)}&token=${encodeURIComponent(order.art.clientToken)}`;
     const ensureOrderClientBridge = async (order) => {
         try {
             ensureArtStructure(order);
