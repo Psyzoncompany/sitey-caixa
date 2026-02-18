@@ -2291,6 +2291,21 @@ body.neo-dashboard {
 }
 .neo-dashboard .metrics-grid--all {
   grid-template-columns: repeat(3, minmax(160px, 1fr));
+  justify-items: center;
+}
+.neo-dashboard .metric-card {
+  width: 100%;
+  max-width: 100%;
+}
+.neo-dashboard .metric-card--compact .metric-head {
+  font-size: .92rem;
+  letter-spacing: .01em;
+}
+.neo-dashboard .metric-card--compact .metric-value {
+  font-size: clamp(1.9rem, 3.8vw, 2.2rem);
+}
+.neo-dashboard .metric-card--compact .metric-sub {
+  font-size: .78rem;
 }
 .neo-dashboard .metric-tile {
   border-radius: 20px;
@@ -2389,6 +2404,13 @@ body.neo-dashboard {
   }
   .neo-dashboard .metrics-grid--all {
     grid-template-columns: repeat(2, minmax(160px, 1fr));
+    justify-items: stretch;
+  }
+  .neo-dashboard .metric-card--compact .metric-head {
+    font-size: .88rem;
+  }
+  .neo-dashboard .metric-card--compact .metric-value {
+    font-size: clamp(1.75rem, 8vw, 2rem);
   }
 }
 
