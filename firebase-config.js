@@ -132,6 +132,304 @@ const updateSaveButtonState = () => {
     }
 };
 
+const parseLocalJson = (key, fallback = []) => {
+    try {
+        const raw = window.localStorage.getItem(key);
+        if (!raw) return fallback;
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : fallback;
+    } catch (_) {
+        return fallback;
+    }
+};
+
+const getDaysUntilDeadline = (deadline) => {
+    if (!deadline) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const target = new Date(`${deadline}T00:00:00`);
+    if (Number.isNaN(target.getTime())) return null;
+    const diff = target.getTime() - today.getTime();
+    return Math.ceil(diff / 86400000);
+};
+
+const collectPendingChecklistTasks = () => {
+    const orders = parseLocalJson('production_orders', []);
+    const clients = parseLocalJson('clients', []);
+    const checklistLabels = {
+        sewing: 'Costura',
+        cutting: 'Corte',
+        printing: 'Estampa',
+        embroidery: 'Bordado',
+        finishing: 'Acabamento',
+        expedition: 'Expedição'
+    };
+
+    const tasks = [];
+    orders.forEach((order) => {
+        if (!order || order.status === 'done' || !order.checklist) return;
+        Object.entries(order.checklist).forEach(([taskKey, task]) => {
+            if (!task || task.completed || !task.deadline) return;
+            const daysUntil = getDaysUntilDeadline(task.deadline);
+            if (daysUntil === null) return;
+            const client = clients.find((item) => String(item.id) === String(order.clientId));
+            tasks.push({
+                orderId: order.id,
+                orderDescription: order.description || 'Pedido sem descrição',
+                taskKey,
+                taskName: checklistLabels[taskKey] || taskKey,
+                clientName: client?.name || 'Cliente',
+                deadline: task.deadline,
+                daysUntil
+            });
+        });
+    });
+    return tasks;
+};
+
+const createGlobalCalculator = () => {
+    if (document.body.dataset.globalCalculatorReady === 'true') return;
+    if (window.location.pathname.endsWith('login.html')) return;
+    if (document.getElementById('calculator-fab')) return;
+    document.body.dataset.globalCalculatorReady = 'true';
+
+    const fab = document.createElement('button');
+    fab.id = 'calculator-fab-global';
+    fab.className = 'calculator-fab';
+    fab.type = 'button';
+    fab.setAttribute('aria-label', 'Abrir calculadora');
+    fab.title = 'Calculadora';
+    fab.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2m4 0h2M8 15h2m4 0h2M8 19h8"/></svg>';
+
+    const modal = document.createElement('div');
+    modal.id = 'calculator-modal-global';
+    modal.className = 'calculator-modal hidden';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.innerHTML = `
+      <div class="calculator-sheet">
+        <div class="calculator-head">
+          <h2>Calculadora</h2>
+          <button id="calculator-close-global" type="button" aria-label="Fechar calculadora">✕</button>
+        </div>
+        <div class="calculator-screen-wrap">
+          <p id="calculator-expression-global" class="calculator-expression">0</p>
+          <p id="calculator-display-global" class="calculator-display">0</p>
+        </div>
+        <div class="calculator-grid">
+          <button data-calc-action="clear">AC</button>
+          <button data-calc-action="backspace">⌫</button>
+          <button data-calc-action="percent">%</button>
+          <button data-calc-value="/" class="is-op">÷</button>
+          <button data-calc-value="7">7</button><button data-calc-value="8">8</button><button data-calc-value="9">9</button><button data-calc-value="*" class="is-op">×</button>
+          <button data-calc-value="4">4</button><button data-calc-value="5">5</button><button data-calc-value="6">6</button><button data-calc-value="-" class="is-op">−</button>
+          <button data-calc-value="1">1</button><button data-calc-value="2">2</button><button data-calc-value="3">3</button><button data-calc-value="+" class="is-op">+</button>
+          <button data-calc-action="toggle-sign">±</button><button data-calc-value="0">0</button><button data-calc-value=".">.</button><button data-calc-action="equals" class="is-equals">=</button>
+        </div>
+        <div class="calculator-history-head"><strong>Histórico</strong><button id="calculator-clear-history-global" type="button">Limpar</button></div>
+        <ul id="calculator-history-global" class="calculator-history"></ul>
+      </div>
+    `;
+
+    document.body.appendChild(fab);
+    document.body.appendChild(modal);
+
+    const closeBtn = modal.querySelector('#calculator-close-global');
+    const expressionEl = modal.querySelector('#calculator-expression-global');
+    const displayEl = modal.querySelector('#calculator-display-global');
+    const historyEl = modal.querySelector('#calculator-history-global');
+    const clearHistoryBtn = modal.querySelector('#calculator-clear-history-global');
+
+    const HISTORY_KEY = 'dashboardCalculatorHistory';
+    const operators = new Set(['+', '-', '*', '/']);
+    let expression = '';
+
+    const formatResult = (value) => {
+        if (!Number.isFinite(value)) return 'Erro';
+        const fixed = Math.abs(value) >= 1 ? Number(value.toFixed(8)) : Number(value.toPrecision(8));
+        return fixed.toLocaleString('pt-BR', { maximumFractionDigits: 8 });
+    };
+
+    const sanitizeExpression = (raw) => raw.replace(/,/g, '.').replace(/[^0-9+\-*/().]/g, '');
+    const evaluateExpression = (raw) => {
+        const clean = sanitizeExpression(raw);
+        if (!clean) return null;
+        try {
+            return Function(`"use strict"; return (${clean});`)();
+        } catch (_) {
+            return null;
+        }
+    };
+    const readHistory = () => {
+        try {
+            const parsed = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (_) {
+            return [];
+        }
+    };
+    const writeHistory = (entries) => localStorage.setItem(HISTORY_KEY, JSON.stringify(entries.slice(0, 20)));
+    const renderHistory = () => {
+        const entries = readHistory();
+        historyEl.innerHTML = entries.length
+            ? entries.map((item) => `<li><span>${item.expression}</span><strong>${item.result}</strong></li>`).join('')
+            : '<li class="calculator-history-empty">Sem cálculos ainda.</li>';
+    };
+    const setExpression = (value) => {
+        expression = value || '';
+        expressionEl.textContent = expression || '0';
+        const result = evaluateExpression(expression);
+        displayEl.textContent = result === null ? '0' : formatResult(Number(result));
+    };
+    const appendValue = (value) => {
+        if (value === '.') {
+            const lastChunk = expression.split(/[+\-*/]/).pop();
+            if (lastChunk.includes('.')) return;
+        }
+        if (operators.has(value)) {
+            const last = expression.slice(-1);
+            if (!expression && value !== '-') return;
+            if (operators.has(last)) expression = expression.slice(0, -1);
+        }
+        setExpression(expression + value);
+    };
+    const applyPercent = () => {
+        const result = evaluateExpression(expression);
+        if (result === null) return;
+        setExpression(String(Number(result) / 100));
+    };
+    const toggleSign = () => {
+        const result = evaluateExpression(expression);
+        if (result === null) return;
+        setExpression(String(Number(result) * -1));
+    };
+    const finalize = () => {
+        const result = evaluateExpression(expression);
+        if (result === null) return;
+        const formatted = formatResult(Number(result));
+        const entries = readHistory();
+        entries.unshift({ expression: expression || '0', result: formatted, at: Date.now() });
+        writeHistory(entries);
+        renderHistory();
+        setExpression(String(Number(result)));
+    };
+
+    modal.addEventListener('click', (event) => { if (event.target === modal) modal.classList.add('hidden'); });
+    fab.addEventListener('click', () => modal.classList.remove('hidden'));
+    closeBtn?.addEventListener('click', () => modal.classList.add('hidden'));
+    modal.querySelectorAll('[data-calc-value]').forEach((btn) => btn.addEventListener('click', () => appendValue(btn.getAttribute('data-calc-value') || '')));
+    modal.querySelectorAll('[data-calc-action]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const action = btn.getAttribute('data-calc-action');
+            if (action === 'clear') setExpression('');
+            if (action === 'backspace') setExpression(expression.slice(0, -1));
+            if (action === 'percent') applyPercent();
+            if (action === 'toggle-sign') toggleSign();
+            if (action === 'equals') finalize();
+        });
+    });
+    clearHistoryBtn?.addEventListener('click', () => {
+        writeHistory([]);
+        renderHistory();
+    });
+
+    renderHistory();
+    setExpression('');
+};
+
+const createDueSoonTasksFab = () => {
+    if (document.body.dataset.dueSoonFabReady === 'true') return;
+    if (window.location.pathname.endsWith('login.html')) return;
+    document.body.dataset.dueSoonFabReady = 'true';
+
+    const dueFab = document.createElement('button');
+    dueFab.id = 'due-soon-fab';
+    dueFab.className = 'due-soon-fab';
+    dueFab.type = 'button';
+    dueFab.title = 'Afazeres vencendo em até 2 dias';
+    dueFab.innerHTML = `
+        <span class="due-soon-fab__icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 3h6"/>
+                <path d="M10 7h4"/>
+                <rect x="5" y="3" width="14" height="18" rx="2"/>
+                <path d="M9 12h6M9 16h6"/>
+            </svg>
+        </span>
+        <span class="due-soon-fab__label">Afazeres 2d</span>
+        <span id="due-soon-fab-count" class="due-soon-fab__count">0</span>
+    `;
+    dueFab.addEventListener('click', () => {
+        window.location.href = 'processos.html?tab=afazeres&filter=due2days';
+    });
+    document.body.appendChild(dueFab);
+
+    const refreshCount = () => {
+        const countEl = document.getElementById('due-soon-fab-count');
+        if (!countEl) return;
+        const tasks = collectPendingChecklistTasks().filter((task) => task.daysUntil >= 0 && task.daysUntil <= 2);
+        countEl.textContent = String(tasks.length);
+        dueFab.classList.toggle('is-empty', tasks.length === 0);
+    };
+
+    window.addEventListener('storage', refreshCount);
+    setInterval(refreshCount, 60000);
+    refreshCount();
+};
+
+const setupAutomaticTaskReminders = () => {
+    if (window.__taskReminderInitialized) return;
+    window.__taskReminderInitialized = true;
+
+    const ONE_DAY_KEY = 'taskDueOneDayReminderSeen';
+    const showTaskReminder = (task) => {
+        const message = `${task.taskName} (${task.clientName}) vence em 1 dia.`;
+        const toast = document.createElement('div');
+        toast.className = 'global-reminder-toast';
+
+        const icon = document.createElement('span');
+        icon.className = 'global-reminder-toast__icon';
+        icon.setAttribute('aria-hidden', 'true');
+        icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>';
+
+        const text = document.createElement('span');
+        text.className = 'global-reminder-toast__text';
+        text.textContent = message;
+
+        toast.appendChild(icon);
+        toast.appendChild(text);
+        document.body.appendChild(toast);
+        setTimeout(() => toast.classList.add('show'), 40);
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, 5000);
+    };
+
+    const remind = () => {
+        const today = new Date().toISOString().split('T')[0];
+        let seen;
+        try {
+            seen = JSON.parse(localStorage.getItem(ONE_DAY_KEY) || '{}');
+        } catch (_) {
+            seen = {};
+        }
+        if (seen.__lastDate !== today) seen = { __lastDate: today };
+
+        const tasks = collectPendingChecklistTasks().filter((task) => task.daysUntil === 1);
+        tasks.forEach((task) => {
+            const taskId = `${task.orderId}:${task.taskKey}:${task.deadline}`;
+            if (seen[taskId]) return;
+            seen[taskId] = true;
+            showTaskReminder(task);
+        });
+        localStorage.setItem(ONE_DAY_KEY, JSON.stringify(seen));
+    };
+
+    remind();
+    setInterval(remind, 1800000);
+};
+
 // Aviso ao sair da página
 window.addEventListener('beforeunload', (e) => {
     if (hasUnsavedChanges) {
@@ -337,6 +635,9 @@ onAuthStateChanged(auth, async (user) => {
             
             window.BackendInitialized = true;
             createFloatingSaveButton();
+            createGlobalCalculator();
+            createDueSoonTasksFab();
+            setupAutomaticTaskReminders();
             
             // Remove tela de carregamento
             const loader = document.getElementById('initial-loader');

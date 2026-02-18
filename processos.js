@@ -6,7 +6,8 @@ const init = () => {
     const addOrderBtn = document.getElementById('add-order-btn');
     const processTabButtons = Array.from(document.querySelectorAll('.process-tab-btn[data-tab]'));
     const processPanels = Array.from(document.querySelectorAll('.process-panel[data-panel]'));
-    let currentTab = 'quadro';
+    const urlParams = new URLSearchParams(window.location.search);
+    let currentTab = urlParams.get('tab') || 'quadro';
 
     const columns = { 
         todo: document.getElementById('column-todo'), 
@@ -1380,16 +1381,27 @@ const init = () => {
                 }
             }
         });
-        const groupedTasks = allTasks.reduce((acc, task) => {
+        const dueSoonFilter = urlParams.get('filter') === 'due2days';
+        const visibleTasks = dueSoonFilter
+            ? allTasks.filter((task) => {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const deadline = new Date(`${task.deadline}T00:00:00`);
+                const diff = Math.ceil((deadline.getTime() - today.getTime()) / 86400000);
+                return Number.isFinite(diff) && diff >= 0 && diff <= 2;
+            })
+            : allTasks;
+
+        const groupedTasks = visibleTasks.reduce((acc, task) => {
             const groupName = task.taskName;
             if (!acc[groupName]) acc[groupName] = [];
             acc[groupName].push(task);
             return acc;
         }, {});
-        if (allTasks.length === 0) {
+        if (visibleTasks.length === 0) {
             const emptyState = document.createElement('div');
             emptyState.className = 'glass-card p-6 text-center text-gray-400 md:col-span-2 xl:col-span-3';
-            emptyState.innerHTML = 'Nenhuma tarefa com prazo definido encontrada.';
+            emptyState.innerHTML = dueSoonFilter ? 'Nenhuma tarefa vencendo em até 2 dias.' : 'Nenhuma tarefa com prazo definido encontrada.';
             tasksContainer.appendChild(emptyState);
             return;
         }
