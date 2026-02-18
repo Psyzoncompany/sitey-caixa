@@ -85,6 +85,7 @@ const init = () => {
     let cuttingSnackbarTimer = null;
     let pendingDeleteSubtaskId = null;
     const cutDebounceTimers = new Map();
+    const expandedCutCards = new Set();
     let isCutSavePending = false;
     // toggle visibility of DTF block based on select
     const togglePrintingBlock = () => {
@@ -1487,9 +1488,25 @@ const init = () => {
     const getCuttingTotalPieces = (subtasks = []) => subtasks.reduce((acc, sub) => acc + (parseInt(sub.total, 10) || 0), 0);
 
     const getCutSectionStatus = (ok) => ok ? '<span class="cutting-status-chip is-ok">Completo</span>' : '<span class="cutting-status-chip">Pendente</span>';
+    const getCutColorChip = (subtask = {}) => {
+        const rawColor = String(subtask.color || '').trim();
+        const safeColor = isHex(rawColor) ? rawColor.toUpperCase() : '';
+        const colorLabel = safeColor
+            ? String(subtask.colorName || subtask.colorLabel || '').trim() || 'Cor'
+            : rawColor || 'Cor';
+
+        return `
+            <span class="cut-chip cut-chip-color" ${safeColor ? `data-color="${safeColor}"` : ''}>
+                <span class="cut-color-swatch" style="${safeColor ? `--cut-color:${safeColor};` : ''}" aria-hidden="true"></span>
+                <span class="cut-chip-label">${sanitizeHtml(colorLabel)}</span>
+            </span>
+        `;
+    };
 
     const renderCutCards = (order) => {
         const subtasks = order?.checklist?.cutting?.subtasks || [];
+        const validSubtaskIds = new Set(subtasks.map((sub) => String(sub.id)));
+        expandedCutCards.forEach((id) => { if (!validSubtaskIds.has(id)) expandedCutCards.delete(id); });
         const colors = order.colors || [];
         const colorsHtml = colors.length
             ? colors.map(c => {
@@ -1504,15 +1521,28 @@ const init = () => {
             const statusOk = parseInt(subtask.cut || 0, 10) >= parseInt(subtask.total || 0, 10) && parseInt(subtask.total || 0, 10) > 0;
             const note = String(subtask.notes || '');
             const preview = note ? sanitizeHtml(note).replace(/\n/g, " ") : "";
+            const cardKey = String(subtask.id);
+            const isExpanded = expandedCutCards.has(cardKey);
             return `
-                <article class="cut-card" role="listitem" data-subtask-id="${subtask.id}">
-                    <div class="cut-card-header">
-                        <div class="cut-card-header-main">
-                            <p class="cut-title-row">
-                                <span class="cut-size-title">${sanitizeHtml(sizeLabel)}</span>
-                                ${getCutSectionStatus(statusOk)}
-                            </p>
+                <article class="cut-card ${isExpanded ? 'is-expanded' : ''}" role="listitem" data-subtask-id="${subtask.id}">
+                    <div class="cut-card-summary">
+                        <div class="cut-summary-main">
+                            <p class="cut-size-title">${sanitizeHtml(sizeLabel)}</p>
+                            <div class="cut-card-meta cut-card-meta-compact">
+                                <span class="cut-chip">${sanitizeHtml(subtask.variation || 'Modelo')}</span>
+                                ${getCutColorChip(subtask)}
+                            </div>
                         </div>
+                        <div class="cut-summary-side">
+                            <span class="cut-compact-count"><strong>${parseInt(subtask.cut || 0, 10)}</strong>/${parseInt(subtask.total || 0, 10)}</span>
+                            ${getCutSectionStatus(statusOk)}
+                            <button type="button" class="cut-expand-btn" data-action="toggle-cut-expand" aria-expanded="${isExpanded ? 'true' : 'false'}" aria-label="${isExpanded ? 'Fechar detalhes do corte' : 'Abrir detalhes do corte'}">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="m6 9 6 6 6-6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="cut-card-details" ${isExpanded ? '' : 'hidden'}>
                         <div class="cut-card-actions">
                             <button type="button" class="cut-icon-action" data-action="duplicate-cut" aria-label="Duplicar corte">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><rect x="9" y="9" width="10" height="10" rx="2" stroke-width="1.8"></rect><rect x="5" y="5" width="10" height="10" rx="2" stroke-width="1.8"></rect></svg>
@@ -1521,25 +1551,28 @@ const init = () => {
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M4 7h16" stroke-width="1.8"/><path d="M10 11v6M14 11v6" stroke-width="1.8"/><path d="M6 7l1 12h10l1-12" stroke-width="1.8"/><path d="M9 7V4h6v3" stroke-width="1.8"/></svg>
                             </button>
                         </div>
-                    </div>
-                    <div class="cut-card-meta">
-                        <span class="cut-chip">${sanitizeHtml(subtask.gender || 'Sexo')}</span>
-                        <span class="cut-chip">${sanitizeHtml(subtask.variation || 'Estilo')}</span>
-                        <span class="cut-chip">${sanitizeHtml(subtask.color || 'Sem cor')}</span>
-                    </div>
-                    <div class="cut-control-row">
-                        <div class="cut-stepper" data-subtask-id="${subtask.id}">
-                            <button type="button" class="cut-step-btn" data-action="decrease-cut" aria-label="Diminuir quantidade">−</button>
-                            <input type="number" min="0" class="cut-quantity-input" data-subtask-id="${subtask.id}" value="${parseInt(subtask.cut || 0, 10)}">
-                            <button type="button" class="cut-step-btn" data-action="increase-cut" aria-label="Aumentar quantidade">+</button>
-                            <span class="cut-step-total">/ ${parseInt(subtask.total || 0, 10)}</span>
+                        <div class="cut-card-meta">
+                            <span class="cut-chip">${sanitizeHtml(subtask.gender || 'Sexo')}</span>
+                            <span class="cut-chip">${sanitizeHtml(subtask.variation || 'Estilo')}</span>
+                            ${getCutColorChip(subtask)}
                         </div>
-                        <p class="cut-subtotal">Subtotal: ${parseInt(subtask.total || 0, 10)} peça(s)</p>
-                    </div>
-                    <div class="cut-note-box ${note ? 'is-expanded has-content' : ''}">
-                        <button type="button" class="cut-note-toggle" data-action="toggle-note">Adicionar observação (opcional)</button>
-                        <p class="cut-note-preview">${preview}</p>
-                        <textarea class="cut-note-input" data-subtask-id="${subtask.id}" rows="2" placeholder="Adicionar observação (opcional)">${sanitizeHtml(note)}</textarea>
+                        <div class="cut-control-row">
+                            <div class="cut-stepper" data-subtask-id="${subtask.id}">
+                                <button type="button" class="cut-step-btn" data-action="decrease-cut" aria-label="Diminuir quantidade">−</button>
+                                <input type="number" min="0" class="cut-quantity-input" data-subtask-id="${subtask.id}" value="${parseInt(subtask.cut || 0, 10)}">
+                                <button type="button" class="cut-step-btn" data-action="increase-cut" aria-label="Aumentar quantidade">+</button>
+                                <span class="cut-step-total">/ ${parseInt(subtask.total || 0, 10)}</span>
+                            </div>
+                            <p class="cut-subtotal">Subtotal: <strong>${parseInt(subtask.total || 0, 10)} peça(s)</strong></p>
+                        </div>
+                        <div class="cut-note-box ${note ? 'is-expanded has-content' : ''}">
+                            <button type="button" class="cut-note-toggle" data-action="toggle-note">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M8 10h8M8 14h5" stroke-width="1.8" stroke-linecap="round"/><path d="M7 4h10a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3h-5l-4 3v-3H7a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3Z" stroke-width="1.8" stroke-linejoin="round"/></svg>
+                                <span>Adicionar observação (opcional)</span>
+                            </button>
+                            <p class="cut-note-preview">${preview}</p>
+                            <textarea class="cut-note-input" data-subtask-id="${subtask.id}" rows="2" placeholder="Adicionar observação (opcional)">${sanitizeHtml(note)}</textarea>
+                        </div>
                     </div>
                 </article>
             `;
@@ -1558,7 +1591,7 @@ const init = () => {
                 <div class="cutting-color-list">${colorsHtml}</div>
             </section>
 
-            <section class="cutting-section-card">
+            <section class="cutting-section-card cutting-section-card-cortes">
                 <div class="cutting-section-head"><h3>Cortes</h3>${getCutSectionStatus(subtasks.length > 0)}</div>
                 <div class="cut-cards-list" role="list">${cutsHtml}</div>
                 <button type="button" class="cutting-add-btn" data-action="toggle-add-cut">+ Adicionar corte</button>
@@ -1677,6 +1710,7 @@ const init = () => {
         setCutSavePending(false);
         closeCutDeleteConfirmation();
         if (cuttingSnackbar) cuttingSnackbar.classList.remove('is-visible');
+        expandedCutCards.clear();
         syncCuttingMeta(order);
         renderCutCards(order);
         cuttingModal.classList.remove('hidden');
@@ -1729,6 +1763,25 @@ const init = () => {
                 return;
             }
 
+            if (action === 'toggle-cut-expand') {
+                const card = actionBtn.closest('.cut-card');
+                const details = card?.querySelector('.cut-card-details');
+                if (!card || !details) return;
+                const cardId = String(card.dataset.subtaskId || '');
+                const willExpand = details.hasAttribute('hidden');
+                if (willExpand) {
+                    details.removeAttribute('hidden');
+                    card.classList.add('is-expanded');
+                    expandedCutCards.add(cardId);
+                } else {
+                    details.setAttribute('hidden', 'hidden');
+                    card.classList.remove('is-expanded');
+                    expandedCutCards.delete(cardId);
+                }
+                actionBtn.setAttribute('aria-expanded', String(willExpand));
+                return;
+            }
+
             if (action === 'form-minus' || action === 'form-plus') {
                 const qty = document.getElementById('cut-form-qty');
                 if (!qty) return;
@@ -1748,6 +1801,7 @@ const init = () => {
             }
 
             if (action === 'delete-cut') {
+                expandedCutCards.delete(String(subtaskId));
                 openCutDeleteConfirmation(subtaskId);
                 return;
             }
