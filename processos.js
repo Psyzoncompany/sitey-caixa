@@ -50,7 +50,12 @@ const init = () => {
     const cuttingChecklistContainer = document.getElementById('cutting-checklist-container');
     const saveCutsBtn = document.getElementById('save-cuts-btn');
     const saveCutsFooterBtn = document.getElementById('save-cuts-footer-btn');
+    const saveCutsQuickBtn = document.getElementById('save-cuts-quick-btn');
     const cuttingFooterTotal = document.getElementById('cutting-footer-total');
+    const cuttingSnackbar = document.getElementById('cutting-snackbar');
+    const cutDeleteConfirmModal = document.getElementById('cut-delete-confirm-modal');
+    const cutDeleteConfirmBtn = document.getElementById('cut-delete-confirm-btn');
+    const cutDeleteCancelBtn = document.getElementById('cut-delete-cancel-btn');
     const orderPrintTypeSelect = document.getElementById('order-print-type');
     const orderColorsContainer = document.getElementById('order-colors-container');
     const addColorBtn = document.getElementById('add-color-btn');
@@ -77,6 +82,10 @@ const init = () => {
     const checkAllDtfImagesBtn = document.getElementById('check-all-dtf-images-btn');
     const clearDtfImagesBtn = document.getElementById('clear-dtf-images-btn');
     let activeDtfImages = []; // temp storage while modal is open
+    let cuttingSnackbarTimer = null;
+    let pendingDeleteSubtaskId = null;
+    const cutDebounceTimers = new Map();
+    let isCutSavePending = false;
     // toggle visibility of DTF block based on select
     const togglePrintingBlock = () => {
         if (!orderPrintingBlock || !orderPrintTypeSelect) return;
@@ -1487,7 +1496,7 @@ const init = () => {
                 const safeBg = /^#([0-9A-F]{3}){1,2}$/i.test((c || '').trim()) ? `background:${c}` : '';
                 return `<span class="cutting-color-item"><span class="swatch" style="${safeBg}"></span>${sanitizeHtml(c)}</span>`;
             }).join('')
-            : '<span class="text-xs text-gray-400">Sem cores</span>';
+            : '<span class="cutting-status-chip">Sem cores</span>';
 
         const cutsHtml = subtasks.length ? subtasks.map((subtask) => {
             const isInf = subtask.gender === 'Infantil';
@@ -1496,7 +1505,7 @@ const init = () => {
             const note = String(subtask.notes || '');
             const preview = note ? sanitizeHtml(note).replace(/\n/g, " ") : "";
             return `
-                <article class="cut-card" data-subtask-id="${subtask.id}">
+                <article class="cut-card" role="listitem" data-subtask-id="${subtask.id}">
                     <div class="cut-card-header">
                         <div class="cut-card-header-main">
                             <p class="cut-title-row">
@@ -1520,9 +1529,9 @@ const init = () => {
                     </div>
                     <div class="cut-control-row">
                         <div class="cut-stepper" data-subtask-id="${subtask.id}">
-                            <button type="button" class="cut-step-btn" data-action="decrease-cut">−</button>
+                            <button type="button" class="cut-step-btn" data-action="decrease-cut" aria-label="Diminuir quantidade">−</button>
                             <input type="number" min="0" class="cut-quantity-input" data-subtask-id="${subtask.id}" value="${parseInt(subtask.cut || 0, 10)}">
-                            <button type="button" class="cut-step-btn" data-action="increase-cut">+</button>
+                            <button type="button" class="cut-step-btn" data-action="increase-cut" aria-label="Aumentar quantidade">+</button>
                             <span class="cut-step-total">/ ${parseInt(subtask.total || 0, 10)}</span>
                         </div>
                         <p class="cut-subtotal">Subtotal: ${parseInt(subtask.total || 0, 10)} peça(s)</p>
@@ -1530,7 +1539,7 @@ const init = () => {
                     <div class="cut-note-box ${note ? 'is-expanded has-content' : ''}">
                         <button type="button" class="cut-note-toggle" data-action="toggle-note">Adicionar observação (opcional)</button>
                         <p class="cut-note-preview">${preview}</p>
-                        <textarea class="cut-note-input" data-subtask-id="${subtask.id}" rows="2" placeholder="Descreva observações importantes para esse corte">${sanitizeHtml(note)}</textarea>
+                        <textarea class="cut-note-input" data-subtask-id="${subtask.id}" rows="2" placeholder="Adicionar observação (opcional)">${sanitizeHtml(note)}</textarea>
                     </div>
                 </article>
             `;
@@ -1551,7 +1560,7 @@ const init = () => {
 
             <section class="cutting-section-card">
                 <div class="cutting-section-head"><h3>Cortes</h3>${getCutSectionStatus(subtasks.length > 0)}</div>
-                <div class="cut-cards-list">${cutsHtml}</div>
+                <div class="cut-cards-list" role="list">${cutsHtml}</div>
                 <button type="button" class="cutting-add-btn" data-action="toggle-add-cut">+ Adicionar corte</button>
                 <form id="add-cut-form" class="cut-form hidden">
                     <div class="cut-form-group">
@@ -1619,24 +1628,78 @@ const init = () => {
         if (cuttingFooterTotal) cuttingFooterTotal.textContent = String(totalPieces);
     };
 
+    const setCutSavePending = (pending) => {
+        isCutSavePending = Boolean(pending);
+        [saveCutsBtn, saveCutsFooterBtn, saveCutsQuickBtn].forEach((btn) => {
+            if (!btn) return;
+            btn.disabled = isCutSavePending;
+            btn.classList.toggle('is-loading', isCutSavePending);
+            btn.setAttribute('aria-busy', isCutSavePending ? 'true' : 'false');
+        });
+    };
+
+    const showCuttingSnackbar = (message, type = 'success') => {
+        if (!cuttingSnackbar) return;
+        cuttingSnackbar.textContent = message;
+        cuttingSnackbar.dataset.type = type;
+        cuttingSnackbar.classList.add('is-visible');
+        if (cuttingSnackbarTimer) clearTimeout(cuttingSnackbarTimer);
+        cuttingSnackbarTimer = setTimeout(() => {
+            cuttingSnackbar.classList.remove('is-visible');
+            cuttingSnackbar.removeAttribute('data-type');
+        }, 2600);
+    };
+
+    const queueCutSave = () => {
+        setCutSavePending(true);
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                setCutSavePending(false);
+                resolve();
+            }, 240);
+        });
+    };
+
+    const openCutDeleteConfirmation = (subtaskId) => {
+        pendingDeleteSubtaskId = subtaskId;
+        if (cutDeleteConfirmModal) cutDeleteConfirmModal.classList.remove('hidden');
+    };
+
+    const closeCutDeleteConfirmation = () => {
+        pendingDeleteSubtaskId = null;
+        if (cutDeleteConfirmModal) cutDeleteConfirmModal.classList.add('hidden');
+    };
+
     const openCuttingModal = (orderId) => {
         activeCuttingOrderId = orderId;
         const order = productionOrders.find(o => o.id === orderId);
         if (!order) return;
+        setCutSavePending(false);
+        closeCutDeleteConfirmation();
+        if (cuttingSnackbar) cuttingSnackbar.classList.remove('is-visible');
         syncCuttingMeta(order);
         renderCutCards(order);
         cuttingModal.classList.remove('hidden');
     };
 
-    const saveCuts = () => {
+    const saveCuts = async () => {
         const order = productionOrders.find(o => o.id === activeCuttingOrderId);
-        if (!order) return;
-        const subtasks = order?.checklist?.cutting?.subtasks || [];
-        order.checklist.cutting.completed = subtasks.length > 0 && subtasks.every(s => (parseInt(s.cut || 0, 10) >= parseInt(s.total || 0, 10)));
-        saveOrders();
-        closeCuttingModal();
-        renderCuttingTasks();
-        renderKanban();
+        if (!order || isCutSavePending) return;
+
+        try {
+            await queueCutSave();
+            const subtasks = order?.checklist?.cutting?.subtasks || [];
+            order.checklist.cutting.completed = subtasks.length > 0 && subtasks.every(s => (parseInt(s.cut || 0, 10) >= parseInt(s.total || 0, 10)));
+            saveOrders();
+            closeCuttingModal();
+            renderCuttingTasks();
+            renderKanban();
+            showCuttingSnackbar('Cortes salvos com sucesso.', 'success');
+        } catch (error) {
+            console.error('Erro ao salvar cortes:', error);
+            setCutSavePending(false);
+            showCuttingSnackbar('Não foi possível salvar os cortes agora.', 'error');
+        }
     };
 
     if (cuttingChecklistContainer) {
@@ -1685,16 +1748,25 @@ const init = () => {
             }
 
             if (action === 'delete-cut') {
-                order.checklist.cutting.subtasks = subtasks.filter(s => s.id !== subtaskId);
+                openCutDeleteConfirmation(subtaskId);
+                return;
             }
 
             if (action === 'increase-cut' || action === 'decrease-cut') {
                 const val = parseInt(subtask.cut || 0, 10);
                 const next = action === 'increase-cut' ? val + 1 : Math.max(0, val - 1);
                 subtask.cut = Math.min(next, parseInt(subtask.total || 0, 10));
+
+                if (cutDebounceTimers.has(subtaskId)) clearTimeout(cutDebounceTimers.get(subtaskId));
+                const timer = setTimeout(() => {
+                    saveOrders();
+                    cutDebounceTimers.delete(subtaskId);
+                }, 200);
+                cutDebounceTimers.set(subtaskId, timer);
+            } else {
+                saveOrders();
             }
 
-            saveOrders();
             syncCuttingMeta(order);
             renderCutCards(order);
             renderCuttingTasks();
@@ -1709,7 +1781,15 @@ const init = () => {
                 const id = parseFloat(e.target.dataset.subtaskId);
                 const subtask = subtasks.find(s => s.id === id);
                 if (!subtask) return;
-                subtask.cut = Math.max(0, parseInt(e.target.value || 0, 10));
+                const limit = parseInt(subtask.total || 0, 10);
+                subtask.cut = Math.min(Math.max(0, parseInt(e.target.value || 0, 10)), limit);
+
+                if (cutDebounceTimers.has(id)) clearTimeout(cutDebounceTimers.get(id));
+                const timer = setTimeout(() => {
+                    saveOrders();
+                    cutDebounceTimers.delete(id);
+                }, 200);
+                cutDebounceTimers.set(id, timer);
             }
 
             if (e.target.classList.contains('cut-note-input') && e.target.dataset.subtaskId) {
@@ -1724,7 +1804,6 @@ const init = () => {
                 }
             }
 
-            saveOrders();
             syncCuttingMeta(order);
         });
 
@@ -1794,8 +1873,37 @@ const init = () => {
     // Listener para salvar cortes
     if (saveCutsBtn) saveCutsBtn.addEventListener('click', saveCuts);
     if (saveCutsFooterBtn) saveCutsFooterBtn.addEventListener('click', saveCuts);
+    if (saveCutsQuickBtn) saveCutsQuickBtn.addEventListener('click', saveCuts);
+
+    if (cutDeleteCancelBtn) cutDeleteCancelBtn.addEventListener('click', closeCutDeleteConfirmation);
+    if (cutDeleteConfirmModal) {
+        cutDeleteConfirmModal.addEventListener('click', (e) => {
+            if (e.target === cutDeleteConfirmModal) closeCutDeleteConfirmation();
+        });
+    }
+    if (cutDeleteConfirmBtn) {
+        cutDeleteConfirmBtn.addEventListener('click', () => {
+            const order = productionOrders.find(o => o.id === activeCuttingOrderId);
+            if (!order || pendingDeleteSubtaskId === null) {
+                closeCutDeleteConfirmation();
+                return;
+            }
+
+            const subtasks = order.checklist?.cutting?.subtasks || [];
+            order.checklist.cutting.subtasks = subtasks.filter((s) => s.id !== pendingDeleteSubtaskId);
+            saveOrders();
+            syncCuttingMeta(order);
+            renderCutCards(order);
+            renderCuttingTasks();
+            closeCutDeleteConfirmation();
+            showCuttingSnackbar('Corte removido com sucesso.', 'success');
+        });
+    }
 
     const closeCuttingModal = () => {
+        cutDebounceTimers.forEach((timer) => clearTimeout(timer));
+        cutDebounceTimers.clear();
+        closeCutDeleteConfirmation();
         cuttingModal.classList.add('hidden');
         activeCuttingOrderId = null;
     };
