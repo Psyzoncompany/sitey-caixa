@@ -53,11 +53,14 @@ const playSuccessSound = () => {
     } catch (e) {}
 };
 
-// State for unsaved changes
+// State for automatic cloud sync
 let hasUnsavedChanges = false;
 let initialSnapshot = "{}"; // Armazena o estado inicial para comparação
+let autosaveTimer = null;
+let autosaveInFlight = null;
+const AUTOSAVE_DELAY_MS = 900;
 
-// Chaves de UI/estado temporário que NÃO devem marcar o botão como "não salvo"
+// Chaves de UI/estado temporário que NÃO devem marcar o estado como alterado
 // Ex.: aba ativa da tela de processos.
 const NON_PERSISTENT_DIRTY_KEYS = new Set([
     'processos_tab',
@@ -77,61 +80,6 @@ const getSnapshot = (data) => {
     };
     return JSON.stringify(sortObj(data));
 };
-
-// Floating Save Button Logic
-const createFloatingSaveButton = () => {
-    if (document.getElementById('floating-save-btn')) return;
-    
-    const btn = document.createElement('button');
-    btn.id = 'floating-save-btn';
-    // Classes iniciais (estilos movidos para style.css para responsividade)
-    btn.className = 'saved';
-    // Estilos base que não mudam com media queries podem ficar aqui ou no CSS
-    btn.style.cssText = "position:fixed; z-index:10000; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); border:none; color:white; box-shadow:0 4px 14px rgba(0,0,0,0.4); bottom:24px; right:24px; width:64px; height:64px; border-radius:50%; background:#3b82f6;";
-    // Ícone de disquete (Save)
-    btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>`;
-    btn.title = "Salvar Alterações";
-    
-    btn.onclick = async () => {
-        if (!hasUnsavedChanges) return;
-        
-        // Feedback visual de carregamento (spinner)
-        const originalContent = btn.innerHTML;
-        btn.innerHTML = `<svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg>`;
-        btn.style.pointerEvents = 'none'; // Evita cliques duplos
-
-        await saveToCloud();
-        
-        // Restaura ícone
-        btn.innerHTML = originalContent;
-        btn.style.pointerEvents = 'auto';
-    };
-
-    document.body.appendChild(btn);
-    
-    // Garante que o botão nasça com o estado correto (Vermelho se já houver alterações)
-    updateSaveButtonState();
-};
-
-const updateSaveButtonState = () => {
-    const btn = document.getElementById('floating-save-btn');
-    if (!btn) return;
-
-    if (hasUnsavedChanges) {
-        btn.classList.remove('saved');
-        btn.classList.add('unsaved');
-        btn.style.background = "#ef4444"; // Vermelho (Alterado)
-        // Transform removido daqui para ser controlado pelo CSS no mobile
-        btn.style.boxShadow = "0 0 15px rgba(239, 68, 68, 0.6)";
-    } else {
-        btn.classList.remove('unsaved');
-        btn.classList.add('saved');
-        btn.style.background = "#3b82f6"; // Azul (Salvo)
-        // Transform removido daqui
-        btn.style.boxShadow = "0 4px 14px rgba(0,0,0,0.4)";
-    }
-};
-
 const parseLocalJson = (key, fallback = []) => {
     try {
         const raw = window.localStorage.getItem(key);
@@ -430,72 +378,6 @@ const setupAutomaticTaskReminders = () => {
     setInterval(remind, 1800000);
 };
 
-// Aviso ao sair da página
-window.addEventListener('beforeunload', (e) => {
-    if (hasUnsavedChanges) {
-        e.preventDefault();
-        e.returnValue = '';
-    }
-});
-
-// Modal Personalizado para Alterações Não Salvas
-const showUnsavedModal = (onSave, onDiscard) => {
-    if (document.getElementById('unsaved-changes-modal')) return;
-
-    const modal = document.createElement('div');
-    modal.id = 'unsaved-changes-modal';
-    modal.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(4px);z-index:99999;display:flex;align-items:center;justify-content:center;padding:1rem;";
-    
-    modal.innerHTML = `
-        <div style="background:#1f2937;border:1px solid rgba(255,255,255,0.1);padding:1.5rem;border-radius:0.75rem;width:100%;max-width:24rem;box-shadow:0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);color:white;font-family:sans-serif;">
-            <h3 style="font-size:1.25rem;font-weight:700;margin-bottom:0.5rem;">Alterações não salvas</h3>
-            <p style="color:#d1d5db;margin-bottom:1.5rem;">Você tem alterações pendentes. O que deseja fazer?</p>
-            <div style="display:flex;justify-content:flex-end;gap:0.75rem;">
-                <button id="unsaved-discard-btn" style="padding:0.5rem 1rem;border-radius:0.5rem;background:rgba(239,68,68,0.2);color:#fca5a5;border:none;cursor:pointer;font-weight:600;transition:background 0.2s;">NÃO SALVAR</button>
-                <button id="unsaved-save-btn" style="padding:0.5rem 1rem;border-radius:0.5rem;background:#0891b2;color:white;border:none;cursor:pointer;font-weight:600;transition:background 0.2s;">SALVAR</button>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(modal);
-
-    document.getElementById('unsaved-save-btn').onclick = () => {
-        modal.remove();
-        onSave();
-    };
-    document.getElementById('unsaved-discard-btn').onclick = () => {
-        modal.remove();
-        onDiscard();
-    };
-};
-
-// Intercepta cliques em links para avisar sobre alterações não salvas
-document.addEventListener('click', async (e) => {
-    const link = e.target.closest('a');
-    
-    // Trava de segurança: Só avisa se o botão estiver visualmente marcado como "não salvo" (vermelho)
-    const saveBtn = document.getElementById('floating-save-btn');
-    const isVisuallyUnsaved = saveBtn && saveBtn.classList.contains('unsaved');
-
-    // Verifica se é um link de navegação interna válido
-    if (link && hasUnsavedChanges && isVisuallyUnsaved && link.href && !link.target && !link.href.includes('#') && !link.getAttribute('download')) {
-        if (link.hostname === window.location.hostname) {
-            e.preventDefault();
-            
-            showUnsavedModal(
-                async () => { // Ação SALVAR
-                    await saveToCloud();
-                    window.location.href = link.href;
-                },
-                () => { // Ação NÃO SALVAR
-                    hasUnsavedChanges = false; // Evita que o beforeunload dispare
-                    updateSaveButtonState();
-                    window.location.href = link.href;
-                }
-            );
-        }
-    }
-});
-
 // --- BACKEND REAL (Memória + Firestore) ---
 // Substitui o localStorage real por um armazenamento em memória conectado à nuvem
 let memoryStore = {};
@@ -538,38 +420,48 @@ const hideInitialLoader = () => {
 
 const bootstrapBackendUI = () => {
     window.BackendInitialized = true;
-    createFloatingSaveButton();
     createGlobalCalculator();
     createDueSoonTasksFab();
     setupAutomaticTaskReminders();
     hideInitialLoader();
 };
 
-const saveToCloud = async () => {
+const saveToCloud = async ({ silent = false, force = false } = {}) => {
     if (!auth.currentUser) return;
+    if (!force && !hasUnsavedChanges) return;
+    if (autosaveInFlight) return autosaveInFlight;
+
     const uid = auth.currentUser.uid;
-    
-    try {
-        // Salva o estado atual da memória no Firestore
-        await setDoc(doc(db, "users", uid), memoryStore, { merge: true });
-        saveUserCache(uid, memoryStore);
-        
-        // Atualiza o snapshot inicial para refletir o novo estado salvo
-        initialSnapshot = getSnapshot(memoryStore);
-        hasUnsavedChanges = false;
-        updateSaveButtonState();
-        playSuccessSound();
-    } catch (e) {
-        console.error("❌ Erro ao salvar na nuvem:", e);
-        alert("Erro ao salvar na nuvem. Verifique sua conexão.");
-    }
+    autosaveInFlight = (async () => {
+        try {
+            await setDoc(doc(db, "users", uid), memoryStore, { merge: true });
+            saveUserCache(uid, memoryStore);
+            initialSnapshot = getSnapshot(memoryStore);
+            hasUnsavedChanges = false;
+            if (!silent) playSuccessSound();
+        } catch (e) {
+            console.error("❌ Erro ao salvar na nuvem:", e);
+            if (!silent) alert("Erro ao salvar na nuvem. Verifique sua conexão.");
+        } finally {
+            autosaveInFlight = null;
+        }
+    })();
+
+    return autosaveInFlight;
+};
+
+const scheduleAutoSave = () => {
+    if (!auth.currentUser || !hasUnsavedChanges) return;
+    clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(() => {
+        saveToCloud({ silent: true });
+    }, AUTOSAVE_DELAY_MS);
 };
 
 const checkDirtyState = () => {
     const currentSnapshot = getSnapshot(memoryStore);
-    // O botão fica vermelho APENAS se o estado atual for diferente do inicial
     hasUnsavedChanges = currentSnapshot !== initialSnapshot;
-    updateSaveButtonState();
+    if (hasUnsavedChanges) scheduleAutoSave();
 };
 
 // Interceptador do localStorage (Mágica para fazer o site funcionar com a nuvem)
@@ -696,6 +588,7 @@ onAuthStateChanged(auth, async (user) => {
         // Não logado
         window.BackendInitialized = false;
         memoryStore = {};
+        clearTimeout(autosaveTimer);
         if (!window.location.pathname.endsWith('login.html')) {
             window.location.href = 'login.html';
         }
