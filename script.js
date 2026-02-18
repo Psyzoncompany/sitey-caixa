@@ -313,7 +313,7 @@ const init = () => {
 
         let newTransactionId = null;
         if (editingId) {
-            const transactionIndex = transactions.findIndex(t => t.id === editingId);
+            const transactionIndex = transactions.findIndex(t => normalizeTransactionId(t.id) === editingId);
             if (transactionIndex > -1) {
                 transactions[transactionIndex] = { ...transactions[transactionIndex], ...transactionData };
             }
@@ -434,9 +434,11 @@ const init = () => {
         modal.classList.remove('hidden');
     };
 
+    const normalizeTransactionId = (value) => String(value);
+
     window.openEditModal = (id) => {
-        editingId = id;
-        const transaction = transactions.find(t => t.id === id);
+        editingId = normalizeTransactionId(id);
+        const transaction = transactions.find(t => normalizeTransactionId(t.id) === editingId);
         if (!transaction) return;
         
         form.reset();
@@ -507,13 +509,14 @@ const init = () => {
     };
     
     window.removeTransaction = (id) => {
+        const normalizedId = normalizeTransactionId(id);
         if (confirm('Tem certeza que deseja excluir esta transação?')) {
             saveTransactions(); // Salva o estado atual antes de modificar
-            const transactionToDelete = transactions.find(t => t.id === id);
+            const transactionToDelete = transactions.find(t => normalizeTransactionId(t.id) === normalizedId);
             if (transactionToDelete && transactionToDelete.type === 'income' && transactionToDelete.category === 'Venda de Produto' && transactionToDelete.quantity > 0) {
                 updateMonthlyProduction(transactionToDelete.date.substring(0, 7), -transactionToDelete.quantity);
             }
-            transactions = transactions.filter(t => t.id !== id);
+            transactions = transactions.filter(t => normalizeTransactionId(t.id) !== normalizedId);
             updateUI();
             showNotification('Transação excluída.', 'warning');
         }
@@ -590,7 +593,7 @@ const init = () => {
         if (actionBtn) {
             e.stopPropagation(); // Prevent card from toggling if button is clicked
             const action = actionBtn.dataset.action;
-            const id = parseInt(actionBtn.dataset.id, 10);
+            const id = actionBtn.dataset.id;
 
             if (action === 'edit') {
                 openEditModal(id);
