@@ -2,10 +2,98 @@
 
 import { FormEvent, useMemo, useState } from 'react';
 
+type ChatRole = 'system' | 'user' | 'assistant';
+
 type ChatMessage = {
-  role: 'user' | 'assistant';
+  role: ChatRole;
   content: string;
 };
+
+const MAX_CONTEXT_MESSAGES = 12;
+const CLIENT_TIMEOUT_MS = 50_000;
+const RETRYABLE_STATUS = new Set([429, 503, 504]);
+
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function safeParseJson(response: Response) {
+  const raw = await response.text();
+  if (!raw) return null;
+
+  try {
+    return JSON.parse(raw) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+async function callChatApi(messages: ChatMessage[], accessToken?: string): Promise<string> {
+  const trimmedMessages = messages
+    .slice(-MAX_CONTEXT_MESSAGES)
+    .map((message) => ({ role: message.role, content: message.content.trim() }))
+    .filter((message) => message.content.length > 0);
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), CLIENT_TIMEOUT_MS);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+        body: JSON.stringify({ messages: trimmedMessages }),
+        signal: controller.signal,
+      });
+
+      const data = await safeParseJson(response);
+
+      if (response.status === 401) {
+        throw new Error('Sessão expirada. Faça login novamente para continuar.');
+      }
+
+      if (RETRYABLE_STATUS.has(response.status) && attempt < 2) {
+        const jitter = Math.floor(Math.random() * 250);
+        await wait(400 * 2 ** attempt + jitter);
+        continue;
+      }
+
+      if (!response.ok) {
+        const errorMessage =
+          data && typeof data.error === 'string'
+            ? data.error
+            : 'Falha na comunicação com a IA.';
+        throw new Error(errorMessage);
+      }
+
+      const reply = data && typeof data.reply === 'string' ? data.reply : null;
+      if (!reply) {
+        throw new Error('A IA retornou uma resposta em formato inesperado.');
+      }
+
+      return reply;
+    } catch (error) {
+      if (attempt < 2) {
+        const jitter = Math.floor(Math.random() * 250);
+        await wait(400 * 2 ** attempt + jitter);
+        continue;
+      }
+
+      if (error instanceof Error) {
+        throw error;
+      }
+
+      throw new Error('Erro inesperado durante a requisição.');
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  throw new Error('Não foi possível completar a requisição para a IA.');
+}
 
 export default function HomePage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -26,19 +114,8 @@ export default function HomePage() {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: nextMessages }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data?.error || 'Falha na resposta da IA.');
-      }
-
-      setMessages((prev) => [...prev, { role: 'assistant', content: data.reply || 'Sem resposta.' }]);
+      const reply = await callChatApi(nextMessages);
+      setMessages((prev) => [...prev, { role: 'assistant', content: reply }]);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Erro inesperado.';
       setMessages((prev) => [...prev, { role: 'assistant', content: `Erro: ${message}` }]);
