@@ -285,6 +285,99 @@ const createGlobalCalculator = () => {
     setExpression('');
 };
 
+
+const createFloatingNotes = () => {
+    if (document.body.dataset.floatingNotesReady === 'true') return;
+    if (window.location.pathname.endsWith('login.html')) return;
+    document.body.dataset.floatingNotesReady = 'true';
+
+    const fab = document.createElement('button');
+    fab.id = 'notes-fab-global';
+    fab.className = 'notes-fab';
+    fab.type = 'button';
+    fab.setAttribute('aria-label', 'Abrir bloco de anotações');
+    fab.title = 'Anotações';
+    fab.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>';
+
+    const modal = document.createElement('div');
+    modal.id = 'notes-modal-global';
+    modal.className = 'notes-modal hidden';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.innerHTML = `
+      <div class="notes-sheet">
+        <div class="notes-head">
+          <div>
+            <h2>Anotações</h2>
+            <p class="notes-subtitle">Seu bloco rápido estilo iPhone</p>
+          </div>
+          <button id="notes-close-global" type="button" aria-label="Fechar bloco de anotações">✕</button>
+        </div>
+        <textarea id="notes-content-global" class="notes-textarea" placeholder="Escreva aqui o que você precisa fazer..."></textarea>
+        <div class="notes-footer">
+          <span id="notes-status-global" class="notes-status">Salvo</span>
+          <button id="notes-clear-global" type="button">Limpar</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(fab);
+    document.body.appendChild(modal);
+
+    const NOTES_KEY = 'floatingQuickNotes';
+    const textarea = modal.querySelector('#notes-content-global');
+    const closeBtn = modal.querySelector('#notes-close-global');
+    const clearBtn = modal.querySelector('#notes-clear-global');
+    const statusEl = modal.querySelector('#notes-status-global');
+    let saveTimer = null;
+
+    const setStatus = (textStatus) => {
+        if (statusEl) statusEl.textContent = textStatus;
+    };
+
+    const persist = () => {
+        localStorage.setItem(NOTES_KEY, textarea?.value || '');
+        setStatus('Salvo');
+    };
+
+    const scheduleSave = () => {
+        setStatus('Salvando...');
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(persist, 300);
+    };
+
+    if (textarea) {
+        textarea.value = localStorage.getItem(NOTES_KEY) || '';
+        textarea.addEventListener('input', scheduleSave);
+    }
+
+    modal.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            clearTimeout(saveTimer);
+            persist();
+            modal.classList.add('hidden');
+        }
+    });
+
+    fab.addEventListener('click', () => modal.classList.remove('hidden'));
+    closeBtn?.addEventListener('click', () => {
+        clearTimeout(saveTimer);
+        persist();
+        modal.classList.add('hidden');
+    });
+
+    clearBtn?.addEventListener('click', () => {
+        if (!textarea) return;
+        textarea.value = '';
+        persist();
+    });
+
+    window.addEventListener('beforeunload', () => {
+        clearTimeout(saveTimer);
+        persist();
+    });
+};
+
 const createDueSoonTasksFab = () => {
     if (document.body.dataset.dueSoonFabReady === 'true') return;
     if (window.location.pathname.endsWith('login.html')) return;
@@ -421,6 +514,7 @@ const hideInitialLoader = () => {
 const bootstrapBackendUI = () => {
     window.BackendInitialized = true;
     createGlobalCalculator();
+    createFloatingNotes();
     createDueSoonTasksFab();
     setupAutomaticTaskReminders();
     hideInitialLoader();

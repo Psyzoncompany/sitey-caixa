@@ -3907,6 +3907,70 @@ body.neo-dashboard {
 }
 .calculator-fab svg { width: 24px; height: 24px; }
 
+.notes-fab {
+  position: fixed;
+  right: 1rem;
+  bottom: calc(var(--bottom-nav-height, 78px) + env(safe-area-inset-bottom) + 156px);
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  border: 1px solid rgba(250, 204, 21, 0.45);
+  background: linear-gradient(160deg, rgba(217,119,6,0.95), rgba(234,88,12,0.92));
+  color: #fff;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 14px 26px rgba(2, 6, 23, 0.5);
+  z-index: 10015;
+}
+.notes-fab svg { width: 23px; height: 23px; }
+
+.notes-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.74);
+  backdrop-filter: blur(4px);
+  z-index: 10032;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  padding-top: max(0.7rem, calc(env(safe-area-inset-top) + 0.45rem));
+  padding-right: max(0.7rem, calc(env(safe-area-inset-right) + 0.45rem));
+  padding-bottom: max(0.7rem, calc(env(safe-area-inset-bottom) + 0.45rem));
+  padding-left: max(0.7rem, calc(env(safe-area-inset-left) + 0.45rem));
+}
+.notes-modal.hidden { display: none; }
+.notes-sheet {
+  width: 100%;
+  height: 100%;
+  border-radius: 20px;
+  border: 1px solid rgba(250,204,21,.33);
+  background: linear-gradient(170deg, rgba(23,23,32,.95), rgba(24,24,27,.9));
+  padding: 1rem;
+  box-shadow: 0 28px 45px rgba(2,6,23,.56);
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+}
+.notes-head { display:flex; align-items:flex-start; justify-content:space-between; gap:.75rem; }
+.notes-head h2 { font-size: 1rem; font-weight: 800; color: #fef3c7; }
+.notes-subtitle { font-size: .74rem; color: #fcd34d; margin-top: .18rem; }
+.notes-head button { color:#fef3c7; background: rgba(113,63,18,.45); border:1px solid rgba(251,191,36,.35); width:32px; height:32px; border-radius:10px; }
+.notes-textarea {
+  flex: 1;
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(148,163,184,.3);
+  background: rgba(2,6,23,.4);
+  color: #f8fafc;
+  padding: .9rem;
+  resize: none;
+  line-height: 1.5;
+}
+.notes-textarea:focus { outline: 2px solid rgba(251,191,36,.55); outline-offset: 1px; }
+.notes-footer { display:flex; align-items:center; justify-content:space-between; }
+.notes-status { font-size: .74rem; color: #fcd34d; }
+.notes-footer button { font-size:.78rem; color:#fef3c7; border:1px solid rgba(251,191,36,.35); border-radius:10px; padding:.35rem .65rem; background:rgba(113,63,18,.45); }
+
 .calculator-modal {
   position: fixed;
   inset: 0;
@@ -3956,11 +4020,16 @@ body.neo-dashboard {
   .calculator-fab {
     bottom: 1.4rem;
   }
-  .calculator-modal {
+  .notes-fab {
+    bottom: calc(1.4rem + 74px);
+  }
+  .calculator-modal,
+  .notes-modal {
     align-items: center;
     padding: 1.2rem;
   }
-  .calculator-sheet {
+  .calculator-sheet,
+  .notes-sheet {
     width: min(420px, 100%);
     height: auto;
     max-height: min(88vh, 760px);
@@ -3971,8 +4040,8 @@ body.neo-dashboard {
 .due-soon-fab {
   position: fixed;
   right: 16px;
-  bottom: calc(var(--bottom-nav-height, 78px) + env(safe-area-inset-bottom) + 86px);
-  z-index: 10001;
+  bottom: calc(var(--bottom-nav-height, 78px) + env(safe-area-inset-bottom) + 226px);
+  z-index: 10025;
   display: inline-flex;
   align-items: center;
   gap: .45rem;
@@ -4030,7 +4099,7 @@ body.neo-dashboard {
 .global-reminder-toast__text { line-height: 1.3; }
 
 @media (min-width: 768px) {
-  .due-soon-fab { bottom: 6.2rem; }
+  .due-soon-fab { bottom: calc(1.4rem + 148px); }
 }
 
 @media (max-width: 768px) {
