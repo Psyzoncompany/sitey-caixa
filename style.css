@@ -2289,8 +2289,8 @@ body.neo-dashboard {
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 12px;
 }
-.neo-dashboard .metrics-grid--bottom {
-  margin-top: 2px;
+.neo-dashboard .metrics-grid--all {
+  grid-template-columns: repeat(3, minmax(160px, 1fr));
 }
 .neo-dashboard .metric-tile {
   border-radius: 20px;
@@ -2387,10 +2387,16 @@ body.neo-dashboard {
   .neo-dashboard .dashboard-section-card {
     border-radius: 22px;
   }
+  .neo-dashboard .metrics-grid--all {
+    grid-template-columns: repeat(2, minmax(160px, 1fr));
+  }
 }
 
 @media (max-width: 360px) {
   .neo-dashboard .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+  .neo-dashboard .metrics-grid--all {
     grid-template-columns: 1fr;
   }
 }
