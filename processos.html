@@ -287,6 +287,7 @@
     
     <div id="cutting-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-0 md:p-4">
         <div class="cutting-sheet glass-card w-full max-w-5xl h-[95vh] md:h-auto md:max-h-[92vh] rounded-t-3xl md:rounded-2xl flex flex-col overflow-hidden">
+          <div id="cutting-snackbar" class="cutting-snackbar" role="status" aria-live="polite"></div>
           <div class="cutting-sheet-header flex justify-between items-start gap-3">
             <div>
               <h2 id="cutting-modal-title" class="text-xl md:text-2xl font-bold">Checklist de Corte</h2>
@@ -304,7 +305,21 @@
               <p class="text-xs text-gray-400">Total de peças</p>
               <p id="cutting-footer-total" class="text-lg font-bold text-cyan-300">0</p>
             </div>
+            <button id="save-cuts-quick-btn" type="button" class="cutting-quick-save" aria-label="Salvar rapidamente">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M6 3h10l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" stroke-width="1.9"/><path d="M8 3v6h8V5" stroke-width="1.9"/><path d="M8 21v-7h8v7" stroke-width="1.9"/></svg>
+            </button>
             <button id="save-cuts-footer-btn" class="btn-shine py-3 px-6 font-bold rounded-xl text-base">Salvar</button>
+          </div>
+
+          <div id="cut-delete-confirm-modal" class="cut-delete-modal hidden" role="dialog" aria-modal="true" aria-labelledby="cut-delete-title">
+            <div class="cut-delete-panel">
+              <h3 id="cut-delete-title">Excluir corte?</h3>
+              <p>Essa ação remove o corte da lista atual. Você pode salvar para confirmar a exclusão.</p>
+              <div class="cut-delete-actions">
+                <button type="button" id="cut-delete-cancel-btn">Cancelar</button>
+                <button type="button" id="cut-delete-confirm-btn">Excluir</button>
+              </div>
+            </div>
           </div>
         </div>
     </div>
@@ -316,7 +331,7 @@
   <!-- Barra de Navegação Inferior (Mobile) -->
 
   <footer class="version-footer">
-    <a href="versoes.html" class="version-footer-link">Versão 6.0.0</a>
+    <a href="versoes.html" class="version-footer-link">Versão 6.0.2</a>
   </footer>
 
   <nav class="bottom-nav">
