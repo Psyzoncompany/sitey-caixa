@@ -526,49 +526,53 @@ const init = () => {
 
     const addTransactionToDOM = (transaction) => {
         const { id, name, description, amount, date, category, type, scope } = transaction;
-        const item = document.createElement('div');
-        item.className = 'transaction-card';
+        const item = document.createElement('article');
+        item.className = 'transaction-card launch-row';
         item.dataset.id = id;
 
-        const colorClass = type === 'income' ? 'text-green-400 value-positive' : 'text-red-400 value-negative';
-        let scopeText = scope === 'personal' ? 'Pessoal' : 'Empresarial';
-        if (type !== 'expense') scopeText = '--';
-        const scopeClass = scope === 'personal' ? 'personal' : 'business';
-
+        const safeName = (name || '--').trim() || '--';
+        const safeDescription = (description || '--').trim() || '--';
+        const safeCategory = (category || '--').trim() || '--';
+        const moneyClass = type === 'income' ? 'value-positive' : 'value-negative';
         const amountPrefix = type === 'income' ? '+' : '-';
 
+        let scopeText = '--';
+        let scopeClass = 'business';
+        if (type === 'expense') {
+            scopeText = scope === 'personal' ? 'Pessoal' : 'Empresarial';
+            scopeClass = scope === 'personal' ? 'personal' : 'business';
+        }
+
         const metaItems = [
-            `<span class="data-chip data-date" title="Data">${formatDate(date)}</span>`,
-            `<span class="data-chip data-category" title="${category}">${compactLabel(category)}</span>`,
-            type === 'expense' ? `<span class="data-chip data-scope" title="Escopo">${scopeText}</span>` : ''
+            `<span class="data-chip data-date" title="${formatDate(date)}">${formatDate(date)}</span>`,
+            `<span class="data-chip data-category" title="${safeCategory}">${compactLabel(safeCategory)}</span>`,
+            type === 'expense' ? `<span class="data-chip data-scope" title="${scopeText}">${scopeText}</span>` : ''
         ].filter(Boolean).join('');
 
         item.innerHTML = `
-            <div class="syt-sticky-actions">
-                <button class="syt-action-btn edit" data-action="edit" data-id="${id}">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
-                    Editar
-                </button>
-                <button class="syt-action-btn delete" data-action="delete" data-id="${id}">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 7h12M9 7V5h6v2m-7 4v6m4-6v6m4-10v12a1 1 0 01-1 1H8a1 1 0 01-1-1V7h10z"></path></svg>
-                    Excluir
-                </button>
+            <div class="cell data-name" title="${safeName}">
+                <div class="title" title="${safeName}">${safeName}</div>
+                <div class="data-description subtitle" title="${safeDescription}">${safeDescription}</div>
             </div>
 
-            <div class="data-name" title="${name || '--'}">${name || '--'}<div class="data-description" title="${description}">${description}</div></div>
-            <div class="data-amount ${colorClass}">${amountPrefix} ${formatCurrency(Math.abs(amount))}</div>
-            <div class="data-scope">${type === 'expense' ? `<span class="scope-badge ${scopeClass}">${scopeText}</span>` : '--'}</div>
-            <div class="data-category"><span class="cat-pill">${category}</span></div>
-            <div class="data-date">${formatDate(date)}</div>
+            <div class="cell data-amount">
+                <span class="money ${moneyClass}">${amountPrefix} ${formatCurrency(Math.abs(amount))}</span>
+            </div>
 
-            <div class="data-meta">${metaItems}</div>
+            <div class="cell data-scope">${type === 'expense' ? `<span class="scope-badge ${scopeClass}" title="${scopeText}">${scopeText}</span>` : '<span class="scope-empty">--</span>'}</div>
 
-            <div class="data-action">
+            <div class="cell data-category"><span class="cat-pill" title="${safeCategory}">${safeCategory}</span></div>
+
+            <div class="cell data-date" title="${formatDate(date)}">${formatDate(date)}</div>
+
+            <div class="cell data-meta">${metaItems}</div>
+
+            <div class="cell data-action actions">
                 <div class="flex items-center justify-end gap-2">
-                    <button class="action-toggle-btn text-gray-500 hover:text-cyan-400 p-1 rounded-full" data-action="edit" data-id="${id}" title="Editar">
+                    <button class="action-toggle-btn" data-action="edit" data-id="${id}" title="Editar" aria-label="Editar">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg>
                     </button>
-                    <button class="action-toggle-btn text-gray-500 hover:text-red-400 p-1 rounded-full" data-action="delete" data-id="${id}" title="Excluir">
+                    <button class="action-toggle-btn danger" data-action="delete" data-id="${id}" title="Excluir" aria-label="Excluir">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 7h12M9 7V5h6v2m-7 4v6m4-6v6m4-10v12a1 1 0 01-1 1H8a1 1 0 01-1-1V7h10z"></path></svg>
                     </button>
                 </div>

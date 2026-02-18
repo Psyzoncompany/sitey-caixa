@@ -4162,3 +4162,174 @@ body.neo-dashboard {
   .due-soon-fab { right: 16px; padding: .6rem .8rem; }
   .due-soon-fab__label { display: none; }
 }
+
+/* ===== Lançamentos vNext: alinhamento desktop em grid e ações únicas ===== */
+.launch-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.transaction-card .cell { min-width: 0; }
+.transaction-card .title,
+.transaction-card .subtitle,
+.transaction-card .cat-pill {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.transaction-card .title {
+  font-size: .95rem;
+  font-weight: 700;
+  color: #e5edf8;
+}
+
+.transaction-card .subtitle {
+  margin-top: 2px;
+  font-size: .78rem;
+  color: #97a9c2;
+}
+
+.transaction-card .money {
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.transaction-card .data-action {
+  justify-self: end;
+}
+
+.transaction-card .action-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(15, 23, 42, 0.5);
+  color: #94a3b8;
+  transition: all .2s ease;
+}
+
+.transaction-card .action-toggle-btn:hover {
+  border-color: rgba(56, 189, 248, 0.45);
+  color: #67e8f9;
+  background: rgba(8, 47, 73, 0.48);
+}
+
+.transaction-card .action-toggle-btn.danger:hover {
+  border-color: rgba(248, 113, 113, 0.55);
+  color: #fda4af;
+  background: rgba(69, 10, 10, 0.5);
+}
+
+@media (max-width: 1023px) {
+  .launch-table-head { display: none !important; }
+
+  .transaction-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "name amount"
+      "desc desc"
+      "meta action";
+    gap: 4px 12px;
+    padding: 13px;
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .transaction-card .data-name { grid-area: name; }
+  .transaction-card .data-amount { grid-area: amount; text-align: right; }
+  .transaction-card .data-description { grid-area: desc; white-space: normal; }
+  .transaction-card .data-scope,
+  .transaction-card .data-category,
+  .transaction-card > .data-date { display: none; }
+
+  .transaction-card .data-meta {
+    grid-area: meta;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .transaction-card .data-chip {
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    background: rgba(15, 23, 42, 0.55);
+    padding: 4px 8px;
+    font-size: .72rem;
+    color: #9ca3af;
+  }
+
+  .transaction-card .data-action { grid-area: action; align-self: center; }
+}
+
+@media (min-width: 1024px) {
+  .launch-table-head {
+    display: grid !important;
+    grid-template-columns: minmax(260px, 1.6fr) 160px 140px 220px 140px 140px !important;
+    gap: 12px;
+    align-items: center;
+    position: sticky;
+    top: 72px;
+    z-index: 10;
+    background: rgba(7, 10, 20, 0.95);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .transaction-card {
+    display: grid;
+    grid-template-columns: minmax(260px, 1.6fr) 160px 140px 220px 140px 140px !important;
+    gap: 12px;
+    align-items: center;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+  }
+
+  .transaction-card:hover {
+    background: rgba(15, 23, 42, 0.62) !important;
+    border-color: rgba(56, 189, 248, 0.28);
+  }
+
+  .transaction-card .data-meta { display: none; }
+  .transaction-card .data-amount { text-align: left; }
+  .transaction-card .data-action { text-align: right; }
+
+  .transaction-card .cat-pill {
+    display: inline-block;
+    max-width: 100%;
+    border-radius: 999px;
+    padding: .2rem .55rem;
+    background: rgba(51, 65, 85, 0.42);
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    font-size: .72rem;
+  }
+
+  .transaction-card .scope-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: .2rem .55rem;
+    border-radius: 999px;
+    font-size: .7rem;
+    font-weight: 700;
+    border: 1px solid rgba(148, 163, 184, .36);
+  }
+
+  .transaction-card .scope-badge.business { color: #38bdf8; background: rgba(14, 165, 233, .12); }
+  .transaction-card .scope-badge.personal { color: #f9a8d4; background: rgba(236, 72, 153, .12); }
+  .transaction-card .scope-empty { color: #64748b; }
+
+  .transaction-card .value-positive { color: #4ade80; }
+  .transaction-card .value-negative { color: #f87171; }
+}
