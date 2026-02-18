@@ -80,7 +80,6 @@
               <a href="clientes.html" class="desktop-nav-link">Clientes</a>
               <a href="processos.html" class="desktop-nav-link is-active">Processos</a>
               <a href="contas.html" class="desktop-nav-link">Contas Mensais</a>
-              <a href="bloco_de_notas.html" class="desktop-nav-link">Bloco de Notas</a>
               <a href="historico.html" class="desktop-nav-link">Histórico</a>
               <a href="relatorios.html" class="desktop-nav-link">Relatórios</a>
               <a href="configuracoes.html" class="desktop-nav-link">Configurações</a>
@@ -97,7 +96,6 @@
           <a href="clientes.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Clientes</a>
           <a href="processos.html" class="bg-cyan-500/20 text-cyan-300 block px-3 py-2 rounded-md text-base font-bold">Processos</a>
           <a href="contas.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Contas Mensais</a>
-          <a href="bloco_de_notas.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Bloco de Notas</a>
           <a href="historico.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Histórico</a>
           <a href="relatorios.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Relatórios</a>
           <a href="configuracoes.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Configurações</a>
@@ -123,6 +121,23 @@
       </div>
 
       <div id="view-quadro" data-panel="quadro" class="view-container process-panel active">
+        <div class="glass-card p-3 mb-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between border border-white/10">
+          <div>
+            <p class="text-xs uppercase tracking-[0.12em] text-cyan-300 font-bold">Filtro do Quadro</p>
+            <p class="text-xs text-gray-400">Os cards são ordenados automaticamente pelo prazo mais próximo.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <label for="kanban-deadline-filter" class="text-sm text-gray-300">Mostrar:</label>
+            <select id="kanban-deadline-filter" class="p-2 rounded-md bg-white/10 border border-white/20 text-sm">
+              <option value="all">Todos os pedidos</option>
+              <option value="overdue">Atrasados</option>
+              <option value="today">Vence hoje</option>
+              <option value="next7">Próximos 7 dias</option>
+              <option value="future">Depois de 7 dias</option>
+              <option value="no-deadline">Sem prazo</option>
+            </select>
+          </div>
+        </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 min-h-[32vh]">
           <div class="glass-card p-4 flex flex-col">
               <h2 class="text-lg font-bold text-gray-300 border-b-2 border-gray-600 pb-2 mb-4">A FAZER</h2>

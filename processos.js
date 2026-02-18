@@ -14,6 +14,7 @@ const init = () => {
         doing: document.getElementById('column-doing'), 
         done: document.getElementById('column-done') 
     };
+    const kanbanDeadlineFilter = document.getElementById('kanban-deadline-filter');
 
     const orderModal = document.getElementById('order-modal');
     const orderForm = document.getElementById('order-form');
@@ -1031,6 +1032,44 @@ const init = () => {
 
     window.transferDoneToHistory = (orderId) => transferDoneToHistory(orderId);
 
+    const getOrderDeadlineDate = (order) => {
+        if (!order?.deadline) return null;
+        const date = new Date(`${order.deadline}T00:00:00`);
+        if (Number.isNaN(date.getTime())) return null;
+        return date;
+    };
+
+    const filterOrdersByDeadlineMode = (orders, mode) => {
+        if (!mode || mode === 'all') return orders;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        return orders.filter((order) => {
+            const deadlineDate = getOrderDeadlineDate(order);
+            if (mode === 'no-deadline') return !deadlineDate;
+            if (!deadlineDate) return false;
+
+            const diffDays = Math.ceil((deadlineDate.getTime() - today.getTime()) / 86400000);
+            if (mode === 'overdue') return diffDays < 0;
+            if (mode === 'today') return diffDays === 0;
+            if (mode === 'next7') return diffDays >= 0 && diffDays <= 7;
+            if (mode === 'future') return diffDays > 7;
+            return true;
+        });
+    };
+
+    const sortOrdersByNearestDeadline = (orders) => [...orders].sort((a, b) => {
+        const dateA = getOrderDeadlineDate(a);
+        const dateB = getOrderDeadlineDate(b);
+
+        if (!dateA && !dateB) return Number(a.id || 0) - Number(b.id || 0);
+        if (!dateA) return 1;
+        if (!dateB) return -1;
+
+        if (dateA.getTime() === dateB.getTime()) return Number(a.id || 0) - Number(b.id || 0);
+        return dateA - dateB;
+    });
+
     const renderKanban = () => {
         Object.values(columns).forEach(col => { if (col) col.innerHTML = ''; });
         
@@ -1053,18 +1092,21 @@ const init = () => {
             }
         } else if (clearBtn) { clearBtn.remove(); }
 
+        const quadroFilterMode = kanbanDeadlineFilter?.value || 'all';
         const filteredOrders = productionOrders.filter(order => {
             if (filterMode === 'receivables') {
                 const total = order.totalValue || 0;
                 const paid = order.amountPaid || 0;
                 const pending = total - paid;
-                return !order.isPaid && pending > 0.01;
+                if (order.isPaid || pending <= 0.01) return false;
             }
+            if (order.status === 'done' && order.inHistory) return false;
             return true;
         });
 
-        filteredOrders.forEach(order => {
-            if (order.status === 'done' && order.inHistory) return;
+        const orderedCards = sortOrdersByNearestDeadline(filterOrdersByDeadlineMode(filteredOrders, quadroFilterMode));
+
+        orderedCards.forEach(order => {
             if (columns[order.status]) {
                 const card = createOrderCard(order);
                 columns[order.status].appendChild(card);
@@ -1084,6 +1126,12 @@ const init = () => {
             tab.textContent = `${label} (${counts[target]})`;
         });
     };
+
+    if (kanbanDeadlineFilter) {
+        kanbanDeadlineFilter.addEventListener('change', () => {
+            if (currentTab === 'quadro') renderKanban();
+        });
+    }
 
 
     const renderOrdersHistory = () => {
