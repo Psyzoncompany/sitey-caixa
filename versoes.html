@@ -33,8 +33,20 @@
 
       <article class="glass-card p-5 border border-cyan-500/20">
         <div class="flex items-center justify-between gap-3 mb-2">
-          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.13</h2>
+          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.14</h2>
           <span class="text-xs text-gray-400">Atual</span>
+        </div>
+        <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
+          <li>Correção do bloco de notas na nuvem: alterações agora atualizam também o cache local do usuário antes do autosave.</li>
+          <li>Ao recarregar a página com internet instável, as notas recentes continuam disponíveis e voltam para a sincronização automática sem perder conteúdo.</li>
+          <li>Fluxo de persistência ajustado para reduzir risco de sumiço de dados entre refresh e envio ao Firestore.</li>
+        </ul>
+      </article>
+
+      <article class="glass-card p-5 border border-cyan-500/20">
+        <div class="flex items-center justify-between gap-3 mb-2">
+          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.13</h2>
+          <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
           <li>Bloco de Anotações agora abre em modo tela cheia em qualquer dispositivo, mantendo margens de segurança no mobile (safe-area).</li>

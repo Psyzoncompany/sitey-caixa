@@ -699,7 +699,14 @@ const scheduleAutoSave = () => {
     }, AUTOSAVE_DELAY_MS);
 };
 
+const syncDraftCache = () => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+    saveUserCache(uid, memoryStore);
+};
+
 const checkDirtyState = () => {
+    syncDraftCache();
     const currentSnapshot = getSnapshot(memoryStore);
     hasUnsavedChanges = currentSnapshot !== initialSnapshot;
     if (hasUnsavedChanges) scheduleAutoSave();
