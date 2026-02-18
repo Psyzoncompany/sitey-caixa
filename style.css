@@ -3973,25 +3973,3 @@ body.neo-dashboard {
   .due-soon-fab { right: 16px; padding: .6rem .8rem; }
   .due-soon-fab__label { display: none; }
 }
-
-/* Transição suave entre páginas */
-html {
-  --page-transition-duration: 220ms;
-}
-
-body {
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity var(--page-transition-duration) ease, transform var(--page-transition-duration) ease;
-}
-
-html:not(.page-transition-in) body {
-  opacity: 0;
-  transform: translateY(8px);
-}
-
-html.page-transition-out body {
-  opacity: 0;
-  transform: translateY(-8px);
-  pointer-events: none;
-}
