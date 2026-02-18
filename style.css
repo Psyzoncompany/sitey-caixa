@@ -4314,6 +4314,20 @@ body.neo-dashboard {
   .transaction-card .data-amount { text-align: left; }
   .transaction-card .data-action { text-align: right; }
 
+  /* Desktop: garantir ações Editar/Excluir visíveis em Lançamentos Recentes */
+  #transaction-list .transaction-card .data-action {
+    display: flex !important;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  #transaction-list .transaction-card .data-action > div {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
   .transaction-card .cat-pill {
     display: inline-block;
     max-width: 100%;
