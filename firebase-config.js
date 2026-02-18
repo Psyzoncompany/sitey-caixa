@@ -309,14 +309,28 @@ const createFloatingNotes = () => {
         <div class="notes-head">
           <div>
             <h2>Anotações</h2>
-            <p class="notes-subtitle">Seu bloco rápido estilo iPhone</p>
+            <p class="notes-subtitle">Bloco rápido estilo iPhone, agora com abas</p>
           </div>
           <button id="notes-close-global" type="button" aria-label="Fechar bloco de anotações">✕</button>
         </div>
+
+        <div class="notes-tabs-wrap">
+          <div id="notes-tabs-global" class="notes-tabs" role="tablist" aria-label="Abas de anotações"></div>
+          <button id="notes-add-tab-global" type="button" class="notes-tab-add" aria-label="Adicionar nova aba">+ Nova</button>
+        </div>
+
         <textarea id="notes-content-global" class="notes-textarea" placeholder="Escreva aqui o que você precisa fazer..."></textarea>
+
         <div class="notes-footer">
-          <span id="notes-status-global" class="notes-status">Salvo</span>
-          <button id="notes-clear-global" type="button">Limpar</button>
+          <div class="notes-meta">
+            <span id="notes-status-global" class="notes-status">Salvo</span>
+            <span id="notes-updated-at-global" class="notes-updated-at">Agora</span>
+          </div>
+          <div class="notes-actions">
+            <button id="notes-rename-tab-global" type="button">Renomear aba</button>
+            <button id="notes-delete-tab-global" type="button">Excluir aba</button>
+            <button id="notes-clear-global" type="button">Limpar</button>
+          </div>
         </div>
       </div>
     `;
@@ -324,53 +338,186 @@ const createFloatingNotes = () => {
     document.body.appendChild(fab);
     document.body.appendChild(modal);
 
-    const NOTES_KEY = 'floatingQuickNotes';
+    const NOTES_KEY = 'floatingQuickNotesV2';
     const textarea = modal.querySelector('#notes-content-global');
     const closeBtn = modal.querySelector('#notes-close-global');
     const clearBtn = modal.querySelector('#notes-clear-global');
+    const addTabBtn = modal.querySelector('#notes-add-tab-global');
+    const renameTabBtn = modal.querySelector('#notes-rename-tab-global');
+    const deleteTabBtn = modal.querySelector('#notes-delete-tab-global');
+    const tabsContainer = modal.querySelector('#notes-tabs-global');
     const statusEl = modal.querySelector('#notes-status-global');
+    const updatedAtEl = modal.querySelector('#notes-updated-at-global');
     let saveTimer = null;
+
+    const makeTab = (title = 'Nota') => ({
+        id: `note-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        title,
+        content: '',
+        updatedAt: Date.now()
+    });
+
+    let notesState = {
+        activeId: null,
+        tabs: [makeTab('Nota 1')]
+    };
+
+    const getActiveTab = () => notesState.tabs.find((tab) => tab.id === notesState.activeId) || notesState.tabs[0];
 
     const setStatus = (textStatus) => {
         if (statusEl) statusEl.textContent = textStatus;
     };
 
+    const formatUpdatedAt = (timestamp) => {
+        if (!timestamp) return 'Agora';
+        return `Atualizado ${new Date(timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+    };
+
     const persist = () => {
-        localStorage.setItem(NOTES_KEY, textarea?.value || '');
-        setStatus('Salvo');
+        try {
+            localStorage.setItem(NOTES_KEY, JSON.stringify(notesState));
+            setStatus('Salvo');
+            const activeTab = getActiveTab();
+            if (updatedAtEl) updatedAtEl.textContent = formatUpdatedAt(activeTab?.updatedAt);
+        } catch (_) {
+            setStatus('Erro ao salvar');
+        }
     };
 
     const scheduleSave = () => {
         setStatus('Salvando...');
         clearTimeout(saveTimer);
-        saveTimer = setTimeout(persist, 300);
+        saveTimer = setTimeout(persist, 260);
     };
 
-    if (textarea) {
-        textarea.value = localStorage.getItem(NOTES_KEY) || '';
-        textarea.addEventListener('input', scheduleSave);
-    }
+    const renderTabs = () => {
+        if (!tabsContainer) return;
+        tabsContainer.innerHTML = notesState.tabs.map((tab) => `
+            <button type="button" class="notes-tab-btn ${tab.id === notesState.activeId ? 'is-active' : ''}" data-note-id="${tab.id}" role="tab" aria-selected="${tab.id === notesState.activeId ? 'true' : 'false'}" title="${tab.title}">
+              ${tab.title}
+            </button>
+        `).join('');
+    };
 
-    modal.addEventListener('click', (event) => {
-        if (event.target === modal) {
-            clearTimeout(saveTimer);
-            persist();
-            modal.classList.add('hidden');
-        }
+    const syncActiveToTextarea = () => {
+        const activeTab = getActiveTab();
+        if (!activeTab || !textarea) return;
+        notesState.activeId = activeTab.id;
+        textarea.value = activeTab.content || '';
+        if (updatedAtEl) updatedAtEl.textContent = formatUpdatedAt(activeTab.updatedAt);
+        renderTabs();
+    };
+
+    const loadState = () => {
+        try {
+            const parsed = JSON.parse(localStorage.getItem(NOTES_KEY) || '{}');
+            if (parsed && Array.isArray(parsed.tabs) && parsed.tabs.length) {
+                notesState = {
+                    activeId: parsed.activeId || parsed.tabs[0]?.id || null,
+                    tabs: parsed.tabs.map((tab, idx) => ({
+                        id: tab?.id || `note-${Date.now()}-${idx}`,
+                        title: (tab?.title || `Nota ${idx + 1}`).slice(0, 22),
+                        content: tab?.content || '',
+                        updatedAt: tab?.updatedAt || Date.now()
+                    }))
+                };
+                return;
+            }
+        } catch (_) {}
+        notesState = {
+            activeId: null,
+            tabs: [makeTab('Nota 1')]
+        };
+    };
+
+    loadState();
+    if (!notesState.activeId && notesState.tabs[0]) notesState.activeId = notesState.tabs[0].id;
+    syncActiveToTextarea();
+    persist();
+
+    tabsContainer?.addEventListener('click', (event) => {
+        const btn = event.target.closest('[data-note-id]');
+        if (!btn) return;
+        const noteId = btn.getAttribute('data-note-id');
+        const exists = notesState.tabs.some((tab) => tab.id === noteId);
+        if (!exists) return;
+        notesState.activeId = noteId;
+        syncActiveToTextarea();
     });
 
-    fab.addEventListener('click', () => modal.classList.remove('hidden'));
-    closeBtn?.addEventListener('click', () => {
+    addTabBtn?.addEventListener('click', () => {
+        const nextIndex = notesState.tabs.length + 1;
+        const newTab = makeTab(`Nota ${nextIndex}`);
+        notesState.tabs.push(newTab);
+        notesState.activeId = newTab.id;
+        syncActiveToTextarea();
+        scheduleSave();
+    });
+
+    renameTabBtn?.addEventListener('click', () => {
+        const activeTab = getActiveTab();
+        if (!activeTab) return;
+        const value = prompt('Nome da aba:', activeTab.title || '');
+        if (value === null) return;
+        const title = value.trim().slice(0, 22) || activeTab.title || 'Nota';
+        activeTab.title = title;
+        activeTab.updatedAt = Date.now();
+        syncActiveToTextarea();
+        scheduleSave();
+    });
+
+    deleteTabBtn?.addEventListener('click', () => {
+        if (notesState.tabs.length <= 1) {
+            alert('Você precisa manter pelo menos 1 aba de nota.');
+            return;
+        }
+        const activeTab = getActiveTab();
+        if (!activeTab) return;
+        const confirmed = confirm(`Excluir a aba "${activeTab.title}"?`);
+        if (!confirmed) return;
+        notesState.tabs = notesState.tabs.filter((tab) => tab.id !== activeTab.id);
+        notesState.activeId = notesState.tabs[0]?.id || null;
+        syncActiveToTextarea();
+        scheduleSave();
+    });
+
+    if (textarea) {
+        textarea.addEventListener('input', () => {
+            const activeTab = getActiveTab();
+            if (!activeTab) return;
+            activeTab.content = textarea.value;
+            activeTab.updatedAt = Date.now();
+            if (updatedAtEl) updatedAtEl.textContent = formatUpdatedAt(activeTab.updatedAt);
+            scheduleSave();
+        });
+    }
+
+    clearBtn?.addEventListener('click', () => {
+        const activeTab = getActiveTab();
+        if (!activeTab || !textarea) return;
+        activeTab.content = '';
+        activeTab.updatedAt = Date.now();
+        textarea.value = '';
+        if (updatedAtEl) updatedAtEl.textContent = formatUpdatedAt(activeTab.updatedAt);
+        scheduleSave();
+    });
+
+    const closeModal = () => {
         clearTimeout(saveTimer);
         persist();
         modal.classList.add('hidden');
+    };
+
+    modal.addEventListener('click', (event) => {
+        if (event.target === modal) closeModal();
     });
 
-    clearBtn?.addEventListener('click', () => {
-        if (!textarea) return;
-        textarea.value = '';
-        persist();
+    fab.addEventListener('click', () => {
+        syncActiveToTextarea();
+        modal.classList.remove('hidden');
     });
+
+    closeBtn?.addEventListener('click', closeModal);
 
     window.addEventListener('beforeunload', () => {
         clearTimeout(saveTimer);
