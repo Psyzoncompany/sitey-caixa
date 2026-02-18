@@ -501,6 +501,50 @@ document.addEventListener('click', async (e) => {
 let memoryStore = {};
 window.BackendInitialized = false;
 
+const CLOUD_CACHE_PREFIX = 'sitey_cloud_cache_v1_';
+const getCloudCacheKey = (uid) => `${CLOUD_CACHE_PREFIX}${uid}`;
+
+const saveUserCache = (uid, data) => {
+    if (!uid) return;
+    try {
+        nativeLocalStorage.setItem(getCloudCacheKey(uid), JSON.stringify({
+            updatedAt: Date.now(),
+            data
+        }));
+    } catch (error) {
+        console.warn('Falha ao salvar cache local da nuvem:', error);
+    }
+};
+
+const loadUserCache = (uid) => {
+    if (!uid) return null;
+    try {
+        const raw = nativeLocalStorage.getItem(getCloudCacheKey(uid));
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        return parsed?.data && typeof parsed.data === 'object' ? parsed.data : null;
+    } catch (error) {
+        console.warn('Falha ao ler cache local da nuvem:', error);
+        return null;
+    }
+};
+
+const hideInitialLoader = () => {
+    const loader = document.getElementById('initial-loader');
+    if (!loader) return;
+    loader.style.opacity = '0';
+    setTimeout(() => loader.remove(), 500);
+};
+
+const bootstrapBackendUI = () => {
+    window.BackendInitialized = true;
+    createFloatingSaveButton();
+    createGlobalCalculator();
+    createDueSoonTasksFab();
+    setupAutomaticTaskReminders();
+    hideInitialLoader();
+};
+
 const saveToCloud = async () => {
     if (!auth.currentUser) return;
     const uid = auth.currentUser.uid;
@@ -508,6 +552,7 @@ const saveToCloud = async () => {
     try {
         // Salva o estado atual da memória no Firestore
         await setDoc(doc(db, "users", uid), memoryStore, { merge: true });
+        saveUserCache(uid, memoryStore);
         
         // Atualiza o snapshot inicial para refletir o novo estado salvo
         initialSnapshot = getSnapshot(memoryStore);
@@ -616,6 +661,14 @@ onAuthStateChanged(auth, async (user) => {
         // O loader agora já existe no HTML (id="initial-loader") para aparecer instantaneamente.
         // Não precisamos criá-lo aqui, apenas garantir que ele não seja removido antes da hora.
 
+        const cachedData = loadUserCache(user.uid);
+        if (cachedData) {
+            memoryStore = cachedData;
+            initialSnapshot = getSnapshot(memoryStore);
+            hasUnsavedChanges = false;
+            bootstrapBackendUI();
+        }
+
         try {
             // Baixa TUDO do Firestore de uma vez
             const docRef = doc(db, "users", user.uid);
@@ -628,23 +681,12 @@ onAuthStateChanged(auth, async (user) => {
                 memoryStore = {};
                 console.log("ℹ️ Novo usuário ou sem dados.");
             }
+            saveUserCache(user.uid, memoryStore);
             
             // Define o ponto de partida (estado limpo)
             initialSnapshot = getSnapshot(memoryStore);
             hasUnsavedChanges = false;
-            
-            window.BackendInitialized = true;
-            createFloatingSaveButton();
-            createGlobalCalculator();
-            createDueSoonTasksFab();
-            setupAutomaticTaskReminders();
-            
-            // Remove tela de carregamento
-            const loader = document.getElementById('initial-loader');
-            if (loader) {
-                loader.style.opacity = '0';
-                setTimeout(() => loader.remove(), 500);
-            }
+            bootstrapBackendUI();
 
         } catch (error) {
             console.error("Erro crítico ao carregar dados:", error);
