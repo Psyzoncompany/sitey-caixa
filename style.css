@@ -4204,9 +4204,9 @@ body.neo-dashboard {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
   border: 1px solid rgba(148, 163, 184, 0.22);
   background: rgba(15, 23, 42, 0.5);
   color: #94a3b8;
@@ -4219,7 +4219,15 @@ body.neo-dashboard {
   background: rgba(8, 47, 73, 0.48);
 }
 
-.transaction-card .action-toggle-btn.danger:hover {
+.transaction-card .action-toggle-btn.edit {
+  color: #7dd3fc;
+}
+
+.transaction-card .action-toggle-btn.delete {
+  color: #fda4af;
+}
+
+.transaction-card .action-toggle-btn.delete:hover {
   border-color: rgba(248, 113, 113, 0.55);
   color: #fda4af;
   background: rgba(69, 10, 10, 0.5);
