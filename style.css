@@ -3568,3 +3568,91 @@ body.neo-dashboard {
   filter: grayscale(.15);
   cursor: progress;
 }
+
+
+/* v2: cortes compact accordion + mobile footer/layout fixes */
+.cutting-sheet-body {
+  padding-inline: .75rem;
+  padding-bottom: 9.5rem;
+}
+.cutting-section-card-cortes {
+  width: 100%;
+  max-width: 100%;
+  padding: .9rem .72rem;
+}
+.cut-cards-list { grid-template-columns: minmax(0, 1fr); }
+.cut-card { width: 100%; max-width: 100%; }
+.cut-card-summary {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  gap: .72rem;
+  align-items: start;
+}
+.cut-summary-main { min-width: 0; display: grid; gap: .45rem; }
+.cut-card-meta-compact { margin: 0; }
+.cut-summary-side {
+  display: grid;
+  justify-items: end;
+  align-content: start;
+  gap: .4rem;
+}
+.cut-compact-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: .2rem .62rem;
+  border-radius: 999px;
+  color: var(--muted);
+  border: 1px solid rgba(178, 201, 235, .28);
+  background: rgba(130, 161, 207, .13);
+  font-size: .86rem;
+  font-weight: 700;
+}
+.cut-compact-count strong { color: var(--text); margin-right: .1rem; }
+.cut-expand-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  border: 1px solid rgba(186, 206, 236, .32);
+  background: rgba(110, 136, 177, .16);
+  display: grid;
+  place-items: center;
+  color: #dbeafe;
+  transition: transform .18s ease, filter .18s ease, background .18s ease;
+}
+.cut-expand-btn svg { width: 17px; height: 17px; }
+.cut-expand-btn:hover { filter: brightness(1.12); background: rgba(133, 161, 206, .24); }
+.cut-expand-btn:active { transform: scale(.96); }
+.cut-expand-btn[aria-expanded="true"] svg { transform: rotate(180deg); }
+.cut-card-details {
+  display: grid;
+  gap: .7rem;
+  padding-top: .64rem;
+  margin-top: .12rem;
+  border-top: 1px solid rgba(178, 201, 235, .2);
+}
+.cut-card-details[hidden] { display: none !important; }
+.cut-card:not(.is-expanded) .cut-size-title { font-size: 1.28rem; }
+
+@media (max-width: 768px) {
+  .cutting-sheet-footer {
+    bottom: calc(env(safe-area-inset-bottom) + .45rem);
+    margin: .3rem .75rem .6rem;
+  }
+  .cutting-sheet-body {
+    padding-inline: .62rem;
+    padding-bottom: 10rem;
+  }
+  .cutting-section-card-cortes {
+    margin-inline: 0;
+    padding-inline: .58rem;
+  }
+  .cut-summary-side .cutting-status-chip { font-size: .76rem; padding: .28rem .62rem; }
+}
+
+@media (max-width: 420px) {
+  .cut-card-summary { gap: .58rem; }
+  .cut-card:not(.is-expanded) .cut-size-title { font-size: 1.16rem; }
+  .cut-chip { min-height: 34px; padding: .35rem .62rem; font-size: .8rem; }
+}
