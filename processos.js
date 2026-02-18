@@ -87,6 +87,8 @@ const init = () => {
     let pendingDeleteSubtaskId = null;
     const cutDebounceTimers = new Map();
     const expandedCutCards = new Set();
+    let cuttingChecklistStatusFilter = 'all';
+    let cuttingChecklistSearchFilter = '';
     let isCutSavePending = false;
     // toggle visibility of DTF block based on select
     const togglePrintingBlock = () => {
@@ -1439,54 +1441,76 @@ const init = () => {
 
     const renderCuttingTasks = () => {
         cuttingTasksContainer.innerHTML = '';
-        // Show orders even if subtasks are not defined yet, so user can open checklist and add them
-        const pendingCutOrders = productionOrders.filter(order => 
-            !order.isArtOnly && 
-            order.checklist && 
-            order.checklist.cutting && 
-            !order.checklist.cutting.completed
-        );
-        if (pendingCutOrders.length === 0) {
-            cuttingTasksContainer.innerHTML = '<div class="glass-card p-6 text-center text-gray-400">Nenhuma tarefa de corte pendente.</div>';
-            return;
-        }
-        pendingCutOrders.forEach(order => {
+
+        const getOrderCardHtml = (order) => {
             const client = clients.find(c => c.id === order.clientId);
             const subtasks = order.checklist.cutting.subtasks || [];
             const totalToCut = subtasks.reduce((acc, sub) => acc + sub.total, 0);
             const totalCut = subtasks.reduce((acc, sub) => acc + sub.cut, 0);
 
-            // render colors
             const colors = order.colors || [];
             const colorsHtml = colors.map(c => {
-                // try to use as background if looks like hex, otherwise show label
                 const safeBg = /^#([0-9A-F]{3}){1,2}$/i.test(c.trim()) ? `background:${c}` : '';
                 return `<div class="flex items-center gap-2"><div class="w-6 h-6 rounded-sm border" style="${safeBg}"></div><span class="text-xs text-gray-300">${c}</span></div>`;
             }).join('');
 
-            const card = document.createElement('div');
-            card.className = 'glass-card p-4 flex flex-col gap-3';
-            card.innerHTML = `
-                <div class="flex justify-between items-start">
-                    <div>
-                        <p class="font-bold">${order.description}</p>
-                        <p class="text-sm text-cyan-300">${client ? client.name : 'Cliente'}</p>
-                        <p class="text-xs text-gray-400">Prazo: ${order.deadline ? new Date(order.deadline + "T03:00:00").toLocaleDateString('pt-BR') : ''}</p>
+            return `
+                <article class="glass-card p-4 flex flex-col gap-3">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="font-bold">${order.description}</p>
+                            <p class="text-sm text-cyan-300">${client ? client.name : 'Cliente'}</p>
+                            <p class="text-xs text-gray-400">Prazo: ${order.deadline ? new Date(order.deadline + "T03:00:00").toLocaleDateString('pt-BR') : ''}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-semibold">${totalCut} / ${totalToCut}</p>
+                            <p class="text-xs text-gray-400">Peças Cortadas</p>
+                        </div>
                     </div>
-                    <div class="text-right">
-                        <p class="font-semibold">${totalCut} / ${totalToCut}</p>
-                        <p class="text-xs text-gray-400">Peças Cortadas</p>
+                    <div class="flex flex-wrap gap-3 items-center">
+                        ${colorsHtml || '<span class="text-xs text-gray-500">Sem cores definidas</span>'}
                     </div>
-                </div>
-                <div class="flex flex-wrap gap-3 items-center">
-                    ${colorsHtml || '<span class="text-xs text-gray-500">Sem cores definidas</span>'}
-                </div>
-                <div class="flex justify-end">
-                    <button data-order-id="${order.id}" class="open-checklist-btn btn-shine py-2 px-4 rounded-lg text-sm">Abrir Checklist</button>
-                </div>
+                    <div class="flex justify-end">
+                        <button data-order-id="${order.id}" class="open-checklist-btn btn-shine py-2 px-4 rounded-lg text-sm">Abrir Checklist</button>
+                    </div>
+                </article>
             `;
-            cuttingTasksContainer.appendChild(card);
-        });
+        };
+
+        const cutOrders = productionOrders.filter(order =>
+            !order.isArtOnly &&
+            order.checklist &&
+            order.checklist.cutting
+        );
+        const pendingCutOrders = cutOrders.filter(order => !order.checklist.cutting.completed);
+        const completedCutOrders = cutOrders.filter(order => order.checklist.cutting.completed);
+
+        if (cutOrders.length === 0) {
+            cuttingTasksContainer.innerHTML = '<div class="glass-card p-6 text-center text-gray-400">Nenhuma tarefa de corte encontrada.</div>';
+            return;
+        }
+
+        const buildSection = (title, subtitle, orders, toneClass = '') => {
+            const section = document.createElement('section');
+            section.className = `cutting-board-row ${toneClass}`.trim();
+            const cardsHtml = orders.length
+                ? orders.map(getOrderCardHtml).join('')
+                : '<div class="glass-card p-4 text-sm text-gray-400">Nenhum pedido nesta fileira.</div>';
+            section.innerHTML = `
+                <header class="cutting-board-row-head">
+                    <div>
+                        <h3>${title}</h3>
+                        <p>${subtitle}</p>
+                    </div>
+                    <span class="task-badge">${orders.length}</span>
+                </header>
+                <div class="cutting-board-row-grid">${cardsHtml}</div>
+            `;
+            return section;
+        };
+
+        cuttingTasksContainer.appendChild(buildSection('Cortando agora', 'Pedidos que ainda estão em andamento.', pendingCutOrders));
+        cuttingTasksContainer.appendChild(buildSection('Corte concluído', 'Pedidos finalizados (você ainda pode editar).', completedCutOrders, 'is-completed'));
     };
 
     if (cuttingTasksContainer) {
@@ -1517,6 +1541,20 @@ const init = () => {
 
     const renderCutCards = (order) => {
         const subtasks = order?.checklist?.cutting?.subtasks || [];
+        const normalizedSearch = cuttingChecklistSearchFilter.trim().toLowerCase();
+        const filteredSubtasks = subtasks.filter((subtask) => {
+            const cut = parseInt(subtask.cut || 0, 10);
+            const total = parseInt(subtask.total || 0, 10);
+            const isDone = total > 0 && cut >= total;
+            if (cuttingChecklistStatusFilter === 'done' && !isDone) return false;
+            if (cuttingChecklistStatusFilter === 'pending' && isDone) return false;
+            if (!normalizedSearch) return true;
+
+            const searchableFields = [subtask.size, subtask.age, subtask.gender, subtask.variation, subtask.color, subtask.colorName, subtask.notes]
+                .map((value) => String(value || '').toLowerCase());
+            return searchableFields.some((value) => value.includes(normalizedSearch));
+        });
+
         const validSubtaskIds = new Set(subtasks.map((sub) => String(sub.id)));
         expandedCutCards.forEach((id) => { if (!validSubtaskIds.has(id)) expandedCutCards.delete(id); });
         const colors = order.colors || [];
@@ -1527,7 +1565,7 @@ const init = () => {
             }).join('')
             : '<span class="cutting-status-chip">Sem cores</span>';
 
-        const cutsHtml = subtasks.length ? subtasks.map((subtask) => {
+        const cutsHtml = filteredSubtasks.length ? filteredSubtasks.map((subtask) => {
             const isInf = subtask.gender === 'Infantil';
             const sizeLabel = isInf ? `Idade: ${subtask.age || subtask.size || '-'}` : `Tam: ${subtask.size || '-'}`;
             const statusOk = parseInt(subtask.cut || 0, 10) >= parseInt(subtask.total || 0, 10) && parseInt(subtask.total || 0, 10) > 0;
@@ -1588,7 +1626,7 @@ const init = () => {
                     </div>
                 </article>
             `;
-        }).join('') : '<div class="glass-card p-4 text-sm text-gray-300">Nenhum corte adicionado ainda.</div>';
+        }).join('') : '<div class="glass-card p-4 text-sm text-gray-300">Nenhum corte encontrado para os filtros aplicados.</div>';
 
         const totalPieces = getCuttingTotalPieces(subtasks);
 
@@ -1605,6 +1643,14 @@ const init = () => {
 
             <section class="cutting-section-card cutting-section-card-cortes">
                 <div class="cutting-section-head"><h3>Cortes</h3>${getCutSectionStatus(subtasks.length > 0)}</div>
+                <div class="cut-filter-bar">
+                    <div class="cut-filter-pills" role="group" aria-label="Filtrar cortes por status">
+                        <button type="button" class="cut-filter-btn ${cuttingChecklistStatusFilter === 'all' ? 'is-active' : ''}" data-action="filter-status" data-filter="all">Todos</button>
+                        <button type="button" class="cut-filter-btn ${cuttingChecklistStatusFilter === 'pending' ? 'is-active' : ''}" data-action="filter-status" data-filter="pending">Em andamento</button>
+                        <button type="button" class="cut-filter-btn ${cuttingChecklistStatusFilter === 'done' ? 'is-active' : ''}" data-action="filter-status" data-filter="done">Concluídos</button>
+                    </div>
+                    <input type="search" id="cut-filter-search" class="cut-filter-search" value="${sanitizeHtml(cuttingChecklistSearchFilter)}" placeholder="Filtrar por tamanho, cor, observação..." aria-label="Filtrar cortes por texto">
+                </div>
                 <div class="cut-cards-list" role="list">${cutsHtml}</div>
                 <button type="button" class="cutting-add-btn" data-action="toggle-add-cut">+ Adicionar corte</button>
                 <form id="add-cut-form" class="cut-form hidden">
@@ -1717,6 +1763,8 @@ const init = () => {
 
     const openCuttingModal = (orderId) => {
         activeCuttingOrderId = orderId;
+        cuttingChecklistStatusFilter = 'all';
+        cuttingChecklistSearchFilter = '';
         const order = productionOrders.find(o => o.id === orderId);
         if (!order) return;
         setCutSavePending(false);
@@ -1772,6 +1820,12 @@ const init = () => {
             if (action === 'toggle-note') {
                 const noteBox = actionBtn.closest('.cut-note-box');
                 if (noteBox) noteBox.classList.toggle('is-expanded');
+                return;
+            }
+
+            if (action === 'filter-status') {
+                cuttingChecklistStatusFilter = actionBtn.dataset.filter || 'all';
+                renderCutCards(order);
                 return;
             }
 
@@ -1842,6 +1896,12 @@ const init = () => {
             const order = productionOrders.find(o => o.id === activeCuttingOrderId);
             if (!order) return;
             const subtasks = order.checklist.cutting.subtasks || [];
+
+            if (e.target.id === 'cut-filter-search') {
+                cuttingChecklistSearchFilter = String(e.target.value || '');
+                renderCutCards(order);
+                return;
+            }
 
             if (e.target.classList.contains('cut-quantity-input')) {
                 const id = parseFloat(e.target.dataset.subtaskId);
