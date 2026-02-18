@@ -347,7 +347,18 @@ const createDueSoonTasksFab = () => {
     dueFab.className = 'due-soon-fab';
     dueFab.type = 'button';
     dueFab.title = 'Afazeres vencendo em até 2 dias';
-    dueFab.innerHTML = '<span class="due-soon-fab__icon">📋</span><span class="due-soon-fab__label">Afazeres 2d</span><span id="due-soon-fab-count" class="due-soon-fab__count">0</span>';
+    dueFab.innerHTML = `
+        <span class="due-soon-fab__icon" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 3h6"/>
+                <path d="M10 7h4"/>
+                <rect x="5" y="3" width="14" height="18" rx="2"/>
+                <path d="M9 12h6M9 16h6"/>
+            </svg>
+        </span>
+        <span class="due-soon-fab__label">Afazeres 2d</span>
+        <span id="due-soon-fab-count" class="due-soon-fab__count">0</span>
+    `;
     dueFab.addEventListener('click', () => {
         window.location.href = 'processos.html?tab=afazeres&filter=due2days';
     });
@@ -372,10 +383,21 @@ const setupAutomaticTaskReminders = () => {
 
     const ONE_DAY_KEY = 'taskDueOneDayReminderSeen';
     const showTaskReminder = (task) => {
-        const message = `⏰ ${task.taskName} (${task.clientName}) vence em 1 dia.`;
+        const message = `${task.taskName} (${task.clientName}) vence em 1 dia.`;
         const toast = document.createElement('div');
         toast.className = 'global-reminder-toast';
-        toast.textContent = message;
+
+        const icon = document.createElement('span');
+        icon.className = 'global-reminder-toast__icon';
+        icon.setAttribute('aria-hidden', 'true');
+        icon.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>';
+
+        const text = document.createElement('span');
+        text.className = 'global-reminder-toast__text';
+        text.textContent = message;
+
+        toast.appendChild(icon);
+        toast.appendChild(text);
         document.body.appendChild(toast);
         setTimeout(() => toast.classList.add('show'), 40);
         setTimeout(() => {
