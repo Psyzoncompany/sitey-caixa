@@ -1487,6 +1487,20 @@ const init = () => {
     const getCuttingTotalPieces = (subtasks = []) => subtasks.reduce((acc, sub) => acc + (parseInt(sub.total, 10) || 0), 0);
 
     const getCutSectionStatus = (ok) => ok ? '<span class="cutting-status-chip is-ok">Completo</span>' : '<span class="cutting-status-chip">Pendente</span>';
+    const getCutColorChip = (subtask = {}) => {
+        const rawColor = String(subtask.color || '').trim();
+        const safeColor = isHex(rawColor) ? rawColor.toUpperCase() : '';
+        const colorLabel = safeColor
+            ? String(subtask.colorName || subtask.colorLabel || '').trim() || 'Cor'
+            : rawColor || 'Cor';
+
+        return `
+            <span class="cut-chip cut-chip-color" ${safeColor ? `data-color="${safeColor}"` : ''}>
+                <span class="cut-color-swatch" style="${safeColor ? `--cut-color:${safeColor};` : ''}" aria-hidden="true"></span>
+                <span class="cut-chip-label">${sanitizeHtml(colorLabel)}</span>
+            </span>
+        `;
+    };
 
     const renderCutCards = (order) => {
         const subtasks = order?.checklist?.cutting?.subtasks || [];
@@ -1525,7 +1539,7 @@ const init = () => {
                     <div class="cut-card-meta">
                         <span class="cut-chip">${sanitizeHtml(subtask.gender || 'Sexo')}</span>
                         <span class="cut-chip">${sanitizeHtml(subtask.variation || 'Estilo')}</span>
-                        <span class="cut-chip">${sanitizeHtml(subtask.color || 'Sem cor')}</span>
+                        ${getCutColorChip(subtask)}
                     </div>
                     <div class="cut-control-row">
                         <div class="cut-stepper" data-subtask-id="${subtask.id}">
@@ -1534,10 +1548,13 @@ const init = () => {
                             <button type="button" class="cut-step-btn" data-action="increase-cut" aria-label="Aumentar quantidade">+</button>
                             <span class="cut-step-total">/ ${parseInt(subtask.total || 0, 10)}</span>
                         </div>
-                        <p class="cut-subtotal">Subtotal: ${parseInt(subtask.total || 0, 10)} peça(s)</p>
+                        <p class="cut-subtotal">Subtotal: <strong>${parseInt(subtask.total || 0, 10)} peça(s)</strong></p>
                     </div>
                     <div class="cut-note-box ${note ? 'is-expanded has-content' : ''}">
-                        <button type="button" class="cut-note-toggle" data-action="toggle-note">Adicionar observação (opcional)</button>
+                        <button type="button" class="cut-note-toggle" data-action="toggle-note">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path d="M8 10h8M8 14h5" stroke-width="1.8" stroke-linecap="round"/><path d="M7 4h10a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3h-5l-4 3v-3H7a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3Z" stroke-width="1.8" stroke-linejoin="round"/></svg>
+                            <span>Adicionar observação (opcional)</span>
+                        </button>
                         <p class="cut-note-preview">${preview}</p>
                         <textarea class="cut-note-input" data-subtask-id="${subtask.id}" rows="2" placeholder="Adicionar observação (opcional)">${sanitizeHtml(note)}</textarea>
                     </div>
@@ -1558,7 +1575,7 @@ const init = () => {
                 <div class="cutting-color-list">${colorsHtml}</div>
             </section>
 
-            <section class="cutting-section-card">
+            <section class="cutting-section-card cutting-section-card-cortes">
                 <div class="cutting-section-head"><h3>Cortes</h3>${getCutSectionStatus(subtasks.length > 0)}</div>
                 <div class="cut-cards-list" role="list">${cutsHtml}</div>
                 <button type="button" class="cutting-add-btn" data-action="toggle-add-cut">+ Adicionar corte</button>
