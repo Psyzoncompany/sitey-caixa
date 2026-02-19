@@ -33,8 +33,20 @@
 
       <article class="glass-card p-5 border border-cyan-500/20">
         <div class="flex items-center justify-between gap-3 mb-2">
-          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.19</h2>
+          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.21</h2>
           <span class="text-xs text-gray-400">Atual</span>
+        </div>
+        <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
+          <li>Correção adicional no importador para remover duplicidades legadas já existentes do pacote de fevereiro.</li>
+          <li>Limpeza agora agrupa por chave estável (data, tipo, valor e descrição do lançamento original) e mantém a versão mais completa do registro.</li>
+          <li>Evita manter pares duplicados entre importações antigas e a nova estrutura com <code>launchId</code>/<code>product_sale</code>.</li>
+        </ul>
+      </article>
+
+      <article class="glass-card p-5 border border-cyan-500/20">
+        <div class="flex items-center justify-between gap-3 mb-2">
+          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.20</h2>
+          <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
           <li>Importador financeiro refeito com idempotência por <code>launchId</code> determinístico e rotina de deduplicação para limpar registros repetidos.</li>

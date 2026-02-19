@@ -168,6 +168,59 @@ const init = () => {
         transactions = deduped;
         return changed;
     };
+
+    const dedupeImportedMonthByLegacyKey = (monthPrefix, sourceLaunches) => {
+        const sourceKeys = new Set(sourceLaunches.map((item) => [
+            item.date,
+            item.type,
+            Number(Math.abs(item.amount)).toFixed(2),
+            normalizeKey(item.description)
+        ].join('|')));
+
+        const grouped = new Map();
+        transactions.forEach((tx) => {
+            const key = [
+                tx.date,
+                tx.type,
+                Number(Math.abs(tx.amount || 0)).toFixed(2),
+                normalizeKey(tx.description || tx.name || '')
+            ].join('|');
+
+            if (!String(tx.date || '').startsWith(monthPrefix) || !sourceKeys.has(key)) return;
+
+            if (!grouped.has(key)) grouped.set(key, []);
+            grouped.get(key).push(tx);
+        });
+
+        const toRemoveIds = new Set();
+        grouped.forEach((list) => {
+            if (list.length <= 1) return;
+            list.sort((a, b) => {
+                const score = (item) => {
+                    let total = 0;
+                    if (item.kind === 'product_sale') total += 50;
+                    if (item.category === 'Venda de Produto') total += 20;
+                    if (item.launchId) total += 10;
+                    if (item.importBatch === 'syt_financial_import_2026_02_rodrigo_v2') total += 5;
+                    return total;
+                };
+                const diffScore = score(b) - score(a);
+                if (diffScore !== 0) return diffScore;
+                const aTime = new Date(a.createdAt || 0).getTime() || Number(a.id) || 0;
+                const bTime = new Date(b.createdAt || 0).getTime() || Number(b.id) || 0;
+                return aTime - bTime;
+            });
+
+            const keep = list[0];
+            list.slice(1).forEach((item) => {
+                if (item.id !== keep.id) toRemoveIds.add(item.id);
+            });
+        });
+
+        if (toRemoveIds.size === 0) return false;
+        transactions = transactions.filter((tx) => !toRemoveIds.has(tx.id));
+        return true;
+    };
     const parseProductSaleMeta = (description, amount) => {
         const desc = (description || '').trim();
         const qtyMatch = desc.match(/(\d+)\s*camisas?/i);
@@ -288,7 +341,8 @@ const init = () => {
         });
 
         const deduped = dedupeTransactionsByLaunchId();
-        const shouldPersist = inserted > 0 || deduped || localStorage.getItem(IMPORT_KEY) !== 'done' || localStorage.getItem(LEGACY_KEY) === 'done';
+        const cleanedLegacyDuplicates = dedupeImportedMonthByLegacyKey(`${year}-02`, launches);
+        const shouldPersist = inserted > 0 || deduped || cleanedLegacyDuplicates || localStorage.getItem(IMPORT_KEY) !== 'done' || localStorage.getItem(LEGACY_KEY) === 'done';
         if (shouldPersist) {
             localStorage.setItem('clients', JSON.stringify(clients));
             rebuildMonthlyProduction();
