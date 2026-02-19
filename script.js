@@ -13,6 +13,8 @@ const init = () => {
     const expenseEl = document.getElementById('total-expense');
     const profitEl = document.getElementById('profit');
     const totalReceivablesEl = document.getElementById('total-receivables');
+    const totalPayablesEl = document.getElementById('total-payables');
+    const totalMonthlyExpensesEl = document.getElementById('total-monthly-expenses');
     if (totalReceivablesEl) {
         totalReceivablesEl.addEventListener('click', () => {
             window.location.href = 'processos.html?filter=receivables';
@@ -35,6 +37,7 @@ const init = () => {
     const personalProgressEl = document.getElementById('personal-progress');
     const breakEvenRevenueEl = document.getElementById('break-even-revenue');
     const dashboardBillsSummaryEl = document.getElementById('dashboard-bills-summary');
+    const dashboardBillsPaidSummaryEl = document.getElementById('dashboard-bills-paid-summary');
     const breakEvenTargetEl = document.getElementById('break-even-target');
     const breakEvenRevenueBar = document.getElementById('break-even-revenue-bar');
     const breakEvenCostsBar = document.getElementById('break-even-costs-bar');
@@ -354,20 +357,11 @@ const init = () => {
         stepGroups.forEach(el => {
             const step = parseInt(el.dataset.step);
             if (isMobile) {
-                el.classList.remove('hidden'); // Garante que a transição funcione
-                if (step === currentStep) {
-                    el.style.transform = 'translateX(0)';
-                    el.style.opacity = '1';
-                    el.style.pointerEvents = 'auto';
-                } else if (step < currentStep) {
-                    el.style.transform = 'translateX(-100%)';
-                    el.style.opacity = '0';
-                    el.style.pointerEvents = 'none';
-                } else { // step > currentStep
-                    el.style.transform = 'translateX(100%)';
-                    el.style.opacity = '0';
-                    el.style.pointerEvents = 'none';
-                }
+                const isCurrentStep = step === currentStep;
+                el.classList.toggle('hidden', !isCurrentStep);
+                el.style.transform = 'none';
+                el.style.opacity = isCurrentStep ? '1' : '0';
+                el.style.pointerEvents = isCurrentStep ? 'auto' : 'none';
             } else { // Desktop logic
                 el.style.transform = 'none';
                 el.style.opacity = '1';
@@ -663,6 +657,9 @@ const init = () => {
         const billsDataRaw = localStorage.getItem('psyzon_accounts_db_v1');
         if (!billsDataRaw) {
             dashboardBillsSummaryEl.innerHTML = '<a href="contas.html" class="text-sm text-gray-400 hover:text-cyan-400">Nenhuma conta configurada. Clique para começar.</a>';
+            if (dashboardBillsPaidSummaryEl) {
+                dashboardBillsPaidSummaryEl.innerHTML = '<p class="text-sm text-gray-400">Nenhuma conta paga no mês.</p>';
+            }
             return;
         }
 
@@ -698,6 +695,29 @@ const init = () => {
             html += '<p class="text-sm text-green-400 mt-2">Tudo pago este mês.</p>';
         }
         dashboardBillsSummaryEl.innerHTML = html;
+
+        if (!dashboardBillsPaidSummaryEl) return;
+        const paidBills = billsDb.accounts
+            .map(acc => {
+                const record = monthlyRecords[acc.id] || { status: 'pending' };
+                const isActive = acc.type === 'fixed' || (acc.type === 'unique' && acc.unique_date === monthKey) || (acc.type === 'installment' && acc.current_installment <= acc.total_installments);
+                if (isActive && record.status === 'paid') {
+                    return { ...acc, ...record };
+                }
+                return null;
+            })
+            .filter(Boolean)
+            .sort((a, b) => a.due_day - b.due_day);
+
+        const totalPaid = paidBills.reduce((sum, bill) => sum + bill.amount, 0);
+        const recentPaid = paidBills.slice(-3).reverse();
+        let paidHtml = `<div class="flex justify-between items-baseline mb-2"><span class="font-bold text-green-400">${formatCurrency(totalPaid)}</span><span class="text-sm text-gray-400">Pago</span></div>`;
+        if (recentPaid.length > 0) {
+            paidHtml += recentPaid.map(bill => `<div class="text-sm flex justify-between border-t border-white/5 pt-1 mt-1"><span>${bill.name}</span><span class="font-semibold">Dia ${bill.due_day}</span></div>`).join('');
+        } else {
+            paidHtml += '<p class="text-sm text-gray-400 mt-2">Nenhuma conta paga ainda.</p>';
+        }
+        dashboardBillsPaidSummaryEl.innerHTML = paidHtml;
     };
 
     const renderRecentTransactions = () => {
@@ -759,6 +779,7 @@ const init = () => {
         const incomeMonth = monthlyTransactions.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
         const businessExpenseMonth = monthlyTransactions.filter(t => t.type === 'expense' && t.scope !== 'personal').reduce((acc, t) => acc + t.amount, 0);
         const personalExpenseMonth = monthlyTransactions.filter(t => t.type === 'expense' && t.scope === 'personal').reduce((acc, t) => acc + t.amount, 0);
+        const totalExpensesMonth = Math.abs(businessExpenseMonth) + Math.abs(personalExpenseMonth);
         const profitMonth = incomeMonth + businessExpenseMonth;
         balanceEl.textContent = formatCurrency(totalBalance);
         
@@ -767,6 +788,9 @@ const init = () => {
         
         incomeEl.textContent = formatCurrency(incomeMonth);
         expenseEl.textContent = formatCurrency(Math.abs(businessExpenseMonth));
+        if (totalMonthlyExpensesEl) {
+            totalMonthlyExpensesEl.textContent = formatCurrency(totalExpensesMonth);
+        }
         profitEl.textContent = formatCurrency(profitMonth);
         profitEl.classList.toggle('text-red-400', profitMonth < 0);
         profitEl.classList.toggle('text-green-400', profitMonth >= 0);
@@ -813,6 +837,29 @@ const init = () => {
             totalReceivablesEl.title = "Clique para ver pedidos pendentes";
         }
 
+        if (totalPayablesEl) {
+            const billsDataRaw = localStorage.getItem('psyzon_accounts_db_v1');
+            let payables = 0;
+            let payablesCount = 0;
+            if (billsDataRaw) {
+                const billsDb = JSON.parse(billsDataRaw);
+                const monthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+                const monthlyRecords = billsDb.monthly_records?.[monthKey] || {};
+                billsDb.accounts.forEach(acc => {
+                    const record = monthlyRecords[acc.id] || { status: 'pending' };
+                    const isActive = acc.type === 'fixed' || (acc.type === 'unique' && acc.unique_date === monthKey) || (acc.type === 'installment' && acc.current_installment <= acc.total_installments);
+                    if (isActive && (record.status === 'pending' || record.status === 'overdue')) {
+                        payables += acc.amount || 0;
+                        payablesCount += 1;
+                    }
+                });
+            }
+            totalPayablesEl.innerHTML = `
+                <div>${formatCurrency(payables)}</div>
+                <div class="text-xs text-gray-400 mt-1">${payablesCount} contas pendentes</div>
+            `;
+        }
+
         const businessLimit = parseFloat(localStorage.getItem('businessSpendingLimit')) || 0;
         const personalLimit = parseFloat(localStorage.getItem('personalSpendingLimit')) || 0;
         const businessPercent = businessLimit > 0 ? (Math.abs(businessExpenseMonth) / businessLimit) * 100 : 0;
@@ -825,7 +872,7 @@ const init = () => {
         personalLimitTextEl.textContent = `de ${formatCurrency(personalLimit)}`;
         personalProgressEl.style.width = `${Math.min(personalPercent, 100)}%`;
         personalProgressEl.className = `h-4 rounded-full transition-all duration-500 ${getProgressColorClass(personalPercent)}`;
-        const totalMonthlyCosts = Math.abs(businessExpenseMonth) + Math.abs(personalExpenseMonth);
+        const totalMonthlyCosts = totalExpensesMonth;
         breakEvenRevenueEl.textContent = `Receita: ${formatCurrency(incomeMonth)}`;
         breakEvenTargetEl.textContent = `Custos: ${formatCurrency(totalMonthlyCosts)}`;
         const totalValue = incomeMonth + totalMonthlyCosts;
@@ -978,6 +1025,7 @@ const init = () => {
     updateUI();
     setTimeout(checkDeadlinesAndNotify, 2000);
     setupCarousel('budget-carousel', 'budget-carousel-dots');
+    setupCarousel('bills-carousel', 'bills-carousel-dots');
     setupCarousel('charts-carousel', 'charts-carousel-dots');
 };
 
