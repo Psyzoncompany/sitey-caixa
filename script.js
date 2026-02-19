@@ -1191,6 +1191,17 @@ const init = () => {
         });
     }
 
+    if (clientSelect) {
+        const handleClientSelection = () => {
+            if (!clientSelect.value) return;
+            // Garante feedback visual imediato após toque/clique no cliente.
+            clientSelect.dispatchEvent(new Event('change', { bubbles: true }));
+        };
+
+        clientSelect.addEventListener('click', handleClientSelection);
+        clientSelect.addEventListener('touchend', handleClientSelection, { passive: true });
+    }
+
     // --- INICIALIZAÇÃO ---
     updateUI();
     setTimeout(() => {
