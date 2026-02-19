@@ -2,7 +2,7 @@
 
 // Importa as funções do Firebase (versão compat para facilitar o uso com scripts existentes)
 import { onAuthStateChanged, setPersistence, browserLocalPersistence, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, updateDoc, serverTimestamp, deleteField } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, onSnapshot, setDoc, updateDoc, serverTimestamp, deleteField } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 import { app, auth, db } from "./js/firebase-init.js";
 
@@ -58,6 +58,7 @@ let hasUnsavedChanges = false;
 let initialSnapshot = "{}"; // Armazena o estado inicial para comparação
 let autosaveTimer = null;
 let autosaveInFlight = null;
+let unsubscribeCloudSync = null;
 const AUTOSAVE_DELAY_MS = 900;
 
 // Chaves de UI/estado temporário que NÃO devem marcar o estado como alterado
@@ -435,6 +436,18 @@ const createFloatingNotes = () => {
     syncActiveToTextarea();
     persist();
 
+    window.addEventListener('cloud-data-updated', () => {
+        // Se o usuário estiver digitando, evita sobrescrever o rascunho aberto.
+        if (!modal.classList.contains('hidden') || saveTimer) return;
+        const previous = JSON.stringify(notesState);
+        loadState();
+        const next = JSON.stringify(notesState);
+        if (next !== previous) {
+            syncActiveToTextarea();
+            setStatus('Atualizado da nuvem');
+        }
+    });
+
     tabsContainer?.addEventListener('click', (event) => {
         const btn = event.target.closest('[data-note-id]');
         if (!btn) return;
@@ -667,6 +680,38 @@ const bootstrapBackendUI = () => {
     hideInitialLoader();
 };
 
+const applyCloudState = (uid, data, { source = 'cloud' } = {}) => {
+    const nextStore = (data && typeof data === 'object') ? data : {};
+    const nextSnapshot = getSnapshot(nextStore);
+    const hasRemoteChange = nextSnapshot !== initialSnapshot;
+
+    // Evita sobrescrever alterações locais ainda não salvas.
+    if (hasUnsavedChanges && hasRemoteChange) {
+        console.warn('⚠️ Atualização remota adiada porque existem alterações locais pendentes.');
+        return false;
+    }
+
+    memoryStore = nextStore;
+    saveUserCache(uid, memoryStore);
+    initialSnapshot = nextSnapshot;
+    hasUnsavedChanges = false;
+
+    if (!window.BackendInitialized) {
+        bootstrapBackendUI();
+    } else {
+        window.dispatchEvent(new CustomEvent('cloud-data-updated', { detail: { source } }));
+    }
+
+    return true;
+};
+
+const stopCloudSync = () => {
+    if (typeof unsubscribeCloudSync === 'function') {
+        unsubscribeCloudSync();
+        unsubscribeCloudSync = null;
+    }
+};
+
 const saveToCloud = async ({ silent = false, force = false } = {}) => {
     if (!auth.currentUser) return;
     if (!force && !hasUnsavedChanges) return;
@@ -803,30 +848,32 @@ onAuthStateChanged(auth, async (user) => {
 
         const cachedData = loadUserCache(user.uid);
         if (cachedData) {
-            memoryStore = cachedData;
-            initialSnapshot = getSnapshot(memoryStore);
-            hasUnsavedChanges = false;
-            bootstrapBackendUI();
+            applyCloudState(user.uid, cachedData, { source: 'cache' });
         }
 
         try {
-            // Baixa TUDO do Firestore de uma vez
             const docRef = doc(db, "users", user.uid);
-            const docSnap = await getDoc(docRef);
+            stopCloudSync();
 
+            unsubscribeCloudSync = onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    applyCloudState(user.uid, docSnap.data(), { source: docSnap.metadata.fromCache ? 'cache' : 'cloud' });
+                    if (!docSnap.metadata.fromCache) {
+                        console.log("✅ Dados sincronizados em tempo real.");
+                    }
+                } else {
+                    applyCloudState(user.uid, {}, { source: 'cloud' });
+                    console.log("ℹ️ Novo usuário ou sem dados.");
+                }
+            }, (error) => {
+                console.error('Erro no listener de sincronização em tempo real:', error);
+            });
+
+            // Fallback inicial para quando o listener demora em redes instáveis.
+            const docSnap = await getDoc(docRef);
             if (docSnap.exists()) {
-                memoryStore = docSnap.data();
-                console.log("✅ Dados carregados da nuvem.");
-            } else {
-                memoryStore = {};
-                console.log("ℹ️ Novo usuário ou sem dados.");
+                applyCloudState(user.uid, docSnap.data(), { source: 'cloud-fallback' });
             }
-            saveUserCache(user.uid, memoryStore);
-            
-            // Define o ponto de partida (estado limpo)
-            initialSnapshot = getSnapshot(memoryStore);
-            hasUnsavedChanges = false;
-            bootstrapBackendUI();
 
         } catch (error) {
             console.error("Erro crítico ao carregar dados:", error);
@@ -834,6 +881,7 @@ onAuthStateChanged(auth, async (user) => {
         }
     } else {
         // Não logado
+        stopCloudSync();
         window.BackendInitialized = false;
         memoryStore = {};
         clearTimeout(autosaveTimer);
