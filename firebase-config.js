@@ -193,7 +193,127 @@ const createGlobalCalculator = () => {
     fab.type = 'button';
     fab.setAttribute('aria-label', 'Abrir calculadora');
     fab.title = 'Calculadora';
-    fab.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h2m4 0h2M8 15h2m4 0h2M8 19h8"/></svg>';
+    fab.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%" aria-labelledby="calcTitle calcDesc" role="img">
+            <title id="calcTitle">Calculadora Animada</title>
+            <desc id="calcDesc">Ícone animado circular de uma calculadora minimalista com um dedo calculando continuamente.</desc>
+
+            <style>
+                /* Animações CSS embutidas no SVG */
+                .anim-ring {
+                    animation: spin 4s linear infinite;
+                    transform-origin: 100px 100px;
+                }
+                
+                .anim-finger {
+                    animation: tap 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+                }
+
+                .anim-button {
+                    animation: button-press 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+                    transform-origin: 120px 130px; /* Centro do botão ativo */
+                }
+
+                .anim-ripple {
+                    animation: ripple-expand 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+                    transform-origin: 120px 130px;
+                }
+
+                /* Keyframes */
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+
+                @keyframes tap {
+                    0%, 15% { transform: translate(35px, 35px); opacity: 0; }
+                    22% { opacity: 1; }
+                    30% { transform: translate(0px, 0px); opacity: 1; }
+                    34% { transform: translate(-1px, 2px) scale(0.96); opacity: 1; } /* Press */
+                    42% { transform: translate(0px, 0px) scale(1); opacity: 1; } /* Release */
+                    55% { transform: translate(35px, 35px); opacity: 0; }
+                    100% { transform: translate(35px, 35px); opacity: 0; }
+                }
+
+                @keyframes button-press {
+                    0%, 30% { transform: scale(1); opacity: 0.9; }
+                    34% { transform: scale(0.85); opacity: 1; } /* Afunda */
+                    42%, 100% { transform: scale(1); opacity: 0.9; }
+                }
+
+                @keyframes ripple-expand {
+                    0%, 30% { r: 0; opacity: 0; stroke-width: 4px; }
+                    32% { opacity: 0.5; }
+                    48% { r: 26; opacity: 0; stroke-width: 0px; }
+                    100% { r: 26; opacity: 0; stroke-width: 0px; }
+                }
+
+                /* Respeito à preferência do usuário de não ter animações */
+                @media (prefers-reduced-motion: reduce) {
+                    .anim-ring, .anim-finger, .anim-button, .anim-ripple {
+                        animation: none !important;
+                    }
+                    .anim-finger { opacity: 0; } /* Esconde o dedo se não houver animação */
+                }
+            </style>
+
+            <!-- 1) CÍRCULO EXTERNO (Fundo + Anel Animado) -->
+            <g id="ring-container">
+                <!-- Fundo sutil -->
+                <circle cx="100" cy="100" r="86" fill="currentColor" opacity="0.03" />
+                <circle cx="100" cy="100" r="86" stroke="currentColor" stroke-width="2" fill="none" opacity="0.1" />
+                <!-- Anel que gira -->
+                <circle class="anim-ring" cx="100" cy="100" r="86" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-dasharray="140 400" fill="none" opacity="0.9" />
+            </g>
+
+            <!-- 2) CALCULADORA MINIMALISTA -->
+            <g id="calculator">
+                <!-- Corpo -->
+                <rect x="60" y="42" width="80" height="116" rx="12" stroke="currentColor" stroke-width="4" fill="none" opacity="0.8" />
+                
+                <!-- Display -->
+                <rect x="72" y="56" width="56" height="22" rx="4" fill="currentColor" opacity="0.15" />
+                <!-- Linhas do Display (Simulando números) -->
+                <line x1="78" y1="63" x2="96" y2="63" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.4" />
+                <line x1="78" y1="71" x2="118" y2="71" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.7" />
+
+                <!-- Grade de Botões (Inativos) -->
+                <!-- Linha 1 -->
+                <rect x="72" y="88" width="16" height="12" rx="4" fill="currentColor" opacity="0.2" />
+                <rect x="92" y="88" width="16" height="12" rx="4" fill="currentColor" opacity="0.2" />
+                <rect x="112" y="88" width="16" height="12" rx="4" fill="currentColor" opacity="0.2" />
+                <!-- Linha 2 -->
+                <rect x="72" y="106" width="16" height="12" rx="4" fill="currentColor" opacity="0.2" />
+                <rect x="92" y="106" width="16" height="12" rx="4" fill="currentColor" opacity="0.2" />
+                <!-- Ícone sutil de '+' no botão lateral -->
+                <g opacity="0.4">
+                    <rect x="112" y="106" width="16" height="12" rx="4" fill="currentColor" opacity="0.5" />
+                    <path d="M117 112 h6 M120 109 v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.8"/>
+                </g>
+                <!-- Linha 3 -->
+                <rect x="72" y="124" width="16" height="12" rx="4" fill="currentColor" opacity="0.2" />
+                <rect x="92" y="124" width="16" height="12" rx="4" fill="currentColor" opacity="0.2" />
+                
+                <!-- Botão Ativo (Animado) -->
+                <rect id="button-active" class="anim-button" x="112" y="124" width="16" height="12" rx="4" fill="currentColor" opacity="0.9" />
+            </g>
+
+            <!-- 3) EFEITO RIPPLE -->
+            <circle id="ripple" class="anim-ripple" cx="120" cy="130" r="0" fill="none" stroke="currentColor" stroke-width="2" />
+
+            <!-- 4) DEDO / MÃO MINIMALISTA (Animado) -->
+            <g class="anim-finger">
+                <!-- Rotacionado para vir da diagonal inferior direita -->
+                <g transform="translate(120, 130) rotate(-40)">
+                    <!-- Restante da mão (palma/outros dedos juntos) -->
+                    <rect x="7" y="14" width="22" height="26" rx="6" fill="currentColor" opacity="0.5" />
+                    <!-- Dedo indicador em destaque -->
+                    <rect x="-6" y="-4" width="12" height="42" rx="6" fill="currentColor" opacity="0.95" />
+                </g>
+            </g>
+
+        </svg>
+    `;
 
     const modal = document.createElement('div');
     modal.id = 'calculator-modal-global';
