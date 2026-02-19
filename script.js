@@ -280,6 +280,20 @@ const init = () => {
         });
     };
 
+    const handleClientSelection = () => {
+        if (!clientSelect) return;
+        const selectedId = clientSelect.value;
+        const selectedName = clientSelect.options[clientSelect.selectedIndex]?.textContent?.trim() || '';
+
+        if (!selectedId) return;
+
+        console.log('Cliente selecionado:', { id: selectedId, name: selectedName });
+
+        if (nameIsClientCheckbox?.checked && selectedName) {
+            nameInput.value = selectedName;
+        }
+    };
+
     const updateScopeButtonsState = () => {
         document.querySelectorAll('.scope-btn').forEach((btn) => {
             const isSelected = btn.dataset.scope === selectedScope;
@@ -1148,6 +1162,12 @@ const init = () => {
     if(isFabricCheckbox) isFabricCheckbox.addEventListener('change', () => {
         fabricDetailsContainer.classList.toggle('hidden', !isFabricCheckbox.checked);
     });
+    if (clientSelect) {
+        clientSelect.removeEventListener('change', handleClientSelection);
+        clientSelect.removeEventListener('dblclick', handleClientSelection);
+        clientSelect.addEventListener('change', handleClientSelection);
+        clientSelect.addEventListener('dblclick', handleClientSelection);
+    }
 
     // Filter Listeners
     const filtersContainer = document.getElementById('syt-filters-container');
