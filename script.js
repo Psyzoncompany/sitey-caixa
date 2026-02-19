@@ -45,6 +45,9 @@ const init = () => {
     if (!modal) return;
     const form = document.getElementById('form');
     const nameInput = document.getElementById('name');
+    const nameFieldContainer = document.getElementById('name-field-container');
+    const nameInputWrapper = document.getElementById('name-input-wrapper');
+    const nameIsClientCheckbox = document.getElementById('name-is-client-checkbox');
     const descriptionInput = document.getElementById('description');
     const amountInput = document.getElementById('amount');
     const dateInput = document.getElementById('date');
@@ -53,7 +56,7 @@ const init = () => {
     const quantityContainer = document.getElementById('quantity-field-container');
     const quantityInput = document.getElementById('transaction-quantity');
     const scopeContainer = document.getElementById('scope-container');
-    const scopeButtons = document.querySelectorAll('.scope-btn');
+    const scopeButtonsContainer = document.getElementById('scope-container');
     const modalTitle = modal.querySelector('h2');
     const addTransactionBtn = document.getElementById('add-transaction-btn');
     const cancelBtn = document.getElementById('cancel-btn');
@@ -115,22 +118,29 @@ const init = () => {
     const checkDeadlinesAndNotify = () => {
         productionOrders = JSON.parse(localStorage.getItem('production_orders')) || [];
         clients = JSON.parse(localStorage.getItem('clients')) || [];
+        const checklistItemsFromData = (typeof window !== 'undefined' && window.PROCESS_CHECKLIST_ITEMS && typeof window.PROCESS_CHECKLIST_ITEMS === 'object')
+            ? window.PROCESS_CHECKLIST_ITEMS
+            : {};
+
+        if (!Array.isArray(productionOrders) || productionOrders.length === 0) return;
+
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const todayString = today.toISOString().split('T')[0];
-        
+
         productionOrders.forEach(order => {
             if (order.status !== 'done' && order.checklist) {
-                for (const key in order.checklist) {
-                    const task = order.checklist[key];
-                    if (task.deadline === todayString && !task.completed) {
-                        const client = clients.find(c => c.id === order.clientId);
-                        const clientName = client ? client.name : 'Cliente';
-                        const taskName = checklistItems[key] || 'Tarefa';
-                        const message = `Lembrete: A etapa "${taskName}" do pedido de ${clientName} vence HOJE!`;
-                        showNotification(message, 'warning');
-                    }
-                }
+                const checklistEntries = Object.entries(order.checklist || {});
+                if (checklistEntries.length === 0) return;
+
+                checklistEntries.forEach(([key, task]) => {
+                    if (!task || task.deadline !== todayString || task.completed) return;
+                    const client = clients.find(c => c.id === order.clientId);
+                    const clientName = client ? client.name : 'Cliente';
+                    const taskName = checklistItemsFromData[key] || key || 'Tarefa';
+                    const message = `Lembrete: A etapa "${taskName}" do pedido de ${clientName} vence HOJE!`;
+                    showNotification(message, 'warning');
+                });
             }
         });
     };
@@ -201,6 +211,18 @@ const init = () => {
         goToSlide(0);
     };
 
+
+    const toggleNameFieldByClient = () => {
+        if (!nameInputWrapper || !nameInput || !nameIsClientCheckbox) return;
+        const shouldHideNameField = nameIsClientCheckbox.checked;
+        nameInputWrapper.classList.toggle('hidden', shouldHideNameField);
+        nameInput.disabled = shouldHideNameField;
+        nameInput.required = false;
+        if (shouldHideNameField) {
+            nameInput.value = '';
+        }
+    };
+
     const toggleQuantityField = () => {
         const isProductSale = typeInput.value === 'income' && categoryInput.value === 'Venda de Produto';
         quantityContainer.classList.toggle('hidden', !isProductSale);
@@ -221,6 +243,7 @@ const init = () => {
     const toggleScopeField = () => {
         const isExpense = typeInput.value === 'expense';
         scopeContainer.classList.toggle('hidden', !isExpense);
+        updateScopeButtonsState();
         if (createBillReminderContainer) {
             createBillReminderContainer.classList.toggle('hidden', !isExpense);
             if (!isExpense && createBillReminderCheckbox) {
@@ -247,13 +270,28 @@ const init = () => {
         });
     };
 
-    scopeButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            scopeButtons.forEach(btn => btn.classList.replace('border-cyan-400', 'border-transparent'));
-            button.classList.replace('border-transparent', 'border-cyan-400');
-            selectedScope = button.dataset.scope;
+    const updateScopeButtonsState = () => {
+        document.querySelectorAll('.scope-btn').forEach((btn) => {
+            const isSelected = btn.dataset.scope === selectedScope;
+            btn.classList.toggle('is-selected', isSelected);
+            btn.classList.toggle('border-cyan-400', isSelected);
+            btn.classList.toggle('border-transparent', !isSelected);
+            btn.setAttribute('aria-pressed', String(isSelected));
         });
-    });
+    };
+
+    if (scopeButtonsContainer) {
+        scopeButtonsContainer.addEventListener('click', (event) => {
+            const button = event.target.closest('.scope-btn');
+            if (!button) return;
+            selectedScope = button.dataset.scope || 'business';
+            updateScopeButtonsState();
+        });
+    }
+
+
+    toggleNameFieldByClient();
+    updateScopeButtonsState();
 
     const handleFormSubmit = (e) => {
         e.preventDefault();
@@ -397,6 +435,14 @@ const init = () => {
         return true;
     };
 
+    if (nameFieldContainer) {
+        nameFieldContainer.addEventListener('change', (event) => {
+            if (event.target && event.target.id === 'name-is-client-checkbox') {
+                toggleNameFieldByClient();
+            }
+        });
+    }
+
     if (nextStepBtn) nextStepBtn.addEventListener('click', () => {
         if (validateStep(currentStep)) { currentStep++; updateWizardUI(); }
     });
@@ -417,10 +463,9 @@ const init = () => {
         clientSelectionContainer.classList.add('hidden');
         if (createBillReminderCheckbox) createBillReminderCheckbox.checked = false;
         selectedScope = 'business';
-        scopeButtons.forEach(btn => btn.classList.replace('border-cyan-400', 'border-transparent'));
-        if (document.querySelector('.scope-btn[data-scope="business"]')) {
-            document.querySelector('.scope-btn[data-scope="business"]').classList.replace('border-transparent', 'border-cyan-400');
-        }
+        updateScopeButtonsState();
+        if (nameIsClientCheckbox) nameIsClientCheckbox.checked = false;
+        toggleNameFieldByClient();
         modalTitle.textContent = 'Novo Lançamento';
         submitBtn.textContent = 'Adicionar';
         currentStep = 1;
@@ -436,6 +481,8 @@ const init = () => {
         form.reset();
         if (createBillReminderCheckbox) createBillReminderCheckbox.checked = false;
         nameInput.value = transaction.name || '';
+        if (nameIsClientCheckbox) nameIsClientCheckbox.checked = !transaction.name;
+        toggleNameFieldByClient();
         descriptionInput.value = transaction.description;
         amountInput.value = Math.abs(transaction.amount);
         dateInput.value = transaction.date;
@@ -458,10 +505,7 @@ const init = () => {
         toggleScopeField();
         if (transaction.type === 'expense') {
             selectedScope = transaction.scope || 'business';
-            scopeButtons.forEach(btn => btn.classList.replace('border-cyan-400', 'border-transparent'));
-            if(document.querySelector(`.scope-btn[data-scope="${selectedScope}"]`)){
-                document.querySelector(`.scope-btn[data-scope="${selectedScope}"]`).classList.replace('border-transparent', 'border-cyan-400');
-            }
+            updateScopeButtonsState();
         }
 
         populateClientSelect();
@@ -486,6 +530,8 @@ const init = () => {
     const closeModal = () => {
         editingId = null;
         form.reset();
+        if (nameIsClientCheckbox) nameIsClientCheckbox.checked = false;
+        toggleNameFieldByClient();
         modal.classList.add('hidden');
     };
 
@@ -589,9 +635,7 @@ const init = () => {
             if (action === 'edit') {
                 openEditModal(id);
             } else if (action === 'delete') {
-                if (confirm('Tem certeza que deseja excluir esta transação? A ação não pode ser desfeita.')) {
-                    removeTransaction(id);
-                }
+                removeTransaction(id);
             }
             return;
         }
@@ -1023,7 +1067,13 @@ const init = () => {
 
     // --- INICIALIZAÇÃO ---
     updateUI();
-    setTimeout(checkDeadlinesAndNotify, 2000);
+    setTimeout(() => {
+        try {
+            checkDeadlinesAndNotify();
+        } catch (error) {
+            console.error('Falha ao verificar lembretes de prazo:', error);
+        }
+    }, 2000);
     setupCarousel('budget-carousel', 'budget-carousel-dots');
     setupCarousel('bills-carousel', 'bills-carousel-dots');
     setupCarousel('charts-carousel', 'charts-carousel-dots');
