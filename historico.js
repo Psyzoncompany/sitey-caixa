@@ -90,6 +90,23 @@ const init = () => {
     categoryInput.innerHTML = opts.map(o => `<option value="${o}">${o}</option>`).join('');
   };
 
+  const syncPersonalScopeCategory = () => {
+    if (typeInput.value !== 'expense') return;
+    if (selectedScope !== 'personal') return;
+    const personalCategory = expenseCategories.find(cat => cat === 'Despesas Pessoais') || expenseCategories.find(cat => /pesso/i.test(cat));
+    if (personalCategory && categoryInput.value !== personalCategory) {
+      categoryInput.value = personalCategory;
+    }
+  };
+
+  const updateScopeButtonState = (activeScope) => {
+    scopeButtons.forEach(btn => {
+      const isActive = btn.dataset.scope === activeScope;
+      btn.classList.toggle('scope-btn-active', isActive);
+      btn.classList.replace(isActive ? 'border-transparent' : 'border-cyan-400', isActive ? 'border-cyan-400' : 'border-transparent');
+    });
+  };
+
   const populateClientSelect = () => {
     clients = JSON.parse(localStorage.getItem('clients')) || [];
     clientSelect.innerHTML = '<option value="">Selecione...</option>';
@@ -203,11 +220,13 @@ const init = () => {
         <td class="p-3 align-top font-semibold ${colorClass}">${formatCurrency(Math.abs(tx.amount))}</td>
         <td class="p-3 align-top">${scopeText}</td>
         <td class="p-3 align-top text-gray-400">${tx.category || ''}</td>
-        <td class="p-3 align-top text-gray-400">${formatDate(tx.date)}</td>
-        <td class="p-3 align-top">
-          <div class="flex items-center gap-2">
-            <button class="text-gray-500 hover:text-cyan-400" title="Editar" data-edit="${tx.id}">✎</button>
-            <button class="text-gray-500 hover:text-red-400" title="Excluir" data-delete="${tx.id}">🗑</button>
+        <td class="p-3 align-top text-gray-400">
+          <div class="transaction-date-actions">
+            <span>${formatDate(tx.date)}</span>
+            <div class="date-action-buttons">
+              <button class="text-gray-500 hover:text-cyan-400" title="Editar" data-edit="${tx.id}">✎</button>
+              <button class="text-gray-500 hover:text-red-400" title="Excluir" data-delete="${tx.id}">🗑</button>
+            </div>
           </div>
         </td>
       `;
@@ -284,8 +303,8 @@ const init = () => {
     populateClientSelect();
     clientSelectionContainer.classList.add('hidden');
     selectedScope = 'business';
-    scopeButtons.forEach(btn => btn.classList.replace('border-cyan-400','border-transparent'));
-    if (document.querySelector('.scope-btn[data-scope="business"]')) document.querySelector('.scope-btn[data-scope="business"]').classList.replace('border-transparent','border-cyan-400');
+    updateScopeButtonState(selectedScope);
+    syncPersonalScopeCategory();
     modalTitle.textContent = 'Novo Lançamento';
     submitBtn.textContent = 'Adicionar';
 
@@ -323,9 +342,8 @@ const init = () => {
     toggleScopeField();
     if (tx.type === 'expense') {
       selectedScope = tx.scope || 'business';
-      scopeButtons.forEach(btn => btn.classList.replace('border-cyan-400','border-transparent'));
-      const el = document.querySelector(`.scope-btn[data-scope="${selectedScope}"]`);
-      if (el) el.classList.replace('border-transparent','border-cyan-400');
+      updateScopeButtonState(selectedScope);
+      syncPersonalScopeCategory();
     }
     populateClientSelect();
     if (tx.clientId) { linkClientCheckbox.checked = true; clientSelectionContainer.classList.remove('hidden'); clientSelect.value = tx.clientId; }
@@ -388,14 +406,14 @@ const init = () => {
   if (addTransactionBtn) addTransactionBtn.addEventListener('click', openAddModal);
   if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
   if (form) form.addEventListener('submit', handleSaveTransaction);
-  if (typeInput) typeInput.addEventListener('change', () => { updateCategoryOptions(); toggleQuantityField(); toggleScopeField(); toggleFabricDetailsField(); });
+  if (typeInput) typeInput.addEventListener('change', () => { updateCategoryOptions(); toggleQuantityField(); toggleScopeField(); toggleFabricDetailsField(); syncPersonalScopeCategory(); });
   if (categoryInput) categoryInput.addEventListener('change', () => { toggleQuantityField(); toggleFabricDetailsField(); });
   if (linkClientCheckbox) linkClientCheckbox.addEventListener('change', () => clientSelectionContainer.classList.toggle('hidden', !linkClientCheckbox.checked));
   if (isFabricCheckbox) isFabricCheckbox.addEventListener('change', () => fabricDetailsContainer.classList.toggle('hidden', !isFabricCheckbox.checked));
   scopeButtons.forEach(btn => btn.addEventListener('click', () => {
-    scopeButtons.forEach(b => b.classList.replace('border-cyan-400','border-transparent'));
-    btn.classList.replace('border-transparent','border-cyan-400');
     selectedScope = btn.dataset.scope;
+    updateScopeButtonState(selectedScope);
+    syncPersonalScopeCategory();
   }));
 
   // initialize month selector to previous month
@@ -555,6 +573,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const options = typeInput.value === 'income' ? incomeCategories : expenseCategories;
         categoryInput.innerHTML = options.map(cat => `<option value="${cat}" class="bg-gray-800">${cat}</option>`).join('');
     };
+
+    const syncPersonalScopeCategory = () => {
+        if (typeInput.value !== 'expense') return;
+        if (selectedScope !== 'personal') return;
+        const personalCategory = expenseCategories.find(cat => cat === 'Despesas Pessoais') || expenseCategories.find(cat => /pesso/i.test(cat));
+        if (personalCategory && categoryInput.value !== personalCategory) {
+            categoryInput.value = personalCategory;
+        }
+    };
+
+    const updateScopeButtonState = (activeScope) => {
+        scopeButtons.forEach(btn => {
+            const isActive = btn.dataset.scope === activeScope;
+            btn.classList.toggle('scope-btn-active', isActive);
+            btn.classList.replace(isActive ? 'border-transparent' : 'border-cyan-400', isActive ? 'border-cyan-400' : 'border-transparent');
+        });
+    };
     
     const populateClientSelect = () => {
         clients = JSON.parse(localStorage.getItem('clients')) || [];
@@ -570,9 +605,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     scopeButtons.forEach(button => {
         button.addEventListener('click', () => {
-            scopeButtons.forEach(btn => btn.classList.replace('border-cyan-400', 'border-transparent'));
-            button.classList.replace('border-transparent', 'border-cyan-400');
             selectedScope = button.dataset.scope;
+            updateScopeButtonState(selectedScope);
+            syncPersonalScopeCategory();
         });
     });
 
@@ -650,10 +685,8 @@ document.addEventListener('DOMContentLoaded', () => {
         populateClientSelect();
         clientSelectionContainer.classList.add('hidden');
         selectedScope = 'business';
-        scopeButtons.forEach(btn => btn.classList.replace('border-cyan-400', 'border-transparent'));
-        if (document.querySelector('.scope-btn[data-scope="business"]')) {
-            document.querySelector('.scope-btn[data-scope="business"]').classList.replace('border-transparent', 'border-cyan-400');
-        }
+        updateScopeButtonState(selectedScope);
+        syncPersonalScopeCategory();
         modalTitle.textContent = 'Novo Lançamento';
         submitBtn.textContent = 'Adicionar';
         modal.classList.remove('hidden');
@@ -688,10 +721,8 @@ document.addEventListener('DOMContentLoaded', () => {
         toggleScopeField();
         if (transaction.type === 'expense') {
             selectedScope = transaction.scope || 'business';
-            scopeButtons.forEach(btn => btn.classList.replace('border-cyan-400', 'border-transparent'));
-            if(document.querySelector(`.scope-btn[data-scope="${selectedScope}"]`)){
-                document.querySelector(`.scope-btn[data-scope="${selectedScope}"]`).classList.replace('border-transparent', 'border-cyan-400');
-            }
+            updateScopeButtonState(selectedScope);
+            syncPersonalScopeCategory();
         }
 
         populateClientSelect();
@@ -752,8 +783,15 @@ document.addEventListener('DOMContentLoaded', () => {
             <td class="p-3 align-top font-semibold ${colorClass}">${formatCurrency(Math.abs(amount))}</td>
             <td class="p-3 align-top">${scopeText}</td>
             <td class="p-3 align-top text-gray-400">${category}</td>
-            <td class="p-3 align-top text-gray-400">${formatDate(date)}</td>
-            <td class="p-3 align-top"><div class="flex items-center gap-2"><button onclick="openEditModal(${id})" class="text-gray-500 hover:text-cyan-400" title="Editar"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg></button><button onclick="removeTransaction(${id})" class="text-gray-500 hover:text-red-400" title="Excluir"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg></button></div></td>
+            <td class="p-3 align-top text-gray-400">
+              <div class="transaction-date-actions">
+                <span>${formatDate(date)}</span>
+                <div class="date-action-buttons">
+                  <button onclick="openEditModal(${id})" class="text-gray-500 hover:text-cyan-400" title="Editar"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z"></path></svg></button>
+                  <button onclick="removeTransaction(${id})" class="text-gray-500 hover:text-red-400" title="Excluir"><svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg></button>
+                </div>
+              </div>
+            </td>
         `;
         transactionListEl.appendChild(item);
     };
@@ -920,7 +958,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if(addTransactionBtn) addTransactionBtn.addEventListener('click', openAddModal);
     if(cancelBtn) cancelBtn.addEventListener('click', closeModal);
     if(form) form.addEventListener('submit', handleFormSubmit);
-    if(typeInput) typeInput.addEventListener('change', () => { updateCategoryOptions(); toggleQuantityField(); toggleScopeField(); toggleFabricDetailsField(); });
+    if(typeInput) typeInput.addEventListener('change', () => { updateCategoryOptions(); toggleQuantityField(); toggleScopeField(); toggleFabricDetailsField(); syncPersonalScopeCategory(); });
     if(categoryInput) categoryInput.addEventListener('change', () => { toggleQuantityField(); toggleFabricDetailsField(); });
     if(linkClientCheckbox) linkClientCheckbox.addEventListener('change', () => {
         clientSelectionContainer.classList.toggle('hidden', !linkClientCheckbox.checked);

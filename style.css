@@ -4472,3 +4472,44 @@ body.has-manual-save-fab .due-soon-fab {
     padding-bottom: calc(var(--bottom-nav-safe-gap) + 76px) !important;
   }
 }
+
+
+.scope-btn {
+  transition: transform .2s ease, background-color .25s ease, border-color .25s ease, box-shadow .25s ease, color .25s ease;
+}
+
+.scope-btn:hover {
+  transform: translateY(-1px);
+}
+
+.scope-btn.scope-btn-active {
+  background: rgba(34, 197, 94, 0.2) !important;
+  border-color: #22c55e !important;
+  color: #86efac;
+  box-shadow: 0 0 0 1px rgba(34,197,94,.25), 0 8px 20px rgba(34,197,94,.2);
+  transform: scale(1.02);
+}
+
+@keyframes scopeButtonPop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.06); }
+  100% { transform: scale(1.02); }
+}
+
+.scope-btn.scope-btn-active {
+  animation: scopeButtonPop .22s ease;
+}
+
+.transaction-date-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: 170px;
+}
+
+.transaction-date-actions .date-action-buttons {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
