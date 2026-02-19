@@ -86,6 +86,10 @@ const init = () => {
     let editingId = null; 
     let selectedScope = 'business';
     let currentStep = 1;
+    let currentLaunchId = null;
+    let launchActionsBackdropEl = null;
+    let launchActionsMenuEl = null;
+    const DESKTOP_MEDIA_QUERY = window.matchMedia('(min-width: 900px)');
 
     let transactionFilters = {
         period: 'this_month', // 'today', 'yesterday', '7days', '30days', 'this_month', 'last_month'
@@ -569,6 +573,7 @@ const init = () => {
         const item = document.createElement('article');
         item.className = 'transaction-card launch-row';
         item.dataset.id = id;
+        item.dataset.launchId = id;
 
         const safeName = (name || '--').trim() || '--';
         const safeDescription = (description || '--').trim() || '--';
@@ -621,6 +626,108 @@ const init = () => {
         transactionListEl.appendChild(item);
     };
 
+    const closeLaunchActionsMenu = () => {
+        if (!launchActionsMenuEl || !launchActionsBackdropEl) return;
+        launchActionsMenuEl.hidden = true;
+        launchActionsBackdropEl.hidden = true;
+        currentLaunchId = null;
+    };
+
+    const openLaunchActionsMenu = (card, launchId) => {
+        if (!launchActionsMenuEl || !launchActionsBackdropEl) return;
+        if (!launchId || !DESKTOP_MEDIA_QUERY.matches) return;
+
+        currentLaunchId = parseInt(launchId, 10);
+        if (Number.isNaN(currentLaunchId)) {
+            currentLaunchId = null;
+            return;
+        }
+
+        const rect = card.getBoundingClientRect();
+        const safePadding = 16;
+
+        launchActionsMenuEl.hidden = false;
+        launchActionsBackdropEl.hidden = false;
+
+        const menuRect = launchActionsMenuEl.getBoundingClientRect();
+        const maxLeft = window.innerWidth - menuRect.width - safePadding;
+        const maxTop = window.innerHeight - menuRect.height - safePadding;
+
+        let left = rect.left + rect.width - menuRect.width;
+        let top = rect.top + 12;
+
+        if (left < safePadding) left = safePadding;
+        if (left > maxLeft) left = maxLeft;
+        if (top < safePadding) top = safePadding;
+        if (top > maxTop) top = maxTop;
+
+        launchActionsMenuEl.style.left = `${left}px`;
+        launchActionsMenuEl.style.top = `${top}px`;
+    };
+
+    const initDesktopLaunchCardActions = () => {
+        if (!transactionListEl || transactionListEl.dataset.desktopActionsInit === 'true') return;
+
+        const existingBackdrop = document.getElementById('launchActionsBackdrop');
+        const existingMenu = document.getElementById('launchActionsMenu');
+
+        launchActionsBackdropEl = existingBackdrop || document.createElement('div');
+        launchActionsMenuEl = existingMenu || document.createElement('div');
+
+        if (!existingBackdrop) {
+            launchActionsBackdropEl.id = 'launchActionsBackdrop';
+            launchActionsBackdropEl.className = 'actions-backdrop';
+            launchActionsBackdropEl.hidden = true;
+            document.body.appendChild(launchActionsBackdropEl);
+        }
+
+        if (!existingMenu) {
+            launchActionsMenuEl.id = 'launchActionsMenu';
+            launchActionsMenuEl.className = 'actions-menu';
+            launchActionsMenuEl.hidden = true;
+            launchActionsMenuEl.setAttribute('role', 'dialog');
+            launchActionsMenuEl.setAttribute('aria-modal', 'true');
+            launchActionsMenuEl.innerHTML = `
+                <button type="button" class="actions-btn actions-edit" data-action="edit">Editar</button>
+                <button type="button" class="actions-btn actions-delete" data-action="delete">Deletar</button>
+            `;
+            document.body.appendChild(launchActionsMenuEl);
+        }
+
+        launchActionsBackdropEl.addEventListener('click', closeLaunchActionsMenu);
+
+        launchActionsMenuEl.addEventListener('click', (e) => {
+            const actionBtn = e.target.closest('[data-action]');
+            if (!actionBtn || !currentLaunchId) return;
+
+            const action = actionBtn.dataset.action;
+            if (action === 'edit') {
+                openEditModal(currentLaunchId);
+                closeLaunchActionsMenu();
+                return;
+            }
+
+            if (action === 'delete') {
+                removeTransaction(currentLaunchId);
+                closeLaunchActionsMenu();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeLaunchActionsMenu();
+        });
+
+        DESKTOP_MEDIA_QUERY.addEventListener('change', (event) => {
+            if (!event.matches) closeLaunchActionsMenu();
+        });
+
+        window.addEventListener('resize', () => {
+            if (!DESKTOP_MEDIA_QUERY.matches) closeLaunchActionsMenu();
+        });
+
+        transactionListEl.dataset.desktopActionsInit = 'true';
+    };
+
     // Event Delegation for Transaction List (Menu Toggle, Edit, Delete)
     transactionListEl.addEventListener('click', (e) => {
         const card = e.target.closest('.transaction-card');
@@ -637,6 +744,15 @@ const init = () => {
             } else if (action === 'delete') {
                 removeTransaction(id);
             }
+            return;
+        }
+
+        const clickedInteractiveElement = e.target.closest('button, a, input, select, textarea');
+        if (clickedInteractiveElement) return;
+
+        if (card && DESKTOP_MEDIA_QUERY.matches) {
+            const id = card.dataset.launchId || card.dataset.id;
+            openLaunchActionsMenu(card, id);
             return;
         }
 
@@ -659,6 +775,8 @@ const init = () => {
             }
         }
     });
+
+    initDesktopLaunchCardActions();
 
     const updateDeadlinesCard = () => {
         productionOrders = JSON.parse(localStorage.getItem('production_orders')) || [];

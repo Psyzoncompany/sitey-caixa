@@ -4534,4 +4534,65 @@ body.has-manual-save-fab .due-soon-fab {
     position: relative;
     z-index: 2;
   }
+
+  #transaction-list .transaction-card {
+    cursor: pointer;
+  }
+
+  #transaction-list .transaction-card .data-action {
+    display: none !important;
+  }
+}
+
+.actions-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: rgba(2, 6, 23, 0.35);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+.actions-menu {
+  position: fixed;
+  z-index: 9999;
+  min-width: 168px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: linear-gradient(160deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.88));
+  box-shadow: 0 20px 40px rgba(2, 6, 23, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.actions-btn {
+  min-height: 42px;
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  background: rgba(15, 23, 42, 0.65);
+  color: #dbeafe;
+  font-size: 0.92rem;
+  font-weight: 700;
+  transition: all .2s ease;
+}
+
+.actions-btn:hover {
+  border-color: rgba(56, 189, 248, 0.5);
+  color: #67e8f9;
+}
+
+.actions-btn.actions-delete {
+  color: #fecaca;
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+.actions-btn.actions-delete:hover {
+  background: rgba(127, 29, 29, 0.35);
+  border-color: rgba(248, 113, 113, 0.65);
+  color: #fda4af;
 }
