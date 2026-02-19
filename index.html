@@ -422,7 +422,18 @@
 
                   <!-- Step 2: Classification -->
                   <div class="step-group hidden md:contents" data-step="2">
-                    <div class="md:col-span-2"><label for="name" class="block mb-2 text-sm font-medium">Nome (Cliente/Fornecedor)</label><input type="text" id="name" class="w-full p-3 rounded-md bg-white/10 border border-white/20" placeholder="Ex: Cliente Vini"></div>
+                    <div id="name-field-container" class="md:col-span-2">
+                      <div class="name-field-label-row">
+                        <label for="name" class="text-sm font-medium">Nome (Cliente/Fornecedor)</label>
+                        <label for="name-is-client-checkbox" class="name-field-client-toggle">
+                          <input type="checkbox" id="name-is-client-checkbox" class="w-4 h-4 rounded text-cyan-500 bg-gray-700 border-gray-600">
+                          <span>Cliente</span>
+                        </label>
+                      </div>
+                      <div id="name-input-wrapper" class="name-input-wrapper mt-2">
+                        <input type="text" id="name" class="w-full p-3 rounded-md bg-white/10 border border-white/20" placeholder="Ex: Cliente Vini">
+                      </div>
+                    </div>
                     <div><label for="type" class="block mb-2 text-sm font-medium">Tipo</label><select id="type" class="w-full p-3 rounded-md bg-white/10 border border-white/20"><option value="income">Receita</option><option value="expense">Despesa</option></select></div>
                     <div><label for="category" class="block mb-2 text-sm font-medium">Categoria</label><select id="category" class="w-full p-3 rounded-md bg-white/10 border border-white/20"></select></div>
                     <div id="scope-container" class="hidden md:col-span-2"><label class="block mb-2 text-sm font-medium">Escopo da Despesa</label><div class="grid grid-cols-2 gap-2"><button type="button" data-scope="business" class="scope-btn p-3 rounded-md border-2 bg-white/10">Empresarial</button><button type="button" data-scope="personal" class="scope-btn p-3 rounded-md border-2 bg-white/10">Pessoal</button></div></div>
