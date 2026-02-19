@@ -33,8 +33,21 @@
 
       <article class="glass-card p-5 border border-cyan-500/20">
         <div class="flex items-center justify-between gap-3 mb-2">
-          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.15</h2>
+          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.17</h2>
           <span class="text-xs text-gray-400">Atual</span>
+        </div>
+        <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
+          <li>Importação automática adicionada para lançar em lote os registros financeiros de fevereiro sem sobrescrever dados existentes.</li>
+          <li>Cada lançamento importado agora garante vínculo com cliente; quando necessário, o cliente é criado automaticamente no cadastro local.</li>
+          <li>Mecanismo anti-duplicidade aplicado com verificação por impressão digital do lançamento e marcação de execução única da importação.</li>
+          <li>Saldos permanecem recalculados pela lógica existente após a inserção, mantendo persistência em localStorage.</li>
+        </ul>
+      </article>
+
+      <article class="glass-card p-5 border border-cyan-500/20">
+        <div class="flex items-center justify-between gap-3 mb-2">
+          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.16</h2>
+          <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
           <li>Sincronização do bloco de notas evoluída para tempo real com listener do Firestore, refletindo mudanças entre dispositivos sem precisar recarregar.</li>

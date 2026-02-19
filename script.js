@@ -90,6 +90,134 @@ const init = () => {
     const formatCurrency = (amount) => amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     const formatDate = (dateString) => new Date(dateString + 'T03:00:00').toLocaleDateString('pt-BR');
 
+    const runFinancialLaunchImport = () => {
+        const IMPORT_KEY = 'syt_financial_import_2026_02_rodrigo_v1';
+        if (localStorage.getItem(IMPORT_KEY) === 'done') return;
+
+        const normalize = (value) => (value || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+        const ensureClient = (clientName) => {
+            const safeName = (clientName || '').trim();
+            if (!safeName) return null;
+            const existingClient = clients.find(c => normalize(c.name) === normalize(safeName));
+            if (existingClient) return existingClient.id;
+
+            const newClient = {
+                id: Date.now() + Math.floor(Math.random() * 100000),
+                name: safeName,
+                gender: 'not_informed',
+                phone: '',
+                email: ''
+            };
+            clients.push(newClient);
+            return newClient.id;
+        };
+
+        const year = new Date().getFullYear();
+        const toDate = (day, month = 2) => `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const transactionsToImport = [
+            { date: toDate(1), type: 'income', amount: 140.64, category: 'Saldo Inicial', description: 'Saldo Inicial', clientName: 'Rodrigo (Dono)', scope: null },
+            { date: toDate(1), type: 'expense', amount: -56.28, category: 'Pessoal', description: 'Gasolina', clientName: 'Rodrigo (Dono)', scope: 'personal' },
+            { date: toDate(1), type: 'expense', amount: -22.00, category: 'Pessoal', description: 'Lanche', clientName: 'Rodrigo (Dono)', scope: 'personal' },
+            { date: toDate(2), type: 'income', amount: 1482.50, category: 'Venda', description: 'Arthur (Terceiro B)', clientName: 'Arthur', scope: null },
+            { date: toDate(2), type: 'income', amount: 65.00, category: 'Venda', description: 'Matheus (Presencial)', clientName: 'Matheus', scope: null },
+            { date: toDate(2), type: 'expense', amount: -26.90, category: 'Pessoal', description: 'Assinatura YouTube', clientName: 'Rodrigo (Dono)', scope: 'personal' },
+            { date: toDate(2), type: 'expense', amount: -60.83, category: 'Pessoal', description: 'Compra Jogo Hytale', clientName: 'Rodrigo (Dono)', scope: 'personal' },
+            { date: toDate(2), type: 'expense', amount: -20.00, category: 'Empresarial', description: 'Marmita', clientName: 'Lauro', scope: 'business' },
+            { date: toDate(2), type: 'expense', amount: -650.00, category: 'Empresarial', description: 'Aluguel', clientName: 'Erisvaldo', scope: 'business' },
+            { date: toDate(2), type: 'expense', amount: -269.39, category: 'Empresarial', description: 'Malhas PV Preto 5,7kg', clientName: 'Malhas Atual Rica', scope: 'business' },
+            { date: toDate(2), type: 'expense', amount: -100.00, category: 'Empresarial', description: 'Gola e Punho', clientName: 'Malhas Atual', scope: 'business' },
+            { date: toDate(2), type: 'expense', amount: -30.00, category: 'Pessoal', description: 'Lanche', clientName: 'Rodrigo (Dono)', scope: 'personal' },
+            { date: toDate(3), type: 'expense', amount: -334.52, category: 'Empresarial', description: 'Malhas 10,5kg', clientName: 'Malhas Costa Rica', scope: 'business' },
+            { date: toDate(3), type: 'expense', amount: -22.00, category: 'Pessoal', description: 'Açaí/Lanche', clientName: 'Rodrigo (Dono)', scope: 'personal' },
+            { date: toDate(3), type: 'expense', amount: -70.00, category: 'Empresarial', description: 'Frete Malhas', clientName: 'Marcelo Taxista', scope: 'business' },
+            { date: toDate(3), type: 'expense', amount: -30.00, category: 'Pessoal', description: 'Chá Helen Prima', clientName: 'Rodrigo (Dono)', scope: 'personal' },
+            { date: toDate(3), type: 'expense', amount: -10.00, category: 'Pessoal', description: 'Acarajé', clientName: 'Rodrigo (Dono)', scope: 'personal' },
+            { date: toDate(3), type: 'expense', amount: -10.00, category: 'Pessoal', description: 'Padaria Mauricelio', clientName: 'Rodrigo (Dono)', scope: 'personal' },
+            { date: toDate(3), type: 'expense', amount: -51.00, category: 'Pessoal', description: 'Cartão Inter', clientName: 'Rodrigo (Dono)', scope: 'personal' },
+            { date: toDate(3), type: 'expense', amount: -7.00, category: 'Pessoal', description: 'Padaria Glecia Ramos', clientName: 'Rodrigo (Dono)', scope: 'personal' },
+            { date: toDate(3), type: 'income', amount: 240.00, category: 'Lucro', description: 'Pagamento Dívida', clientName: 'Leandra', scope: null },
+            { date: toDate(5), type: 'income', amount: 80.00, category: 'Venda', description: 'Adriana Vizinha', clientName: 'Adriana', scope: null },
+            { date: toDate(5), type: 'expense', amount: -174.00, category: 'Dívida', description: 'Palmeira 1/4', clientName: 'Palmeira', scope: 'business' },
+            { date: toDate(5), type: 'expense', amount: -30.00, category: 'Investimento', description: 'Zanones Malhas', clientName: 'Zanones', scope: 'business' },
+            { date: toDate(6), type: 'expense', amount: -15.20, category: 'Pessoal', description: 'Adelaide', clientName: 'Rodrigo (Dono)', scope: 'personal' },
+            { date: toDate(7), type: 'expense', amount: -30.00, category: 'Pessoal', description: 'Películas', clientName: 'Rodrigo (Dono)', scope: 'personal' },
+            { date: toDate(7), type: 'income', amount: 225.20, category: 'Lucro', description: 'Pagamento Dívida', clientName: 'Ricardo', scope: null },
+            { date: toDate(7), type: 'expense', amount: -13.75, category: 'Pessoal', description: 'Mercado', clientName: 'Rodrigo (Dono)', scope: 'personal' },
+            { date: toDate(7), type: 'expense', amount: -12.80, category: 'Pessoal', description: 'Padaria/Lanchonete', clientName: 'Rodrigo (Dono)', scope: 'personal' },
+            { date: toDate(8), type: 'expense', amount: -30.05, category: 'Pessoal', description: 'Gasolina Posto Potiragua', clientName: 'Rodrigo (Dono)', scope: 'personal' },
+            { date: toDate(9), type: 'expense', amount: -12.00, category: 'Empresarial', description: 'Água Rás', clientName: 'Água Rás', scope: 'business' },
+            { date: toDate(10), type: 'expense', amount: -10.00, category: 'Pessoal', description: 'Padaria', clientName: 'Rodrigo (Dono)', scope: 'personal' },
+            { date: toDate(11), type: 'expense', amount: -35.00, category: 'Pessoal', description: 'Lava Jato', clientName: 'Rodrigo (Dono)', scope: 'personal' },
+            { date: toDate(11), type: 'expense', amount: -20.00, category: 'Pessoal', description: 'Xbox Ultimate', clientName: 'Rodrigo (Dono)', scope: 'personal' },
+            { date: toDate(11), type: 'expense', amount: -65.00, category: 'Pessoal', description: 'Gasolina', clientName: 'Rodrigo (Dono)', scope: 'personal' },
+            { date: toDate(12), type: 'income', amount: 80.00, category: 'Venda', description: 'Adriana Vizinha', clientName: 'Adriana', scope: null },
+            { date: toDate(12), type: 'income', amount: 855.00, category: 'Venda', description: '40 Camisas Geovanna 9B', clientName: 'Geovanna', scope: null },
+            { date: toDate(12), type: 'expense', amount: -51.74, category: 'Pessoal', description: 'Banco Inter', clientName: 'Rodrigo (Dono)', scope: 'personal' },
+            { date: toDate(12), type: 'expense', amount: -10.00, category: 'Empresarial', description: 'Assinatura Meli+', clientName: 'Mercado Livre', scope: 'business' },
+            { date: toDate(12), type: 'expense', amount: -10.00, category: 'Empresarial', description: 'Assinatura Lightroom', clientName: 'Adobe', scope: 'business' },
+            { date: toDate(12), type: 'expense', amount: -6.90, category: 'Pessoal', description: 'iCloud', clientName: 'Rodrigo (Dono)', scope: 'personal' },
+            { date: toDate(12), type: 'expense', amount: -9.90, category: 'Pessoal', description: 'iCloud', clientName: 'Rodrigo (Dono)', scope: 'personal' },
+            { date: toDate(12), type: 'expense', amount: -155.90, category: 'Empresarial', description: 'Reposição de Tinta', clientName: 'Estoque', scope: 'business' },
+            { date: toDate(12), type: 'expense', amount: -29.59, category: 'Empresarial', description: 'Marketing Instagram Ads', clientName: 'Meta', scope: 'business' },
+            { date: toDate(12), type: 'expense', amount: -130.00, category: 'Empresarial', description: 'DTF 2m', clientName: 'Arthur', scope: 'business' },
+            { date: toDate(12), type: 'expense', amount: -60.00, category: 'Empresarial', description: 'DTF 1m', clientName: 'Geovanna', scope: 'business' },
+            { date: toDate(12), type: 'expense', amount: -25.00, category: 'Pessoal', description: 'Corte de Cabelo', clientName: 'Rodrigo (Dono)', scope: 'personal' },
+            { date: toDate(14), type: 'expense', amount: -60.00, category: 'Empresarial', description: 'Frete', clientName: 'Marcelo Taxista', scope: 'business' },
+            { date: toDate(15), type: 'expense', amount: -18.00, category: 'Dívida', description: 'Costureira', clientName: 'Marcia', scope: 'business' },
+            { date: toDate(15), type: 'expense', amount: -4.30, category: 'Pessoal', description: 'Padaria', clientName: 'Rodrigo (Dono)', scope: 'personal' },
+            { date: toDate(16), type: 'expense', amount: -10.00, category: 'Pessoal', description: 'Acarajé', clientName: 'Rodrigo (Dono)', scope: 'personal' },
+            { date: toDate(17), type: 'expense', amount: -9.00, category: 'Pessoal', description: 'Padaria Mauricelio', clientName: 'Rodrigo (Dono)', scope: 'personal' },
+            { date: toDate(17), type: 'expense', amount: -80.00, category: 'Empresarial', description: 'Internet', clientName: 'Provedor', scope: 'business' },
+            { date: toDate(17), type: 'expense', amount: -5.90, category: 'Pessoal', description: 'iCloud', clientName: 'Rodrigo (Dono)', scope: 'personal' },
+            { date: toDate(17), type: 'expense', amount: -9.00, category: 'Pessoal', description: 'Padaria Djane', clientName: 'Rodrigo (Dono)', scope: 'personal' },
+            { date: toDate(17), type: 'expense', amount: -9.00, category: 'Pessoal', description: 'Mercado', clientName: 'Rodrigo (Dono)', scope: 'personal' },
+            { date: toDate(17), type: 'expense', amount: -70.00, category: 'Investimento', description: 'Camisas Lisas', clientName: 'Estoque', scope: 'business' },
+            { date: toDate(17), type: 'income', amount: 390.00, category: 'Lucro', description: 'Pagamento Dívida', clientName: 'Ricardo', scope: null },
+            { date: toDate(17), type: 'income', amount: 40.00, category: 'Venda', description: 'Camisa Manga Longa', clientName: 'Vini', scope: null },
+            { date: toDate(18), type: 'expense', amount: -5.00, category: 'Custo Indireto', description: 'Folhas A4', clientName: 'Papelaria', scope: 'business' },
+            { date: toDate(18), type: 'expense', amount: -10.00, category: 'Custo Indireto', description: 'Estampa A3', clientName: 'Estamparia', scope: 'business' },
+            { date: toDate(18), type: 'expense', amount: -30.00, category: 'Pessoal', description: 'Recarga Claro', clientName: 'Rodrigo (Dono)', scope: 'personal' }
+        ];
+
+        const transactionFingerprint = (tx) => [tx.date, tx.type, Number(tx.amount).toFixed(2), normalize(tx.category), normalize(tx.description)].join('|');
+        const existingFingerprints = new Set(transactions.map(t => transactionFingerprint(t)));
+        let transactionIdSeed = Date.now();
+        let inserted = 0;
+
+        transactionsToImport.forEach((entry) => {
+            const resolvedClientName = entry.clientName || entry.description;
+            const clientId = ensureClient(resolvedClientName);
+            const transactionData = {
+                id: transactionIdSeed++,
+                name: entry.description,
+                description: entry.description,
+                amount: entry.amount,
+                date: entry.date,
+                type: entry.type,
+                category: entry.category,
+                scope: entry.type === 'expense' ? (entry.scope || 'business') : null,
+                clientId,
+                quantity: 0,
+                weightKg: 0,
+                fabricColor: null,
+                importBatch: IMPORT_KEY,
+                createdAt: new Date()
+            };
+            const fp = transactionFingerprint(transactionData);
+            if (!existingFingerprints.has(fp)) {
+                transactions.push(transactionData);
+                existingFingerprints.add(fp);
+                inserted++;
+            }
+        });
+
+        if (inserted > 0) {
+            localStorage.setItem('clients', JSON.stringify(clients));
+            saveTransactions();
+        }
+        localStorage.setItem(IMPORT_KEY, 'done');
+    };
+
     const getProgressColorClass = (percentage) => {
         if (percentage <= 50) return 'bg-gradient-green';
         if (percentage <= 80) return 'bg-gradient-yellow';
@@ -975,6 +1103,7 @@ const init = () => {
     }
 
     // --- INICIALIZAÇÃO ---
+    runFinancialLaunchImport();
     updateUI();
     setTimeout(checkDeadlinesAndNotify, 2000);
     setupCarousel('budget-carousel', 'budget-carousel-dots');
