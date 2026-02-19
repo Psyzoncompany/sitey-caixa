@@ -90,6 +90,284 @@ const init = () => {
     const formatCurrency = (amount) => amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     const formatDate = (dateString) => new Date(dateString + 'T03:00:00').toLocaleDateString('pt-BR');
 
+    const normalizeText = (value) => (value || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+    const normalizeKey = (value) => normalizeText(value).toLowerCase();
+    const blockedNameTerms = ['padaria', 'posto', 'mercado', 'assinatura', 'meta', 'adobe', 'provedor', 'estoque', 'marmita', 'malha', 'papelaria', 'estamparia', 'aluguel', 'internet', 'agua', 'banco', 'icloud', 'xbox', 'youtube', 'dtf', 'frete'];
+    const isPersonName = (value) => {
+        const raw = (value || '').toString().trim();
+        if (!raw) return false;
+        if (raw === 'Rodrigo (Dono)') return true;
+        const cleaned = raw.replace(/\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();
+        if (!cleaned) return false;
+        const normalized = normalizeKey(cleaned);
+        if (blockedNameTerms.some(term => normalized.includes(term))) return false;
+        const words = cleaned.split(' ');
+        if (words.length < 1 || words.length > 3) return false;
+        return words.every((word) => /^[A-Za-zÀ-ÿ]+$/.test(word) && word[0] === word[0].toUpperCase());
+    };
+    const round2 = (num) => Math.round((Number(num) + Number.EPSILON) * 100) / 100;
+    const buildLaunchId = (tx) => {
+        const clientName = tx.clientName || tx.client || tx.clientLabel || '';
+        const qty = tx.qty ?? tx.quantity ?? '';
+        return [
+            tx.date || '',
+            tx.type || '',
+            Number(tx.amount || tx.totalPrice || 0).toFixed(2),
+            normalizeKey(tx.category || ''),
+            normalizeKey(tx.description || tx.name || ''),
+            normalizeKey(clientName),
+            qty
+        ].join('|');
+    };
+    const findClientNameById = (clientId) => {
+        if (!clientId) return '';
+        const client = clients.find(c => c.id === clientId);
+        return client ? client.name : '';
+    };
+    const ensureClientByPersonName = (personName) => {
+        const safeName = (personName || '').trim();
+        if (!isPersonName(safeName)) return null;
+        const existingClient = clients.find(c => normalizeKey(c.name) === normalizeKey(safeName));
+        if (existingClient) return existingClient.id;
+        const newClient = { id: Date.now() + Math.floor(Math.random() * 100000), name: safeName, gender: 'not_informed', phone: '', email: '' };
+        clients.push(newClient);
+        return newClient.id;
+    };
+    const rebuildMonthlyProduction = () => {
+        const monthlyMap = {};
+        transactions.forEach((tx) => {
+            const isProductSale = tx.type === 'income' && (tx.kind === 'product_sale' || tx.category === 'Venda de Produto');
+            if (!isProductSale) return;
+            const qty = Number(tx.qty ?? tx.quantity ?? 1);
+            if (!tx.date || qty <= 0) return;
+            const month = tx.date.substring(0, 7);
+            monthlyMap[month] = (monthlyMap[month] || 0) + qty;
+        });
+        const monthlyProduction = Object.entries(monthlyMap).map(([month, quantity]) => ({ month, quantity }));
+        localStorage.setItem('monthlyProduction', JSON.stringify(monthlyProduction));
+    };
+    const dedupeTransactionsByLaunchId = () => {
+        const enriched = transactions.map((tx, index) => {
+            const clientName = findClientNameById(tx.clientId);
+            const launchId = tx.launchId || buildLaunchId({ ...tx, clientName });
+            return { ...tx, launchId, _index: index };
+        });
+        const byId = new Map();
+        enriched.forEach((tx) => {
+            const existing = byId.get(tx.launchId);
+            if (!existing) {
+                byId.set(tx.launchId, tx);
+                return;
+            }
+            const existingCreated = new Date(existing.createdAt || 0).getTime() || Number(existing.id) || existing._index;
+            const candidateCreated = new Date(tx.createdAt || 0).getTime() || Number(tx.id) || tx._index;
+            if (candidateCreated < existingCreated) byId.set(tx.launchId, tx);
+        });
+        const deduped = Array.from(byId.values()).map(({ _index, ...tx }) => tx);
+        const changed = deduped.length !== transactions.length || deduped.some((tx, idx) => tx.launchId !== transactions[idx]?.launchId);
+        transactions = deduped;
+        return changed;
+    };
+
+    const dedupeImportedMonthByLegacyKey = (monthPrefix, sourceLaunches) => {
+        const sourceKeys = new Set(sourceLaunches.map((item) => [
+            item.date,
+            item.type,
+            Number(Math.abs(item.amount)).toFixed(2),
+            normalizeKey(item.description)
+        ].join('|')));
+
+        const grouped = new Map();
+        transactions.forEach((tx) => {
+            const key = [
+                tx.date,
+                tx.type,
+                Number(Math.abs(tx.amount || 0)).toFixed(2),
+                normalizeKey(tx.description || tx.name || '')
+            ].join('|');
+
+            if (!String(tx.date || '').startsWith(monthPrefix) || !sourceKeys.has(key)) return;
+
+            if (!grouped.has(key)) grouped.set(key, []);
+            grouped.get(key).push(tx);
+        });
+
+        const toRemoveIds = new Set();
+        grouped.forEach((list) => {
+            if (list.length <= 1) return;
+            list.sort((a, b) => {
+                const score = (item) => {
+                    let total = 0;
+                    if (item.kind === 'product_sale') total += 50;
+                    if (item.category === 'Venda de Produto') total += 20;
+                    if (item.launchId) total += 10;
+                    if (item.importBatch === 'syt_financial_import_2026_02_rodrigo_v2') total += 5;
+                    return total;
+                };
+                const diffScore = score(b) - score(a);
+                if (diffScore !== 0) return diffScore;
+                const aTime = new Date(a.createdAt || 0).getTime() || Number(a.id) || 0;
+                const bTime = new Date(b.createdAt || 0).getTime() || Number(b.id) || 0;
+                return aTime - bTime;
+            });
+
+            const keep = list[0];
+            list.slice(1).forEach((item) => {
+                if (item.id !== keep.id) toRemoveIds.add(item.id);
+            });
+        });
+
+        if (toRemoveIds.size === 0) return false;
+        transactions = transactions.filter((tx) => !toRemoveIds.has(tx.id));
+        return true;
+    };
+    const parseProductSaleMeta = (description, amount) => {
+        const desc = (description || '').trim();
+        const qtyMatch = desc.match(/(\d+)\s*camisas?/i);
+        const qty = qtyMatch ? parseInt(qtyMatch[1], 10) : 1;
+        const productName = /manga\s+longa/i.test(desc) ? 'Camisa Manga Longa' : 'Camisa';
+        const totalPrice = round2(Math.abs(amount));
+        const unitPrice = qty > 0 ? round2(totalPrice / qty) : totalPrice;
+        return { qty, productName, totalPrice, unitPrice };
+    };
+
+    const runFinancialLaunchImport = () => {
+        const IMPORT_KEY = 'syt_financial_import_2026_02_rodrigo_v2';
+        const LEGACY_KEY = 'syt_financial_import_2026_02_rodrigo_v1';
+
+        const year = new Date().getFullYear();
+        const toDate = (day, month = 2) => `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const launches = [
+            { date: toDate(1), type: 'income', amount: 140.64, category: 'Saldo Inicial', description: 'Saldo Inicial', clientName: 'Rodrigo (Dono)' },
+            { date: toDate(1), type: 'expense', amount: -56.28, category: 'Pessoal', description: 'Gasolina' },
+            { date: toDate(1), type: 'expense', amount: -22.00, category: 'Pessoal', description: 'Lanche' },
+            { date: toDate(2), type: 'income', amount: 1482.50, category: 'Venda', description: 'Arthur (Terceiro B)', clientName: 'Arthur' },
+            { date: toDate(2), type: 'income', amount: 65.00, category: 'Venda', description: 'Matheus (Presencial)', clientName: 'Matheus' },
+            { date: toDate(2), type: 'expense', amount: -26.90, category: 'Pessoal', description: 'Assinatura YouTube' },
+            { date: toDate(2), type: 'expense', amount: -60.83, category: 'Pessoal', description: 'Compra Jogo Hytale' },
+            { date: toDate(2), type: 'expense', amount: -20.00, category: 'Empresarial', description: 'Marmita', clientName: 'Lauro' },
+            { date: toDate(2), type: 'expense', amount: -650.00, category: 'Empresarial', description: 'Aluguel', clientName: 'Erisvaldo' },
+            { date: toDate(2), type: 'expense', amount: -269.39, category: 'Empresarial', description: 'Malhas PV Preto 5,7kg', clientName: 'Malhas Atual Rica' },
+            { date: toDate(2), type: 'expense', amount: -100.00, category: 'Empresarial', description: 'Gola e Punho', clientName: 'Malhas Atual' },
+            { date: toDate(2), type: 'expense', amount: -30.00, category: 'Pessoal', description: 'Lanche' },
+            { date: toDate(3), type: 'expense', amount: -334.52, category: 'Empresarial', description: 'Malhas 10,5kg', clientName: 'Malhas Costa Rica' },
+            { date: toDate(3), type: 'expense', amount: -22.00, category: 'Pessoal', description: 'Açaí/Lanche' },
+            { date: toDate(3), type: 'expense', amount: -70.00, category: 'Empresarial', description: 'Frete Malhas', clientName: 'Marcelo Taxista' },
+            { date: toDate(3), type: 'expense', amount: -30.00, category: 'Pessoal', description: 'Chá Helen Prima' },
+            { date: toDate(3), type: 'expense', amount: -10.00, category: 'Pessoal', description: 'Acarajé' },
+            { date: toDate(3), type: 'expense', amount: -10.00, category: 'Pessoal', description: 'Padaria Mauricelio' },
+            { date: toDate(3), type: 'expense', amount: -51.00, category: 'Pessoal', description: 'Cartão Inter' },
+            { date: toDate(3), type: 'expense', amount: -7.00, category: 'Pessoal', description: 'Padaria Glecia Ramos' },
+            { date: toDate(3), type: 'income', amount: 240.00, category: 'Lucro', description: 'Pagamento Dívida', clientName: 'Leandra' },
+            { date: toDate(5), type: 'income', amount: 80.00, category: 'Venda', description: 'Adriana Vizinha', clientName: 'Adriana' },
+            { date: toDate(5), type: 'expense', amount: -174.00, category: 'Dívida', description: 'Palmeira 1/4', clientName: 'Palmeira' },
+            { date: toDate(5), type: 'expense', amount: -30.00, category: 'Investimento', description: 'Zanones Malhas', clientName: 'Zanones' },
+            { date: toDate(6), type: 'expense', amount: -15.20, category: 'Pessoal', description: 'Adelaide' },
+            { date: toDate(7), type: 'expense', amount: -30.00, category: 'Pessoal', description: 'Películas' },
+            { date: toDate(7), type: 'income', amount: 225.20, category: 'Lucro', description: 'Pagamento Dívida', clientName: 'Ricardo' },
+            { date: toDate(7), type: 'expense', amount: -13.75, category: 'Pessoal', description: 'Mercado' },
+            { date: toDate(7), type: 'expense', amount: -12.80, category: 'Pessoal', description: 'Padaria/Lanchonete' },
+            { date: toDate(8), type: 'expense', amount: -30.05, category: 'Pessoal', description: 'Gasolina Posto Potiragua' },
+            { date: toDate(9), type: 'expense', amount: -12.00, category: 'Empresarial', description: 'Água Rás', clientName: 'Água Rás' },
+            { date: toDate(10), type: 'expense', amount: -10.00, category: 'Pessoal', description: 'Padaria' },
+            { date: toDate(11), type: 'expense', amount: -35.00, category: 'Pessoal', description: 'Lava Jato' },
+            { date: toDate(11), type: 'expense', amount: -20.00, category: 'Pessoal', description: 'Xbox Ultimate' },
+            { date: toDate(11), type: 'expense', amount: -65.00, category: 'Pessoal', description: 'Gasolina' },
+            { date: toDate(12), type: 'income', amount: 80.00, category: 'Venda', description: 'Adriana Vizinha', clientName: 'Adriana' },
+            { date: toDate(12), type: 'income', amount: 855.00, category: 'Venda', description: '40 Camisas Geovanna 9B', clientName: 'Geovanna' },
+            { date: toDate(12), type: 'expense', amount: -51.74, category: 'Pessoal', description: 'Banco Inter' },
+            { date: toDate(12), type: 'expense', amount: -10.00, category: 'Empresarial', description: 'Assinatura Meli+', clientName: 'Mercado Livre' },
+            { date: toDate(12), type: 'expense', amount: -10.00, category: 'Empresarial', description: 'Assinatura Lightroom', clientName: 'Adobe' },
+            { date: toDate(12), type: 'expense', amount: -6.90, category: 'Pessoal', description: 'iCloud' },
+            { date: toDate(12), type: 'expense', amount: -9.90, category: 'Pessoal', description: 'iCloud' },
+            { date: toDate(12), type: 'expense', amount: -155.90, category: 'Empresarial', description: 'Reposição de Tinta', clientName: 'Estoque' },
+            { date: toDate(12), type: 'expense', amount: -29.59, category: 'Empresarial', description: 'Marketing Instagram Ads', clientName: 'Meta' },
+            { date: toDate(12), type: 'expense', amount: -130.00, category: 'Empresarial', description: 'DTF 2m', clientName: 'Arthur' },
+            { date: toDate(12), type: 'expense', amount: -60.00, category: 'Empresarial', description: 'DTF 1m', clientName: 'Geovanna' },
+            { date: toDate(12), type: 'expense', amount: -25.00, category: 'Pessoal', description: 'Corte de Cabelo' },
+            { date: toDate(14), type: 'expense', amount: -60.00, category: 'Empresarial', description: 'Frete', clientName: 'Marcelo Taxista' },
+            { date: toDate(15), type: 'expense', amount: -18.00, category: 'Dívida', description: 'Costureira', clientName: 'Marcia' },
+            { date: toDate(15), type: 'expense', amount: -4.30, category: 'Pessoal', description: 'Padaria' },
+            { date: toDate(16), type: 'expense', amount: -10.00, category: 'Pessoal', description: 'Acarajé' },
+            { date: toDate(17), type: 'expense', amount: -9.00, category: 'Pessoal', description: 'Padaria Mauricelio' },
+            { date: toDate(17), type: 'expense', amount: -80.00, category: 'Empresarial', description: 'Internet', clientName: 'Provedor' },
+            { date: toDate(17), type: 'expense', amount: -5.90, category: 'Pessoal', description: 'iCloud' },
+            { date: toDate(17), type: 'expense', amount: -9.00, category: 'Pessoal', description: 'Padaria Djane' },
+            { date: toDate(17), type: 'expense', amount: -9.00, category: 'Pessoal', description: 'Mercado' },
+            { date: toDate(17), type: 'expense', amount: -70.00, category: 'Investimento', description: 'Camisas Lisas', clientName: 'Estoque' },
+            { date: toDate(17), type: 'income', amount: 390.00, category: 'Lucro', description: 'Pagamento Dívida', clientName: 'Ricardo' },
+            { date: toDate(17), type: 'income', amount: 40.00, category: 'Venda', description: 'Camisa Manga Longa', clientName: 'Vini' },
+            { date: toDate(18), type: 'expense', amount: -5.00, category: 'Custo Indireto', description: 'Folhas A4', clientName: 'Papelaria' },
+            { date: toDate(18), type: 'expense', amount: -10.00, category: 'Custo Indireto', description: 'Estampa A3', clientName: 'Estamparia' },
+            { date: toDate(18), type: 'expense', amount: -30.00, category: 'Pessoal', description: 'Recarga Claro' }
+        ];
+
+        let txIdSeed = Date.now();
+        let inserted = 0;
+
+        launches.forEach((entry) => {
+            const isPersonalExpense = entry.type === 'expense' && normalizeKey(entry.category) === 'pessoal';
+            const personClientName = isPersonalExpense ? 'Rodrigo (Dono)' : (isPersonName(entry.clientName) ? entry.clientName.trim() : null);
+            const clientId = personClientName ? ensureClientByPersonName(personClientName) : null;
+            const isProductSale = entry.type === 'income' && normalizeKey(entry.category) === 'venda';
+            const productMeta = isProductSale ? parseProductSaleMeta(entry.description, entry.amount) : null;
+
+            const transactionData = {
+                id: txIdSeed++,
+                name: entry.description,
+                description: entry.description,
+                amount: entry.type === 'expense' ? -Math.abs(entry.amount) : Math.abs(entry.amount),
+                date: entry.date,
+                type: entry.type,
+                category: isProductSale ? 'Venda de Produto' : entry.category,
+                scope: entry.type === 'expense' ? (isPersonalExpense ? 'personal' : 'business') : null,
+                clientId,
+                kind: isProductSale ? 'product_sale' : 'launch',
+                productName: productMeta ? productMeta.productName : null,
+                qty: productMeta ? productMeta.qty : null,
+                unitPrice: productMeta ? productMeta.unitPrice : null,
+                totalPrice: productMeta ? productMeta.totalPrice : null,
+                quantity: productMeta ? productMeta.qty : 0,
+                weightKg: 0,
+                fabricColor: null,
+                importBatch: IMPORT_KEY,
+                createdAt: new Date().toISOString()
+            };
+            transactionData.launchId = buildLaunchId({ ...transactionData, clientName: personClientName || '' });
+            if (!transactions.some(tx => (tx.launchId || buildLaunchId({ ...tx, clientName: findClientNameById(tx.clientId) })) === transactionData.launchId)) {
+                transactions.push(transactionData);
+                inserted++;
+            }
+        });
+
+        const deduped = dedupeTransactionsByLaunchId();
+        const cleanedLegacyDuplicates = dedupeImportedMonthByLegacyKey(`${year}-02`, launches);
+        const shouldPersist = inserted > 0 || deduped || cleanedLegacyDuplicates || localStorage.getItem(IMPORT_KEY) !== 'done' || localStorage.getItem(LEGACY_KEY) === 'done';
+        if (shouldPersist) {
+            localStorage.setItem('clients', JSON.stringify(clients));
+            rebuildMonthlyProduction();
+            saveTransactions();
+        }
+
+        localStorage.setItem(IMPORT_KEY, 'done');
+
+        const importMonth = `${year}-02`;
+        const importedMonthTransactions = transactions.filter(tx => (tx.date || '').startsWith(importMonth));
+        const totalQtySold = importedMonthTransactions
+            .filter(tx => tx.type === 'income' && (tx.kind === 'product_sale' || tx.category === 'Venda de Produto'))
+            .reduce((sum, tx) => sum + Number(tx.qty ?? tx.quantity ?? 1), 0);
+        const directKeywords = ['malha', 'gola', 'punho', 'costur', 'dtf', 'silk', 'camisas lisas', 'tinta'];
+        const totalDirectCosts = importedMonthTransactions
+            .filter(tx => tx.type === 'expense' && tx.scope !== 'personal')
+            .filter(tx => directKeywords.some(keyword => normalizeKey(`${tx.category} ${tx.description}`).includes(keyword)))
+            .reduce((sum, tx) => sum + Math.abs(Number(tx.amount) || 0), 0);
+        const costPerPiece = totalQtySold > 0 ? round2(totalDirectCosts / totalQtySold) : null;
+        console.info('[import-check] total_qty_vendida:', totalQtySold);
+        console.info('[import-check] total_custos_diretos:', round2(totalDirectCosts));
+        console.info('[import-check] custo_por_peca_resultante:', costPerPiece === null ? '—' : costPerPiece);
+    };
+
+
     const getProgressColorClass = (percentage) => {
         if (percentage <= 50) return 'bg-gradient-green';
         if (percentage <= 80) return 'bg-gradient-yellow';
@@ -261,6 +539,8 @@ const init = () => {
 
         const amount = typeInput.value === 'expense' ? -Math.abs(parseFloat(amountInput.value)) : parseFloat(amountInput.value);
         
+        const linkedClientId = linkClientCheckbox.checked && clientSelect.value ? parseInt(clientSelect.value, 10) : null;
+        const linkedClientName = linkedClientId ? findClientNameById(linkedClientId) : '';
         const transactionData = {
             name: nameInput.value.trim(),
             description: descriptionInput.value.trim(),
@@ -269,11 +549,16 @@ const init = () => {
             type: typeInput.value,
             category: categoryInput.value,
             scope: typeInput.value === 'expense' ? selectedScope : null,
-            clientId: linkClientCheckbox.checked && clientSelect.value ? parseInt(clientSelect.value) : null,
+            clientId: linkedClientId,
+            kind: 'launch',
+            productName: null,
+            qty: null,
+            unitPrice: null,
+            totalPrice: null,
             quantity: 0,
             weightKg: 0,
             fabricColor: null,
-            createdAt: new Date() // Adiciona timestamp para futuras queries no Firestore
+            createdAt: new Date().toISOString()
         };
 
         // --- NEW LOGIC: Create Bill Reminder ---
@@ -304,12 +589,20 @@ const init = () => {
             } catch (error) { console.error("Erro ao criar lembrete de conta:", error); showNotification('Falha ao criar lembrete de conta.', 'danger'); }
         }
         if (isProductSale) {
-            transactionData.quantity = parseInt(quantityInput.value, 10) || 0;
+            const qty = parseInt(quantityInput.value, 10) || 0;
+            transactionData.kind = 'product_sale';
+            transactionData.productName = 'Camisa';
+            transactionData.qty = qty;
+            transactionData.quantity = qty;
+            transactionData.totalPrice = round2(Math.abs(transactionData.amount));
+            transactionData.unitPrice = qty > 0 ? round2(transactionData.totalPrice / qty) : transactionData.totalPrice;
         }
         if (isFabricCheckbox.checked) {
             transactionData.weightKg = parseFloat(fabricWeightInput.value) || 0;
             transactionData.fabricColor = fabricColorInput.value.trim() || null;
         }
+
+        transactionData.launchId = buildLaunchId({ ...transactionData, clientName: linkedClientName });
 
         let newTransactionId = null;
         if (editingId) {
@@ -318,6 +611,11 @@ const init = () => {
                 transactions[transactionIndex] = { ...transactions[transactionIndex], ...transactionData };
             }
         } else {
+            const hasDuplicate = transactions.some(tx => (tx.launchId || buildLaunchId({ ...tx, clientName: findClientNameById(tx.clientId) })) === transactionData.launchId);
+            if (hasDuplicate) {
+                alert('Este lançamento já existe e não será duplicado.');
+                return;
+            }
             const newTransaction = { ...transactionData, id: Date.now() };
             transactions.push(newTransaction);
             newTransactionId = newTransaction.id;
@@ -839,13 +1137,26 @@ const init = () => {
         breakEvenCostsBar.style.width = `${costsShare}%`;
         breakEvenCostsBar.textContent = `${costsShare.toFixed(0)}%`;
         if(costPerPieceDashboardEl) {
-            const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-            const monthlyProduction = JSON.parse(localStorage.getItem('monthlyProduction')) || [];
-            const productionData = monthlyProduction.find(p => p.month === currentMonthStr);
-            const piecesProduced = productionData ? productionData.quantity : 0;
-            const totalIndirectCosts = monthlyTransactions.filter(t => t.type === 'expense' && t.scope !== 'personal' && t.category.includes('Indireto')).reduce((sum, t) => sum + Math.abs(t.amount), 0);
-            let costPerPiece = piecesProduced > 0 ? totalIndirectCosts / piecesProduced : 0;
-            costPerPieceDashboardEl.textContent = formatCurrency(costPerPiece);
+            const directCostKeywords = ['malha', 'costura', 'dtf', 'silk', 'gola', 'punho', 'camisas lisas', 'reposicao de tinta', 'reposição de tinta'];
+            const directCosts = monthlyTransactions
+                .filter(t => t.type === 'expense' && t.scope !== 'personal')
+                .filter(t => directCostKeywords.some(keyword => normalizeKey(`${t.category} ${t.description}`).includes(normalizeKey(keyword))))
+                .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+            const indirectCosts = monthlyTransactions
+                .filter(t => t.type === 'expense' && t.scope !== 'personal')
+                .filter(t => !directCostKeywords.some(keyword => normalizeKey(`${t.category} ${t.description}`).includes(normalizeKey(keyword))))
+                .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+            const totalQtySold = monthlyTransactions
+                .filter(t => t.type === 'income' && (t.kind === 'product_sale' || t.category === 'Venda de Produto'))
+                .reduce((sum, t) => sum + Number(t.qty ?? t.quantity ?? 1), 0);
+
+            const totalCost = directCosts + indirectCosts;
+            const costPerPiece = totalQtySold > 0 ? totalCost / totalQtySold : null;
+            costPerPieceDashboardEl.textContent = costPerPiece === null ? '—' : formatCurrency(costPerPiece);
+
+            console.info('[cost-per-piece] total_qty_vendida:', totalQtySold);
+            console.info('[cost-per-piece] total_custos_diretos:', round2(directCosts));
+            console.info('[cost-per-piece] custo_por_peca_resultante:', costPerPiece === null ? '—' : round2(costPerPiece));
         }
         
         renderRecentTransactions();
@@ -975,6 +1286,7 @@ const init = () => {
     }
 
     // --- INICIALIZAÇÃO ---
+    runFinancialLaunchImport();
     updateUI();
     setTimeout(checkDeadlinesAndNotify, 2000);
     setupCarousel('budget-carousel', 'budget-carousel-dots');

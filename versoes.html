@@ -33,8 +33,46 @@
 
       <article class="glass-card p-5 border border-cyan-500/20">
         <div class="flex items-center justify-between gap-3 mb-2">
-          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.15</h2>
+          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.21</h2>
           <span class="text-xs text-gray-400">Atual</span>
+        </div>
+        <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
+          <li>Correção adicional no importador para remover duplicidades legadas já existentes do pacote de fevereiro.</li>
+          <li>Limpeza agora agrupa por chave estável (data, tipo, valor e descrição do lançamento original) e mantém a versão mais completa do registro.</li>
+          <li>Evita manter pares duplicados entre importações antigas e a nova estrutura com <code>launchId</code>/<code>product_sale</code>.</li>
+        </ul>
+      </article>
+
+      <article class="glass-card p-5 border border-cyan-500/20">
+        <div class="flex items-center justify-between gap-3 mb-2">
+          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.20</h2>
+          <span class="text-xs text-gray-400">Anterior</span>
+        </div>
+        <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
+          <li>Importador financeiro refeito com idempotência por <code>launchId</code> determinístico e rotina de deduplicação para limpar registros repetidos.</li>
+          <li>Vínculo de cliente agora aceita apenas nomes de pessoa; fornecedores/serviços permanecem apenas na descrição e gastos pessoais vão para <strong>Rodrigo (Dono)</strong>.</li>
+          <li>Vendas importadas passaram a ser salvas como <strong>Venda de Produto</strong> com <code>kind</code>, <code>qty</code>, <code>unitPrice</code> e <code>totalPrice</code> para alimentar custo por peça.</li>
+          <li>Cálculo de custo por peça atualizado para usar quantidade vendida no mês e registrar logs de validação sem divisão por zero.</li>
+        </ul>
+      </article>
+
+      <article class="glass-card p-5 border border-cyan-500/20">
+        <div class="flex items-center justify-between gap-3 mb-2">
+          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.18</h2>
+          <span class="text-xs text-gray-400">Anterior</span>
+        </div>
+        <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
+          <li>Importação automática adicionada para lançar em lote os registros financeiros de fevereiro sem sobrescrever dados existentes.</li>
+          <li>Cada lançamento importado agora garante vínculo com cliente; quando necessário, o cliente é criado automaticamente no cadastro local.</li>
+          <li>Mecanismo anti-duplicidade aplicado com verificação por impressão digital do lançamento e marcação de execução única da importação.</li>
+          <li>Saldos permanecem recalculados pela lógica existente após a inserção, mantendo persistência em localStorage.</li>
+        </ul>
+      </article>
+
+      <article class="glass-card p-5 border border-cyan-500/20">
+        <div class="flex items-center justify-between gap-3 mb-2">
+          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.16</h2>
+          <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
           <li>Sincronização do bloco de notas evoluída para tempo real com listener do Firestore, refletindo mudanças entre dispositivos sem precisar recarregar.</li>
