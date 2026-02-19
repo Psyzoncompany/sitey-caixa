@@ -261,13 +261,19 @@ const init = () => {
         categoryInput.innerHTML = options.map(cat => `<option value="${cat}" class="bg-gray-800">${cat}</option>`).join('');
     };
     
+    const getTypedClientIdBySelectValue = (selectedValue) => {
+        if (!selectedValue) return null;
+        const matchedClient = clients.find(client => String(client.id) === selectedValue);
+        return matchedClient ? matchedClient.id : selectedValue;
+    };
+
     const populateClientSelect = () => {
         clients = JSON.parse(localStorage.getItem('clients')) || [];
         // O placeholder é ocultado pois o campo de busca cumpre essa função.
         clientSelect.innerHTML = '<option value="" class="bg-gray-800 p-2 hidden">Selecione...</option>';
         clients.forEach(client => {
             const option = document.createElement('option');
-            option.value = client.id;
+            option.value = String(client.id);
             option.textContent = client.name;
             option.className = 'bg-gray-800 p-2';
             clientSelect.appendChild(option);
@@ -306,6 +312,8 @@ const init = () => {
 
         const amount = typeInput.value === 'expense' ? -Math.abs(parseFloat(amountInput.value)) : parseFloat(amountInput.value);
         
+        const selectedClientId = getTypedClientIdBySelectValue(clientSelect.value);
+
         const transactionData = {
             name: nameInput.value.trim(),
             description: descriptionInput.value.trim(),
@@ -314,7 +322,7 @@ const init = () => {
             type: typeInput.value,
             category: categoryInput.value,
             scope: typeInput.value === 'expense' ? selectedScope : null,
-            clientId: linkClientCheckbox.checked && clientSelect.value ? parseInt(clientSelect.value) : null,
+            clientId: linkClientCheckbox.checked && selectedClientId ? selectedClientId : null,
             quantity: 0,
             weightKg: 0,
             fabricColor: null,
@@ -518,7 +526,7 @@ const init = () => {
         if (transaction.clientId) {
             linkClientCheckbox.checked = true;
             clientSelectionContainer.classList.remove('hidden');
-            clientSelect.value = transaction.clientId;
+            clientSelect.value = String(transaction.clientId);
         } else {
             linkClientCheckbox.checked = false;
             clientSelectionContainer.classList.add('hidden');
