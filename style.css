@@ -499,6 +499,40 @@ input:focus, textarea:focus, select:focus {
 #modal .glass-card { max-width: 78rem; padding:1rem; }
 
 /* Mobile Modal Fullscreen Fix */
+#floating-save-btn {
+    position: fixed;
+    right: 1.4rem;
+    bottom: 1.5rem;
+    width: 58px;
+    height: 58px;
+    border-radius: 999px;
+    border: 2px solid rgba(14, 165, 233, 0.8);
+    background: linear-gradient(180deg, #1d4ed8, #1e40af);
+    color: #eff6ff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 14px 30px rgba(30, 64, 175, 0.45);
+    z-index: 10035;
+    transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+#floating-save-btn svg {
+    width: 24px;
+    height: 24px;
+}
+
+#floating-save-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 16px 34px rgba(30, 64, 175, 0.5);
+}
+
+#floating-save-btn.unsaved {
+    background: linear-gradient(180deg, #ef4444, #b91c1c);
+    border-color: rgba(248, 113, 113, 0.92);
+    box-shadow: 0 16px 32px rgba(127, 29, 29, 0.5);
+}
+
 @media (max-width: 768px) {
     #modal .glass-card, #cutting-modal .glass-card, #art-modal .glass-card {
         height: 100vh !important;

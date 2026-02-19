@@ -60,6 +60,45 @@ let autosaveTimer = null;
 let autosaveInFlight = null;
 let unsubscribeCloudSync = null;
 const AUTOSAVE_DELAY_MS = 900;
+let floatingSaveButton = null;
+
+const isIndexPage = () => {
+    const path = window.location.pathname || '';
+    return path === '/' || path.endsWith('/index.html') || path.endsWith('index.html');
+};
+
+const updateFloatingSaveButtonState = () => {
+    if (!floatingSaveButton) return;
+    const isDirty = hasUnsavedChanges;
+    floatingSaveButton.classList.toggle('unsaved', isDirty);
+    floatingSaveButton.setAttribute('aria-label', isDirty ? 'Salvar alterações pendentes' : 'Tudo salvo');
+    floatingSaveButton.title = isDirty ? 'Salvar alterações pendentes' : 'Tudo salvo';
+};
+
+const ensureFloatingSaveButton = () => {
+    if (!isIndexPage() || window.location.pathname.endsWith('login.html')) return;
+    if (floatingSaveButton?.isConnected) {
+        updateFloatingSaveButtonState();
+        return;
+    }
+
+    const existingBtn = document.getElementById('floating-save-btn');
+    if (existingBtn) {
+        floatingSaveButton = existingBtn;
+        updateFloatingSaveButtonState();
+        return;
+    }
+
+    const btn = document.createElement('button');
+    btn.id = 'floating-save-btn';
+    btn.type = 'button';
+    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>';
+    btn.addEventListener('click', () => saveToCloud({ force: true }));
+    document.body.appendChild(btn);
+
+    floatingSaveButton = btn;
+    updateFloatingSaveButtonState();
+};
 
 // Chaves de UI/estado temporário que NÃO devem marcar o estado como alterado
 // Ex.: aba ativa da tela de processos.
@@ -724,6 +763,7 @@ const saveToCloud = async ({ silent = false, force = false } = {}) => {
             saveUserCache(uid, memoryStore);
             initialSnapshot = getSnapshot(memoryStore);
             hasUnsavedChanges = false;
+            updateFloatingSaveButtonState();
             if (!silent) playSuccessSound();
         } catch (e) {
             console.error("❌ Erro ao salvar na nuvem:", e);
@@ -754,6 +794,7 @@ const checkDirtyState = () => {
     syncDraftCache();
     const currentSnapshot = getSnapshot(memoryStore);
     hasUnsavedChanges = currentSnapshot !== initialSnapshot;
+    updateFloatingSaveButtonState();
     if (hasUnsavedChanges) scheduleAutoSave();
 };
 
@@ -837,6 +878,7 @@ Object.defineProperty(window, 'localStorage', {
 
 onAuthStateChanged(auth, async (user) => {
     if (user) {
+        ensureFloatingSaveButton();
         // Se estivermos na página de login, redireciona para index
         if (window.location.pathname.endsWith('login.html')) {
             window.location.href = 'index.html';
