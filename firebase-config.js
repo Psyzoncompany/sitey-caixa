@@ -76,8 +76,12 @@ const updateFloatingSaveButtonState = () => {
 };
 
 const ensureFloatingSaveButton = () => {
-    if (!isIndexPage() || window.location.pathname.endsWith('login.html')) return;
+    if (!isIndexPage() || window.location.pathname.endsWith('login.html')) {
+        document.body.classList.remove('has-manual-save-fab');
+        return;
+    }
     if (floatingSaveButton?.isConnected) {
+        document.body.classList.add('has-manual-save-fab');
         updateFloatingSaveButtonState();
         return;
     }
@@ -85,6 +89,7 @@ const ensureFloatingSaveButton = () => {
     const existingBtn = document.getElementById('floating-save-btn');
     if (existingBtn) {
         floatingSaveButton = existingBtn;
+        document.body.classList.add('has-manual-save-fab');
         updateFloatingSaveButtonState();
         return;
     }
@@ -95,6 +100,7 @@ const ensureFloatingSaveButton = () => {
     btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>';
     btn.addEventListener('click', () => saveToCloud({ force: true }));
     document.body.appendChild(btn);
+    document.body.classList.add('has-manual-save-fab');
 
     floatingSaveButton = btn;
     updateFloatingSaveButtonState();
@@ -795,7 +801,7 @@ const checkDirtyState = () => {
     const currentSnapshot = getSnapshot(memoryStore);
     hasUnsavedChanges = currentSnapshot !== initialSnapshot;
     updateFloatingSaveButtonState();
-    if (hasUnsavedChanges) scheduleAutoSave();
+    if (hasUnsavedChanges && !isIndexPage()) scheduleAutoSave();
 };
 
 // Interceptador do localStorage (Mágica para fazer o site funcionar com a nuvem)
