@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-title" content="PSYZON Caixa">
   <meta name="application-name" content="PSYZON Caixa">
   <meta name="theme-color" content="#0f172a">
-  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="manifest" href="manifest.webmanifest">
   <title>PSYZON - Versões</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -33,8 +33,21 @@
 
       <article class="glass-card p-5 border border-cyan-500/20">
         <div class="flex items-center justify-between gap-3 mb-2">
-          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.14</h2>
+          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.15</h2>
           <span class="text-xs text-gray-400">Atual</span>
+        </div>
+        <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
+          <li>Sincronização do bloco de notas evoluída para tempo real com listener do Firestore, refletindo mudanças entre dispositivos sem precisar recarregar.</li>
+          <li>Atualizações remotas agora disparam evento interno para recarregar a UI de notas quando o usuário não está editando, evitando sobreposição de rascunho.</li>
+          <li>Link de Afazeres no dashboard corrigido para abrir a aba de processos, eliminando o erro 404 de página inexistente.</li>
+          <li>Referência do manifesto PWA ajustada para caminho relativo, reduzindo falhas de carregamento em alguns ambientes de deploy.</li>
+        </ul>
+      </article>
+
+      <article class="glass-card p-5 border border-cyan-500/20">
+        <div class="flex items-center justify-between gap-3 mb-2">
+          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.14</h2>
+          <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
           <li>Correção do bloco de notas na nuvem: alterações agora atualizam também o cache local do usuário antes do autosave.</li>
