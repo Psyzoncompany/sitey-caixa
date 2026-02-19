@@ -81,6 +81,257 @@ const init = () => {
     let selectedScope = 'business';
     let currentStep = 1;
 
+    const IMPORT_KEY = 'sitey_rodrigo_import_v2_done';
+    const IMPORT_CLEANUP_KEY = 'sitey_rodrigo_import_v2_cleanup_done';
+    const PERSON_BLOCKLIST = ['padaria', 'posto', 'mercado', 'assinatura', 'meta', 'adobe', 'provedor', 'estoque', 'marmita', 'papelaria', 'estamparia', 'agua', 'rás', 'ras', 'malhas', 'frete', 'dtf', 'inter', 'icloud'];
+
+    const normalizeText = (value = '') => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    const toCents = (amount = 0) => Math.round(Number(amount || 0) * 100);
+    const centsToAmount = (cents = 0) => Number((cents / 100).toFixed(2));
+    const toISODate = (dayMonth, year = new Date().getFullYear()) => {
+        const [day, month] = dayMonth.split('/').map(part => parseInt(part, 10));
+        return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    };
+    const getClientNameById = (id) => {
+        const client = clients.find(c => c.id === id);
+        return client ? client.name : '';
+    };
+    const buildLaunchId = (entry) => {
+        const qty = entry.qty ?? entry.quantity ?? '';
+        const clientName = entry.clientName || getClientNameById(entry.clientId) || '';
+        return [
+            entry.date,
+            entry.type,
+            toCents(entry.amount),
+            entry.category || '',
+            (entry.description || '').trim(),
+            clientName.trim(),
+            qty
+        ].join('|');
+    };
+    const isPersonName = (value = '') => {
+        const trimmed = (value || '').trim();
+        if (!trimmed) return false;
+        if (trimmed === 'Rodrigo (Dono)') return true;
+        const normalized = normalizeText(trimmed);
+        if (PERSON_BLOCKLIST.some(word => normalized.includes(word))) return false;
+        return /^[A-ZÀ-Ý][a-zà-ÿ]+(?: [A-ZÀ-Ý][a-zà-ÿ]+){0,2}$/.test(trimmed);
+    };
+    const ensurePersonClient = (name) => {
+        if (!isPersonName(name)) return null;
+        const existing = clients.find(client => normalizeText(client.name) === normalizeText(name));
+        if (existing) return existing.id;
+        const newClient = { id: Date.now() + Math.floor(Math.random() * 100000), name: name.trim() };
+        clients.push(newClient);
+        localStorage.setItem('clients', JSON.stringify(clients));
+        return newClient.id;
+    };
+    const parseQtyAndProduct = (description) => {
+        const text = (description || '').trim();
+        const qtyMatch = text.match(/(\d+)\s*camis(?:a|as)/i);
+        if (qtyMatch) {
+            return { qty: parseInt(qtyMatch[1], 10), productName: 'Camisa' };
+        }
+        if (/camisa/i.test(text)) {
+            const productName = text.replace(/^\d+\s*/i, '').trim() || 'Camisa';
+            return { qty: 1, productName };
+        }
+        return { qty: 1, productName: text || 'Produto' };
+    };
+
+
+    const IMPORT_ENTRIES = [
+        { date: '01/02', type: 'income', amount: 140.64, category: 'Saldo Inicial', description: 'Saldo Inicial', client: 'Rodrigo (Dono)' },
+        { date: '01/02', type: 'expense', amount: 56.28, category: 'Pessoal', description: 'Gasolina', client: 'Rodrigo (Dono)' },
+        { date: '01/02', type: 'expense', amount: 22.00, category: 'Pessoal', description: 'Lanche', client: 'Rodrigo (Dono)' },
+        { date: '02/02', type: 'income', amount: 1482.50, category: 'Venda', description: 'Arthur (Terceiro B)', client: 'Arthur' },
+        { date: '02/02', type: 'income', amount: 65.00, category: 'Venda', description: 'Matheus (Presencial)', client: 'Matheus' },
+        { date: '02/02', type: 'expense', amount: 26.90, category: 'Pessoal', description: 'Assinatura YouTube', client: 'Rodrigo (Dono)' },
+        { date: '02/02', type: 'expense', amount: 60.83, category: 'Pessoal', description: 'Compra Jogo Hytale', client: 'Rodrigo (Dono)' },
+        { date: '02/02', type: 'expense', amount: 20.00, category: 'Empresarial', description: 'Marmita', client: 'Lauro' },
+        { date: '02/02', type: 'expense', amount: 650.00, category: 'Empresarial', description: 'Aluguel', client: 'Erisvaldo' },
+        { date: '02/02', type: 'expense', amount: 269.39, category: 'Empresarial', description: 'Malhas PV Preto 5,7kg', client: 'Malhas Atual Rica' },
+        { date: '02/02', type: 'expense', amount: 100.00, category: 'Empresarial', description: 'Gola e Punho', client: 'Malhas Atual' },
+        { date: '02/02', type: 'expense', amount: 30.00, category: 'Pessoal', description: 'Lanche', client: 'Rodrigo (Dono)' },
+        { date: '03/02', type: 'expense', amount: 334.52, category: 'Empresarial', description: 'Malhas 10,5kg', client: 'Malhas Costa Rica' },
+        { date: '03/02', type: 'expense', amount: 22.00, category: 'Pessoal', description: 'Açaí/Lanche', client: 'Rodrigo (Dono)' },
+        { date: '03/02', type: 'expense', amount: 70.00, category: 'Empresarial', description: 'Frete Malhas', client: 'Marcelo Taxista' },
+        { date: '03/02', type: 'expense', amount: 30.00, category: 'Pessoal', description: 'Chá Helen Prima', client: 'Rodrigo (Dono)' },
+        { date: '03/02', type: 'expense', amount: 10.00, category: 'Pessoal', description: 'Acarajé', client: 'Rodrigo (Dono)' },
+        { date: '03/02', type: 'expense', amount: 10.00, category: 'Pessoal', description: 'Padaria Mauricelio', client: 'Rodrigo (Dono)' },
+        { date: '03/02', type: 'expense', amount: 51.00, category: 'Pessoal', description: 'Cartão Inter', client: 'Rodrigo (Dono)' },
+        { date: '03/02', type: 'expense', amount: 7.00, category: 'Pessoal', description: 'Padaria Glecia Ramos', client: 'Rodrigo (Dono)' },
+        { date: '03/02', type: 'income', amount: 240.00, category: 'Lucro', description: 'Pagamento Dívida', client: 'Leandra' },
+        { date: '05/02', type: 'income', amount: 80.00, category: 'Venda', description: 'Adriana Vizinha', client: 'Adriana' },
+        { date: '05/02', type: 'expense', amount: 174.00, category: 'Dívida Empresarial', description: 'Palmeira 1/4', client: 'Palmeira' },
+        { date: '05/02', type: 'expense', amount: 30.00, category: 'Investimento', description: 'Zanones Malhas', client: 'Zanones' },
+        { date: '06/02', type: 'expense', amount: 15.20, category: 'Pessoal', description: 'Adelaide', client: 'Rodrigo (Dono)' },
+        { date: '07/02', type: 'expense', amount: 30.00, category: 'Pessoal', description: 'Películas', client: 'Rodrigo (Dono)' },
+        { date: '07/02', type: 'income', amount: 225.20, category: 'Lucro', description: 'Pagamento Dívida', client: 'Ricardo' },
+        { date: '07/02', type: 'expense', amount: 13.75, category: 'Pessoal', description: 'Mercado', client: 'Rodrigo (Dono)' },
+        { date: '07/02', type: 'expense', amount: 12.80, category: 'Pessoal', description: 'Padaria/Lanchonete', client: 'Rodrigo (Dono)' },
+        { date: '08/02', type: 'expense', amount: 30.05, category: 'Pessoal', description: 'Gasolina Posto Potiragua', client: 'Rodrigo (Dono)' },
+        { date: '09/02', type: 'expense', amount: 12.00, category: 'Empresarial', description: 'Água Rás', client: 'Água Rás' },
+        { date: '10/02', type: 'expense', amount: 10.00, category: 'Pessoal', description: 'Padaria', client: 'Rodrigo (Dono)' },
+        { date: '11/02', type: 'expense', amount: 35.00, category: 'Pessoal', description: 'Lava Jato', client: 'Rodrigo (Dono)' },
+        { date: '11/02', type: 'expense', amount: 20.00, category: 'Pessoal', description: 'Xbox Ultimate', client: 'Rodrigo (Dono)' },
+        { date: '11/02', type: 'expense', amount: 65.00, category: 'Pessoal', description: 'Gasolina', client: 'Rodrigo (Dono)' },
+        { date: '12/02', type: 'income', amount: 80.00, category: 'Venda', description: 'Adriana Vizinha', client: 'Adriana' },
+        { date: '12/02', type: 'income', amount: 855.00, category: 'Venda', description: '40 Camisas Geovanna 9B', client: 'Geovanna' },
+        { date: '12/02', type: 'expense', amount: 51.74, category: 'Pessoal', description: 'Banco Inter', client: 'Rodrigo (Dono)' },
+        { date: '12/02', type: 'expense', amount: 10.00, category: 'Empresarial', description: 'Assinatura Meli+', client: 'Mercado Livre' },
+        { date: '12/02', type: 'expense', amount: 10.00, category: 'Empresarial', description: 'Assinatura Lightroom', client: 'Adobe' },
+        { date: '12/02', type: 'expense', amount: 6.90, category: 'Pessoal', description: 'iCloud', client: 'Rodrigo (Dono)' },
+        { date: '12/02', type: 'expense', amount: 9.90, category: 'Pessoal', description: 'iCloud', client: 'Rodrigo (Dono)' },
+        { date: '12/02', type: 'expense', amount: 155.90, category: 'Empresarial', description: 'Reposição de Tinta', client: 'Estoque' },
+        { date: '12/02', type: 'expense', amount: 29.59, category: 'Empresarial', description: 'Marketing Instagram Ads', client: 'Meta' },
+        { date: '12/02', type: 'expense', amount: 130.00, category: 'Empresarial', description: 'DTF 2m', client: 'Arthur' },
+        { date: '12/02', type: 'expense', amount: 60.00, category: 'Empresarial', description: 'DTF 1m', client: 'Geovanna' },
+        { date: '12/02', type: 'expense', amount: 25.00, category: 'Pessoal', description: 'Corte de Cabelo', client: 'Rodrigo (Dono)' },
+        { date: '14/02', type: 'expense', amount: 60.00, category: 'Empresarial', description: 'Frete', client: 'Marcelo Taxista' },
+        { date: '15/02', type: 'expense', amount: 18.00, category: 'Dívida Empresarial', description: 'Costureira', client: 'Marcia' },
+        { date: '15/02', type: 'expense', amount: 4.30, category: 'Pessoal', description: 'Padaria', client: 'Rodrigo (Dono)' },
+        { date: '16/02', type: 'expense', amount: 10.00, category: 'Pessoal', description: 'Acarajé', client: 'Rodrigo (Dono)' },
+        { date: '17/02', type: 'expense', amount: 9.00, category: 'Pessoal', description: 'Padaria Mauricelio', client: 'Rodrigo (Dono)' },
+        { date: '17/02', type: 'expense', amount: 80.00, category: 'Empresarial', description: 'Internet', client: 'Provedor' },
+        { date: '17/02', type: 'expense', amount: 5.90, category: 'Pessoal', description: 'iCloud', client: 'Rodrigo (Dono)' },
+        { date: '17/02', type: 'expense', amount: 9.00, category: 'Pessoal', description: 'Padaria Djane', client: 'Rodrigo (Dono)' },
+        { date: '17/02', type: 'expense', amount: 9.00, category: 'Pessoal', description: 'Mercado', client: 'Rodrigo (Dono)' },
+        { date: '17/02', type: 'expense', amount: 70.00, category: 'Investimento', description: 'Camisas Lisas', client: 'Estoque' },
+        { date: '17/02', type: 'income', amount: 390.00, category: 'Lucro', description: 'Pagamento Dívida', client: 'Ricardo' },
+        { date: '17/02', type: 'income', amount: 40.00, category: 'Venda', description: 'Camisa Manga Longa', client: 'Vini' },
+        { date: '18/02', type: 'expense', amount: 5.00, category: 'Custo Indireto', description: 'Folhas A4', client: 'Papelaria' },
+        { date: '18/02', type: 'expense', amount: 10.00, category: 'Custo Indireto', description: 'Estampa A3', client: 'Estamparia' },
+        { date: '18/02', type: 'expense', amount: 30.00, category: 'Pessoal', description: 'Recarga Claro', client: 'Rodrigo (Dono)' }
+    ];
+
+    const resolveClientForEntry = ({ type, category, client }) => {
+        const isPersonalExpense = type === 'expense' && normalizeText(category).includes('pessoal');
+        if (isPersonalExpense) return ensurePersonClient('Rodrigo (Dono)');
+        if (client && isPersonName(client)) return ensurePersonClient(client);
+        return null;
+    };
+
+    const normalizeImportedEntry = (entry) => {
+        const isIncome = entry.type === 'income';
+        const isSale = isIncome && normalizeText(entry.category) === 'venda';
+        const scope = entry.type === 'expense' ? (normalizeText(entry.category).includes('pessoal') ? 'personal' : 'business') : null;
+        const clientId = resolveClientForEntry(entry);
+        const normalized = {
+            id: Date.now() + Math.floor(Math.random() * 1000000),
+            name: (entry.client || entry.description || 'Lançamento').trim(),
+            description: entry.description,
+            amount: entry.type === 'expense' ? -Math.abs(entry.amount) : Math.abs(entry.amount),
+            date: toISODate(entry.date),
+            type: entry.type,
+            category: entry.category,
+            scope,
+            clientId,
+            kind: 'launch',
+            productName: null,
+            qty: 1,
+            quantity: 0,
+            unitPrice: null,
+            totalPrice: Math.abs(entry.amount),
+            createdAt: new Date()
+        };
+
+        if (isSale) {
+            const { qty, productName } = parseQtyAndProduct(entry.description);
+            normalized.kind = 'product_sale';
+            normalized.category = 'Venda de Produto';
+            normalized.productName = productName;
+            normalized.qty = qty || 1;
+            normalized.quantity = normalized.qty;
+            normalized.totalPrice = Math.abs(entry.amount);
+            normalized.unitPrice = Number((normalized.totalPrice / normalized.qty).toFixed(2));
+        }
+
+        normalized.launchId = buildLaunchId({ ...normalized, amount: Math.abs(normalized.amount), clientName: clientId ? getClientNameById(clientId) : '' });
+        return normalized;
+    };
+
+    const dedupeTransactionsByLaunchId = () => {
+        const seen = new Set();
+        const deduped = [];
+        transactions.forEach(transaction => {
+            if (!transaction.launchId) {
+                const absAmount = Math.abs(Number(transaction.amount || 0));
+                const normalizedType = transaction.type || (transaction.amount < 0 ? 'expense' : 'income');
+                const resolvedQty = transaction.qty ?? transaction.quantity ?? '';
+                transaction.launchId = buildLaunchId({ ...transaction, amount: absAmount, type: normalizedType, qty: resolvedQty });
+            }
+            if (!seen.has(transaction.launchId)) {
+                seen.add(transaction.launchId);
+                deduped.push({
+                    kind: 'launch',
+                    qty: 1,
+                    ...transaction,
+                    quantity: transaction.quantity ?? transaction.qty ?? 0,
+                    totalPrice: transaction.totalPrice ?? Math.abs(transaction.amount || 0)
+                });
+            }
+        });
+        const changed = deduped.length !== transactions.length;
+        transactions = deduped;
+        if (changed) saveTransactions();
+    };
+
+    const importRodrigoEntries = () => {
+        if (localStorage.getItem(IMPORT_CLEANUP_KEY) !== '1') {
+            dedupeTransactionsByLaunchId();
+            localStorage.setItem(IMPORT_CLEANUP_KEY, '1');
+        }
+
+        if (localStorage.getItem(IMPORT_KEY) === '1') return;
+
+        const existingLaunchIds = new Set(transactions.map(t => t.launchId || buildLaunchId({ ...t, amount: Math.abs(t.amount || 0), qty: t.qty ?? t.quantity ?? '' })));
+        let inserted = 0;
+        IMPORT_ENTRIES.forEach(rawEntry => {
+            const normalized = normalizeImportedEntry(rawEntry);
+            if (existingLaunchIds.has(normalized.launchId)) return;
+            existingLaunchIds.add(normalized.launchId);
+            transactions.push(normalized);
+            inserted += 1;
+        });
+
+        saveTransactions();
+        localStorage.setItem('clients', JSON.stringify(clients));
+        localStorage.setItem(IMPORT_KEY, '1');
+        if (inserted > 0) {
+            console.info(`[IMPORT] ${inserted} lançamentos inseridos sem duplicidade.`);
+        }
+    };
+
+    const calculateCostPerPiece = (monthTransactions) => {
+        const isDirectCost = (transaction) => {
+            const txt = normalizeText(`${transaction.category || ''} ${transaction.description || ''}`);
+            return ['malha', 'costur', 'dtf', 'silk', 'gola', 'punho', 'camisas lisas', 'reposicao de tinta', 'materia-prima'].some(tag => txt.includes(tag));
+        };
+        const isIndirectCost = (transaction) => normalizeText(transaction.category || '').includes('custo indireto');
+
+        const totalQtySold = monthTransactions
+            .filter(t => t.type === 'income' && ((t.kind || 'launch') === 'product_sale' || normalizeText(t.category || '') === 'venda de produto'))
+            .reduce((sum, t) => sum + (Number(t.qty ?? t.quantity ?? 1) || 1), 0);
+
+        const totalDirectCosts = monthTransactions
+            .filter(t => t.type === 'expense' && t.scope !== 'personal' && isDirectCost(t))
+            .reduce((sum, t) => sum + Math.abs(Number(t.amount || 0)), 0);
+
+        const totalIndirectCosts = monthTransactions
+            .filter(t => t.type === 'expense' && t.scope !== 'personal' && isIndirectCost(t))
+            .reduce((sum, t) => sum + Math.abs(Number(t.amount || 0)), 0);
+
+        const totalCosts = totalDirectCosts + totalIndirectCosts;
+        const costPerPiece = totalQtySold > 0 ? totalCosts / totalQtySold : null;
+
+        console.info('[CUSTO_POR_PECA] total_qty_vendida=', totalQtySold);
+        console.info('[CUSTO_POR_PECA] total_custos_diretos=', totalDirectCosts.toFixed(2));
+        console.info('[CUSTO_POR_PECA] custo_por_peca_resultante=', costPerPiece === null ? '—' : costPerPiece.toFixed(2));
+
+        return { totalQtySold, totalDirectCosts, totalIndirectCosts, costPerPiece };
+    };
+
     let transactionFilters = {
         period: 'this_month', // 'today', 'yesterday', '7days', '30days', 'this_month', 'last_month'
         type: 'all' // 'all', 'income', 'expense'
@@ -270,7 +521,12 @@ const init = () => {
             category: categoryInput.value,
             scope: typeInput.value === 'expense' ? selectedScope : null,
             clientId: linkClientCheckbox.checked && clientSelect.value ? parseInt(clientSelect.value) : null,
+            kind: 'launch',
+            productName: null,
+            qty: 1,
             quantity: 0,
+            unitPrice: null,
+            totalPrice: Math.abs(amount),
             weightKg: 0,
             fabricColor: null,
             createdAt: new Date() // Adiciona timestamp para futuras queries no Firestore
@@ -304,7 +560,11 @@ const init = () => {
             } catch (error) { console.error("Erro ao criar lembrete de conta:", error); showNotification('Falha ao criar lembrete de conta.', 'danger'); }
         }
         if (isProductSale) {
-            transactionData.quantity = parseInt(quantityInput.value, 10) || 0;
+            transactionData.kind = 'product_sale';
+            transactionData.productName = transactionData.description || 'Produto';
+            transactionData.qty = parseInt(quantityInput.value, 10) || 0;
+            transactionData.quantity = transactionData.qty;
+            transactionData.unitPrice = transactionData.qty > 0 ? Number((Math.abs(transactionData.amount) / transactionData.qty).toFixed(2)) : null;
         }
         if (isFabricCheckbox.checked) {
             transactionData.weightKg = parseFloat(fabricWeightInput.value) || 0;
@@ -312,12 +572,18 @@ const init = () => {
         }
 
         let newTransactionId = null;
+        transactionData.launchId = buildLaunchId({ ...transactionData, amount: Math.abs(transactionData.amount), clientName: getClientNameById(transactionData.clientId) });
         if (editingId) {
             const transactionIndex = transactions.findIndex(t => t.id === editingId);
             if (transactionIndex > -1) {
                 transactions[transactionIndex] = { ...transactions[transactionIndex], ...transactionData };
             }
         } else {
+            if (transactions.some(t => t.launchId === transactionData.launchId)) {
+                showNotification('Lançamento duplicado detectado e ignorado.', 'warning');
+                closeModal();
+                return;
+            }
             const newTransaction = { ...transactionData, id: Date.now() };
             transactions.push(newTransaction);
             newTransactionId = newTransaction.id;
@@ -839,13 +1105,8 @@ const init = () => {
         breakEvenCostsBar.style.width = `${costsShare}%`;
         breakEvenCostsBar.textContent = `${costsShare.toFixed(0)}%`;
         if(costPerPieceDashboardEl) {
-            const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-            const monthlyProduction = JSON.parse(localStorage.getItem('monthlyProduction')) || [];
-            const productionData = monthlyProduction.find(p => p.month === currentMonthStr);
-            const piecesProduced = productionData ? productionData.quantity : 0;
-            const totalIndirectCosts = monthlyTransactions.filter(t => t.type === 'expense' && t.scope !== 'personal' && t.category.includes('Indireto')).reduce((sum, t) => sum + Math.abs(t.amount), 0);
-            let costPerPiece = piecesProduced > 0 ? totalIndirectCosts / piecesProduced : 0;
-            costPerPieceDashboardEl.textContent = formatCurrency(costPerPiece);
+            const { costPerPiece } = calculateCostPerPiece(monthlyTransactions);
+            costPerPieceDashboardEl.textContent = costPerPiece === null ? '—' : formatCurrency(costPerPiece);
         }
         
         renderRecentTransactions();
@@ -975,6 +1236,7 @@ const init = () => {
     }
 
     // --- INICIALIZAÇÃO ---
+    importRodrigoEntries();
     updateUI();
     setTimeout(checkDeadlinesAndNotify, 2000);
     setupCarousel('budget-carousel', 'budget-carousel-dots');
