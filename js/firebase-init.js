@@ -3,6 +3,9 @@ import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getStorage } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
+// =========================================================================
+// CHAVES DE ACESSO DO BANCO DE DADOS (Como se fossem o login e senha do seu baú)
+// =========================================================================
 const firebaseConfig = {
   apiKey: "AIzaSyCJVYTzakEJdJ2lODZRjVx4V7r220-iWIQ",
   authDomain: "sitey-caixa.firebaseapp.com",
@@ -13,11 +16,18 @@ const firebaseConfig = {
   measurementId: "G-F0CJN6MTFE"
 };
 
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const storage = getStorage(app);
+// =========================================================================
+// INICIALIZAÇÃO E LIGAÇÃO COM O SERVIDOR
+// =========================================================================
 
+// "Liga o servidor" usando as chaves acima
+const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+// Habilita as 3 ferramentas do Firebase: Contas de Login, Banco de Dados e as Imagens na Nuvem
+const auth = getAuth(app);         // Módulo de Login e Senha
+const db = getFirestore(app);      // Módulo de Dados em Tempo Real (Documentos)
+const storage = getStorage(app);   // Módulo do HD virtual (Imagens)
+
+// Deixa o "firebaseConfig" disponível pro restante do site se precisar usar
 if (typeof window !== "undefined") {
   window.firebasePublicConfig = firebaseConfig;
 }

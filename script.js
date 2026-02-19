@@ -1,147 +1,214 @@
 const init = () => {
+    // =========================================================================
+    // 1. MAPEAMENTO DE ELEMENTOS DO HTML (Criamos variáveis para acessar a tela)
+    // =========================================================================
+
+    // Menu mobile (celular)
     const mobileMenuButton = document.getElementById('mobile-menu-button');
     const mobileMenu = document.getElementById('mobile-menu');
-    
-    // Chart instances must be in a scope that persists across calls to updateUI/updateCharts
+
+    // Variáveis para guardar os Gráficos do Dashboard, 
+    // definidas aqui fora para não sumirem quando a tela atualiza
     let incomeExpenseChart, categoryChart, incomeSourceChart, fabricChart;
 
-    // Menu Mobile Listener (Movido para o topo para garantir que funcione mesmo se houver erros abaixo)
-    if (mobileMenuButton) { mobileMenuButton.addEventListener('click', () => mobileMenu.classList.toggle('open')); }
+    // Se o botão do menu do celular existir, fazemos ele abrir/fechar o menu ao clicar
+    if (mobileMenuButton) {
+        mobileMenuButton.addEventListener('click', () => mobileMenu.classList.toggle('open'));
+    }
 
+    // Elementos do Resumo/Dashboard (Valores totais no topo da tela)
     const balanceEl = document.getElementById('balance');
     const incomeEl = document.getElementById('total-income');
     const expenseEl = document.getElementById('total-expense');
     const profitEl = document.getElementById('profit');
-    const totalReceivablesEl = document.getElementById('total-receivables');
-    const totalPayablesEl = document.getElementById('total-payables');
+    const totalReceivablesEl = document.getElementById('total-receivables'); // A receber
+    const totalPayablesEl = document.getElementById('total-payables');       // A pagar
     const totalMonthlyExpensesEl = document.getElementById('total-monthly-expenses');
-    if (totalReceivablesEl) {
-        totalReceivablesEl.addEventListener('click', () => {
-            window.location.href = 'processos.html?filter=receivables';
-        });
-    }
+
+    // Quando clica no valor de "A Receber", leva o usuário para a tela de Processos
     if (totalReceivablesEl) {
         totalReceivablesEl.addEventListener('click', () => {
             window.location.href = 'processos.html?filter=receivables';
         });
     }
 
+    // Barras de progresso e Limites de Gastos (Pessoal e Empresa)
     const costPerPieceDashboardEl = document.getElementById('cost-per-piece-dashboard');
     const transactionListEl = document.getElementById('transaction-list');
-    const deadlinesListEl = document.getElementById('deadlines-list');
+    const deadlinesListEl = document.getElementById('deadlines-list'); // Lista de prazos (Lembretes)
+
     const businessSpentEl = document.getElementById('business-spent');
     const businessLimitTextEl = document.getElementById('business-limit-text');
     const businessProgressEl = document.getElementById('business-progress');
+
     const personalSpentEl = document.getElementById('personal-spent');
     const personalLimitTextEl = document.getElementById('personal-limit-text');
     const personalProgressEl = document.getElementById('personal-progress');
+
+    // Ponto de Equilíbrio e Contas
     const breakEvenRevenueEl = document.getElementById('break-even-revenue');
     const dashboardBillsSummaryEl = document.getElementById('dashboard-bills-summary');
     const dashboardBillsPaidSummaryEl = document.getElementById('dashboard-bills-paid-summary');
     const breakEvenTargetEl = document.getElementById('break-even-target');
     const breakEvenRevenueBar = document.getElementById('break-even-revenue-bar');
     const breakEvenCostsBar = document.getElementById('break-even-costs-bar');
+
+    // =========================================================================
+    // 2. ELEMENTOS DO MODAL DE ADICIONAR LANÇAMENTOS (O "Pop-up" da tela inicial)
+    // =========================================================================
     const modal = document.getElementById('modal');
-    if (!modal) return;
+    if (!modal) return; // Se a tela atual não tiver modal (ex: não é o index), para de executar o script aqui.
+
     const form = document.getElementById('form');
+    // Campos do formulário de lançamento
     const nameInput = document.getElementById('name');
     const nameFieldContainer = document.getElementById('name-field-container');
     const nameInputWrapper = document.getElementById('name-input-wrapper');
     const nameIsClientCheckbox = document.getElementById('name-is-client-checkbox');
     const descriptionInput = document.getElementById('description');
-    const amountInput = document.getElementById('amount');
-    const dateInput = document.getElementById('date');
-    const typeInput = document.getElementById('type');
-    const categoryInput = document.getElementById('category');
+    const amountInput = document.getElementById('amount'); // Valor em R$
+    const dateInput = document.getElementById('date');     // Data do lançamento
+    const typeInput = document.getElementById('type');     // Receita ou Despesa
+    const categoryInput = document.getElementById('category'); // Categoria
     const quantityContainer = document.getElementById('quantity-field-container');
-    const quantityInput = document.getElementById('transaction-quantity');
+    const quantityInput = document.getElementById('transaction-quantity'); // Quantidade de peças
+
     const scopeContainer = document.getElementById('scope-container');
-    const scopeButtonsContainer = document.getElementById('scope-container');
+    const scopeButtonsContainer = document.getElementById('scope-container'); // Pessoal vs Empresarial
     const modalTitle = modal.querySelector('h2');
+
+    // Botões de ação do Modal
     const addTransactionBtn = document.getElementById('add-transaction-btn');
     const cancelBtn = document.getElementById('cancel-btn');
     const submitBtn = form.querySelector('button[type="submit"]');
+
+    // Seleção de Clientes no Modal
     const linkClientCheckbox = document.getElementById('link-client-checkbox');
     const clientSelectionContainer = document.getElementById('client-selection-container');
     const clientSearchInput = document.getElementById('client-search');
     const clientSelect = document.getElementById('client-select');
+
+    // Notificações em tela (Aquelas janelinhas que avisam "Sucesso" ou "Erro")
     const notificationContainer = document.getElementById('notification-container');
+    // Campos específicos para Lançamento de Tecidos (Estoque de Retalhos)
     const isFabricContainer = document.getElementById('is-fabric-container');
     const isFabricCheckbox = document.getElementById('is-fabric-checkbox');
     const fabricDetailsContainer = document.getElementById('fabric-details-container');
     const fabricColorInput = document.getElementById('fabric-color');
     const fabricWeightInput = document.getElementById('fabric-weight');
-    
+
+    // Adicionar Despesa direto para a Área de Contas a Pagar
     const createBillReminderContainer = document.getElementById('create-bill-reminder-container');
     const createBillReminderCheckbox = document.getElementById('create-bill-reminder-checkbox');
-    // Wizard Elements
+
+    // Botões de navegação no Modal (Quando está no celular e aparece passo 1, 2, 3...)
     const prevStepBtn = document.getElementById('prev-step-btn');
     const nextStepBtn = document.getElementById('next-step-btn');
 
+    // =========================================================================
+    // 3. DADOS PRINCIPAIS (Lendo do armazenamento do navegador - localStorage)
+    // =========================================================================
+
+    // Categorias Padrão de Receitas e Despesas (Se não tiver salvo, usa essas)
     let incomeCategories = JSON.parse(localStorage.getItem('incomeCategories')) || ['Venda de Produto', 'Adiantamento', 'Serviços', 'Outros'];
     let expenseCategories = JSON.parse(localStorage.getItem('expenseCategories')) || ['Matéria-Prima (Custo Direto)', 'Aluguel', 'Contas (Água, Luz, Internet)', 'Marketing e Vendas', 'Salários e Pró-labore', 'Impostos', 'Software e Ferramentas', 'Manutenção', 'Despesas Pessoais', 'Outros'];
-    let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+
+    // Bancos de Dados Locais (Traz as informações salvas ou cria uma lista vazia [])
+    let transactions = JSON.parse(localStorage.getItem('transactions')) || []; // Fluxo de Caixa principal
     let clients = JSON.parse(localStorage.getItem('clients')) || [];
-    let productionOrders = JSON.parse(localStorage.getItem('production_orders')) || [];
-    let editingId = null; 
-    let selectedScope = 'business';
-    let currentStep = 1;
+    let productionOrders = JSON.parse(localStorage.getItem('production_orders')) || []; // Pedidos em andamento
+
+    // Variáveis de controle de tela (Ajudam a saber o que usuário tá fazendo agora)
+    let editingId = null; // Guarda o ID se a pessoa estiver editando um lançamento antigo
+    let selectedScope = 'business'; // Por padrão, lança como despesa da empresa
+    let currentStep = 1; // Passo do formulário no celular
     let currentLaunchId = null;
     let launchActionsBackdropEl = null;
     let launchActionsMenuEl = null;
+
+    // Detecta se é o computador (Desktop) ou celular
     const DESKTOP_MEDIA_QUERY = window.matchMedia('(min-width: 900px)');
 
+    // Filtros de tempo do extrato (ex: mostrar apenas "Este Mês")
     let transactionFilters = {
         period: 'this_month', // 'today', 'yesterday', '7days', '30days', 'this_month', 'last_month'
         type: 'all' // 'all', 'income', 'expense'
     };
 
+    // =========================================================================
+    // 4. FUNÇÕES UTILITÁRIAS (Ajudantes para o restante do código)
+    // =========================================================================
+
+    // Salva o caixa atualizado no navegador
     const saveTransactions = () => localStorage.setItem('transactions', JSON.stringify(transactions));
+
+    // Formata um número para Moeda (ex: 15.5 vira R$ 15,50)
     const formatCurrency = (amount) => amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+    // Formata a Data para padrão brasileiro (ex: 2024-05-10 vira 10/05/2024)
     const formatDate = (dateString) => new Date(dateString + 'T03:00:00').toLocaleDateString('pt-BR');
 
+    // Decide a cor da barra de progresso do Orçamento (Verde, Amarelo ou Vermelho)
     const getProgressColorClass = (percentage) => {
-        if (percentage <= 50) return 'bg-gradient-green';
-        if (percentage <= 80) return 'bg-gradient-yellow';
-        return 'bg-gradient-red';
+        if (percentage <= 50) return 'bg-gradient-green'; // Gastou pouco = Verde
+        if (percentage <= 80) return 'bg-gradient-yellow'; // Chegando perto do limite = Amarelo
+        return 'bg-gradient-red';                         // Passou do limite = Vermelho!
     };
 
+    // Exibe aquelas caixas de alerta pop-up no canto do painel (ex: "Sucesso! Lançamento criado")
     const showNotification = (message, type = 'info') => {
         if (!notificationContainer) return;
         const colors = { info: 'bg-cyan-500', warning: 'bg-yellow-500', danger: 'bg-red-500 animate-pulse' };
+
+        // Cria um elemento HTML na tela para mostrar o aviso
         const notificationId = `notif-${Date.now()}`;
         const notification = document.createElement('div');
         notification.id = notificationId;
         notification.className = `relative w-full p-4 rounded-lg shadow-lg text-white ${colors[type]} transform translate-x-full opacity-0 transition-all duration-500 ease-out`;
         notification.innerHTML = `<p class="font-bold text-sm">${message}</p><button onclick="document.getElementById('${notificationId}').remove()" class="absolute top-1 right-1 text-white/70 hover:text-white">&times;</button>`;
+
         notificationContainer.appendChild(notification);
+
+        // Faz o balãozinho deslizar para a tela
         setTimeout(() => { notification.classList.remove('translate-x-full', 'opacity-0'); }, 100);
+
+        // Faz o balãozinho desaparecer sozinho após 7 segundos
         setTimeout(() => { notification.remove(); }, 7000);
     };
 
+    // Verifica os prazos de produção da equipe e avisa se algo está vencendo hoje
     const checkDeadlinesAndNotify = () => {
         productionOrders = JSON.parse(localStorage.getItem('production_orders')) || [];
         clients = JSON.parse(localStorage.getItem('clients')) || [];
+
+        // Carrega os nomes das tarefas, se estiverem no arquivo processos.js
         const checklistItemsFromData = (typeof window !== 'undefined' && window.PROCESS_CHECKLIST_ITEMS && typeof window.PROCESS_CHECKLIST_ITEMS === 'object')
             ? window.PROCESS_CHECKLIST_ITEMS
             : {};
 
         if (!Array.isArray(productionOrders) || productionOrders.length === 0) return;
 
+        // Pega apenas a data de hoje, ignorando o fuso-horário para evitar bugs
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const todayString = today.toISOString().split('T')[0];
 
+        // Passa por todos os pedidos que ainda não foram finalizados
         productionOrders.forEach(order => {
             if (order.status !== 'done' && order.checklist) {
                 const checklistEntries = Object.entries(order.checklist || {});
                 if (checklistEntries.length === 0) return;
 
+                // Passa por todas as tarefinhas de cada pedido
                 checklistEntries.forEach(([key, task]) => {
+                    // Se a tarefa não tem a data de hoje ou se já foi concluída, ignora
                     if (!task || task.deadline !== todayString || task.completed) return;
+
                     const client = clients.find(c => c.id === order.clientId);
                     const clientName = client ? client.name : 'Cliente';
                     const taskName = checklistItemsFromData[key] || key || 'Tarefa';
+
+                    // Dispara a caixinha pop-up avisando que vai vencer hoje!
                     const message = `Lembrete: A etapa "${taskName}" do pedido de ${clientName} vence HOJE!`;
                     showNotification(message, 'warning');
                 });
@@ -149,7 +216,10 @@ const init = () => {
         });
     };
 
-    // --- Generic Carousel Logic (Manual Only) ---
+    // =========================================================================
+    // 5. CARROSSEL DA TELA INICIAL (Caixinhas que deslizam para o lado)
+    // =========================================================================
+    // Essa função permite arrastar as caixas pro lado no celular ou clicar nas "bolinhas"
     const setupCarousel = (trackId, dotsId) => {
         const carousel = document.getElementById(trackId);
         const carouselDots = document.getElementById(dotsId);
@@ -216,6 +286,12 @@ const init = () => {
     };
 
 
+    // =========================================================================
+    // 6. REGRAS DO FORMULÁRIO (Modal de Adição de Caixa)
+    // Opcionais que somem ou aparecem dependendo do que o usuário clica
+    // =========================================================================
+
+    // Esconde o campo "Nome Solto" se a caixinha "É um cliente" estiver marcada
     const toggleNameFieldByClient = () => {
         if (!nameInputWrapper || !nameInput || !nameIsClientCheckbox) return;
         const shouldHideNameField = nameIsClientCheckbox.checked;
@@ -227,6 +303,7 @@ const init = () => {
         }
     };
 
+    // Mostra o campo de "Quantidade" apenas se escolheu "Venda de Produto"
     const toggleQuantityField = () => {
         const isProductSale = typeInput.value === 'income' && categoryInput.value === 'Venda de Produto';
         quantityContainer.classList.toggle('hidden', !isProductSale);
@@ -234,16 +311,18 @@ const init = () => {
         if (!isProductSale) quantityInput.value = '';
     };
 
+    // Mostra os campos de "Cor e Peso do Fio" apenas se for Despesa (Compra de material)
     const toggleFabricDetailsField = () => {
         const isExpense = typeInput.value === 'expense';
         isFabricContainer.classList.toggle('hidden', !isExpense);
-        
+
         if (!isExpense) {
             isFabricCheckbox.checked = false;
         }
         fabricDetailsContainer.classList.toggle('hidden', !isFabricCheckbox.checked);
     };
 
+    // Mostra os botõezinhos "Empresa x Pessoal" apenas quando for Despesa
     const toggleScopeField = () => {
         const isExpense = typeInput.value === 'expense';
         scopeContainer.classList.toggle('hidden', !isExpense);
@@ -255,18 +334,21 @@ const init = () => {
             }
         }
     };
-    
+
+    // Troca a lista de categorias. Se marcou "Receita", mostra as opções de venda. Se marcou "Despesa", mostra as de compra.
     const updateCategoryOptions = () => {
         const options = typeInput.value === 'income' ? incomeCategories : expenseCategories;
         categoryInput.innerHTML = options.map(cat => `<option value="${cat}" class="bg-gray-800">${cat}</option>`).join('');
     };
-    
+
+    // Busca a ID numérica do cliente pelo campo de seleção
     const getTypedClientIdBySelectValue = (selectedValue) => {
         if (!selectedValue) return null;
         const matchedClient = clients.find(client => String(client.id) === selectedValue);
         return matchedClient ? matchedClient.id : selectedValue;
     };
 
+    // Preenche a caixinha "Selecione o Cliente" com todos os clientes salvos
     const populateClientSelect = () => {
         clients = JSON.parse(localStorage.getItem('clients')) || [];
         // O placeholder é ocultado pois o campo de busca cumpre essa função.
@@ -280,6 +362,7 @@ const init = () => {
         });
     };
 
+    // Se escolher o cliente "João", já preenche o campo "Descrição" automaticamente com "João" (Se "Is Client" estiver checado)
     const handleClientSelection = () => {
         if (!clientSelect) return;
         const selectedId = clientSelect.value;
@@ -294,6 +377,7 @@ const init = () => {
         }
     };
 
+    // Pinta o botão Empresa/Pessoal de azul dependendo de qual estiver selecionado
     const updateScopeButtonsState = () => {
         document.querySelectorAll('.scope-btn').forEach((btn) => {
             const isSelected = btn.dataset.scope === selectedScope;
@@ -314,10 +398,16 @@ const init = () => {
     }
 
 
+    // Executando regras iniciais pela primeira vez pra carregar tela
     toggleNameFieldByClient();
     updateScopeButtonsState();
 
+    // =========================================================================
+    // 7. FUNÇÃO DE SALVAR O NOVO LANÇAMENTO
+    // Quando o usuário preenche o formulário todo e clica no botão "Adicionar"
+    // =========================================================================
     const handleFormSubmit = (e) => {
+        // e.preventDefault() impede a página de recarregar "piscando" na tela
         e.preventDefault();
         const isProductSale = typeInput.value === 'income' && categoryInput.value === 'Venda de Produto';
         if (!descriptionInput.value.trim() || !amountInput.value.trim() || !dateInput.value) { alert('Por favor, preencha todos os campos obrigatórios.'); return; }
@@ -325,7 +415,7 @@ const init = () => {
         if (linkClientCheckbox.checked && !clientSelect.value) { alert('Por favor, selecione um cliente.'); return; }
 
         const amount = typeInput.value === 'expense' ? -Math.abs(parseFloat(amountInput.value)) : parseFloat(amountInput.value);
-        
+
         const selectedClientId = getTypedClientIdBySelectValue(clientSelect.value);
 
         const transactionData = {
@@ -349,7 +439,7 @@ const init = () => {
                 const DB_KEY = 'psyzon_accounts_db_v1';
                 const billsDataRaw = localStorage.getItem(DB_KEY);
                 let billsDb = billsDataRaw ? JSON.parse(billsDataRaw) : { accounts: [], monthly_records: {}, settings: {} };
-                
+
                 if (!Array.isArray(billsDb.accounts)) billsDb.accounts = [];
 
                 const transactionDate = new Date(transactionData.date + 'T03:00:00');
@@ -392,7 +482,7 @@ const init = () => {
                 updateMonthlyProduction(newTransaction.date.substring(0, 7), newTransaction.quantity);
             }
         }
-        
+
         saveTransactions();
         updateUI();
         closeModal();
@@ -410,7 +500,10 @@ const init = () => {
         }
     };
 
-    // --- WIZARD LOGIC (Mobile) ---
+    // =========================================================================
+    // 8. LÓGICA DO "ASSISTENTE EM PASSOS" (Somente para a tela de Celular)
+    // Controla quando o usuário clica em "Próximo Passo", ex: "Escolher Categoria -> Escolher Valor"
+    // =========================================================================
     const updateWizardUI = () => {
         const isMobile = window.innerWidth < 768;
         const stepGroups = document.querySelectorAll('.step-group');
@@ -433,7 +526,7 @@ const init = () => {
                 if (el.dataset.step != 1) el.classList.remove('hidden'); // Garante que todos os steps sejam visíveis no desktop
             }
         });
-        
+
         // Update Indicators
         stepIndicators.forEach(el => {
             if (parseInt(el.dataset.step) <= currentStep) el.classList.add('active');
@@ -445,7 +538,7 @@ const init = () => {
         nextStepBtn.classList.toggle('hidden', currentStep === 3);
         submitBtn.classList.toggle('hidden', isMobile ? currentStep !== 3 : false);
         cancelBtn.classList.toggle('hidden', isMobile ? currentStep !== 1 : false);
-        
+
         // On Desktop, ensure Submit is always visible and Next/Prev hidden (handled by CSS media queries mostly, but logic helps)
         if (window.innerWidth >= 768) {
             submitBtn.classList.remove('hidden');
@@ -472,9 +565,14 @@ const init = () => {
     if (nextStepBtn) nextStepBtn.addEventListener('click', () => {
         if (validateStep(currentStep)) { currentStep++; updateWizardUI(); }
     });
-    
+
     if (prevStepBtn) prevStepBtn.addEventListener('click', () => { currentStep--; updateWizardUI(); });
 
+    // =========================================================================
+    // 9. ABRIR E FECHAR O MODAL (Janela do formulário)
+    // =========================================================================
+
+    // Zera tudo e abre a tela limpa para adicionar um novo registro
     const openAddModal = () => {
         editingId = null;
         form.reset();
@@ -499,11 +597,12 @@ const init = () => {
         modal.classList.remove('hidden');
     };
 
+    // Preenche os campos caso a pessoa tenha clicado em editar um lançamento que já existe
     window.openEditModal = (id) => {
         editingId = id;
         const transaction = transactions.find(t => t.id === id);
         if (!transaction) return;
-        
+
         form.reset();
         if (createBillReminderCheckbox) createBillReminderCheckbox.checked = false;
         nameInput.value = transaction.name || '';
@@ -515,10 +614,10 @@ const init = () => {
         typeInput.value = transaction.type;
         updateCategoryOptions();
         categoryInput.value = transaction.category;
-        
+
         toggleQuantityField();
         if (transaction.quantity) { quantityInput.value = transaction.quantity; }
-        
+
         const isFabric = !!(transaction.weightKg || transaction.fabricColor);
         isFabricCheckbox.checked = isFabric;
         toggleFabricDetailsField();
@@ -553,6 +652,7 @@ const init = () => {
         modal.classList.remove('hidden');
     };
 
+    // Somente fecha e oculta o Modal, zerando o ID que estava editando
     const closeModal = () => {
         editingId = null;
         form.reset();
@@ -561,6 +661,11 @@ const init = () => {
         modal.classList.add('hidden');
     };
 
+    // =========================================================================
+    // 10. INTEGRAÇÃO FINANCEIRA COM OUTRAS ABAS
+    // =========================================================================
+
+    // Soma (ou diminui) uma roupa vendida na lista de "Produção" (Dashboard de custo por peça)
     const updateMonthlyProduction = (month, quantity) => {
         let monthlyProduction = JSON.parse(localStorage.getItem('monthlyProduction')) || [];
         const existingEntryIndex = monthlyProduction.findIndex(item => item.month === month);
@@ -571,7 +676,8 @@ const init = () => {
         }
         localStorage.setItem('monthlyProduction', JSON.stringify(monthlyProduction));
     };
-    
+
+    // Função chamada  quando clica na lixeira para Excluir um lançamento do extrato
     window.removeTransaction = (id) => {
         if (confirm('Tem certeza que deseja excluir esta transação?')) {
             saveTransactions(); // Salva o estado atual antes de modificar
@@ -584,12 +690,14 @@ const init = () => {
             showNotification('Transação excluída.', 'warning');
         }
     };
-    
+
+    // Corta os nomes caso passem de 26 caracteres para a tela não ficar esticada
     const compactLabel = (text = '', maxLength = 26) => {
         if (text.length <= maxLength) return text;
         return `${text.slice(0, maxLength).trimEnd()}…`;
     };
 
+    // Pega a lista invisível no computador, cria o HTML e empurra na Área de "Extrato" da tela
     const addTransactionToDOM = (transaction) => {
         const { id, name, description, amount, date, category, type, scope } = transaction;
         const item = document.createElement('article');
@@ -648,6 +756,11 @@ const init = () => {
         transactionListEl.appendChild(item);
     };
 
+    // =========================================================================
+    // 11. MENU DE AÇÕES NO COMPUTADOR (Editar/Excluir nos 3 pontinhos)
+    // =========================================================================
+
+    // Fecha a janelinha de opções
     const closeLaunchActionsMenu = () => {
         if (!launchActionsMenuEl || !launchActionsBackdropEl) return;
         launchActionsMenuEl.hidden = true;
@@ -655,6 +768,7 @@ const init = () => {
         currentLaunchId = null;
     };
 
+    // Abre a janelinha de opções (Editar ou Deletar) grudadinha ao botão que foi clicado
     const openLaunchActionsMenu = (card, launchId) => {
         if (!launchActionsMenuEl || !launchActionsBackdropEl) return;
         if (!launchId || !DESKTOP_MEDIA_QUERY.matches) return;
@@ -781,7 +895,7 @@ const init = () => {
         // Handle card expansion on mobile
         if (card && window.innerWidth <= 768) {
             const isExpanded = card.classList.contains('expanded');
-            
+
             // Close all other cards
             transactionListEl.querySelectorAll('.transaction-card.expanded').forEach(c => {
                 c.classList.remove('expanded');
@@ -798,8 +912,14 @@ const init = () => {
         }
     });
 
+    // =========================================================================
+    // 12. ATUALIZAÇÃO DA TELA INICIAL (DASHBOARD)
+    // Tudo que aparece de resumo de números, contas e prazos na primeira tela
+    // =========================================================================
+
     initDesktopLaunchCardActions();
 
+    // Lê os pedidos do sistema de processos e monta a listinha de "O que vence hoje"
     const updateDeadlinesCard = () => {
         productionOrders = JSON.parse(localStorage.getItem('production_orders')) || [];
         clients = JSON.parse(localStorage.getItem('clients')) || [];
@@ -834,7 +954,8 @@ const init = () => {
             deadlinesListEl.appendChild(item);
         });
     };
-    
+
+    // Lê da Aba de Contas e monta a listinha de "Contas a Pagar" deste mês
     const updateDashboardBillsCard = () => {
         if (!dashboardBillsSummaryEl) return;
 
@@ -860,7 +981,7 @@ const init = () => {
                 const record = monthlyRecords[acc.id] || { status: 'pending' };
                 // Considera apenas as ativas para o mês atual
                 if (acc.type === 'fixed' || (acc.type === 'unique' && acc.unique_date === monthKey) || (acc.type === 'installment' && acc.current_installment <= acc.total_installments)) {
-                     if (record.status === 'pending' || record.status === 'overdue') {
+                    if (record.status === 'pending' || record.status === 'overdue') {
                         return { ...acc, ...record };
                     }
                 }
@@ -904,6 +1025,7 @@ const init = () => {
         dashboardBillsPaidSummaryEl.innerHTML = paidHtml;
     };
 
+    // Escreve os itens do Fluxo de Caixa no HTML (Parte do Extrato lá embaixo), aplicando os filtros de Dia/Mês/Ano
     const renderRecentTransactions = () => {
         transactionListEl.innerHTML = '<div class="text-center text-gray-400 p-4">Carregando...</div>';
 
@@ -951,6 +1073,8 @@ const init = () => {
         filteredTransactions.forEach(addTransactionToDOM);
     };
 
+    // Essa é a função principal que CALCULA TUDO: Soma os totais, vê quantos % já gastou do limite, etc.
+    // É chamada sempre que algo novo é adicionado ou excluído.
     const updateUI = () => {
         const now = new Date();
         const currentMonth = now.getMonth();
@@ -966,10 +1090,10 @@ const init = () => {
         const totalExpensesMonth = Math.abs(businessExpenseMonth) + Math.abs(personalExpenseMonth);
         const profitMonth = incomeMonth + businessExpenseMonth;
         balanceEl.textContent = formatCurrency(totalBalance);
-        
+
         // Dashboard Mobile Optimization: Ensure elements are visible and sized correctly via CSS
         // The logic here remains the same, but style.css handles the layout (stacked vs grid)
-        
+
         incomeEl.textContent = formatCurrency(incomeMonth);
         expenseEl.textContent = formatCurrency(Math.abs(businessExpenseMonth));
         if (totalMonthlyExpensesEl) {
@@ -985,7 +1109,7 @@ const init = () => {
         let receivablesCount = 0;
         let hasOverdueReceivables = false;
         const todayDate = new Date();
-        todayDate.setHours(0,0,0,0);
+        todayDate.setHours(0, 0, 0, 0);
 
         productionOrdersList.forEach(order => {
             if (order.isPaid) return; // Pedido quitado não entra
@@ -997,7 +1121,7 @@ const init = () => {
             if (pending > 0.01) {
                 receivablesTotal += pending;
                 receivablesCount++;
-                
+
                 if (order.deadline) {
                     const d = new Date(order.deadline + 'T03:00:00');
                     if (d < todayDate) hasOverdueReceivables = true;
@@ -1009,8 +1133,8 @@ const init = () => {
             const alertClass = hasOverdueReceivables ? 'text-red-400 font-bold' : 'text-gray-400';
             const icon = hasOverdueReceivables
                 ? '<svg class="syt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M4.9 19h14.2a1 1 0 00.87-1.49L12.87 4.5a1 1 0 00-1.74 0L4.03 17.5A1 1 0 004.9 19z"/></svg>'
-                : '<svg class="syt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0v10l-8 4m8-14-8 4m0 10-8-4V7m8 4v10"/></svg>'; 
-            
+                : '<svg class="syt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0v10l-8 4m8-14-8 4m0 10-8-4V7m8 4v10"/></svg>';
+
             totalReceivablesEl.innerHTML = `
                 <div>${formatCurrency(receivablesTotal)}</div>
                 <div class="text-xs ${alertClass} mt-1 flex items-center gap-1 font-normal">
@@ -1069,7 +1193,7 @@ const init = () => {
         breakEvenRevenueBar.textContent = `${revenueShare.toFixed(0)}%`;
         breakEvenCostsBar.style.width = `${costsShare}%`;
         breakEvenCostsBar.textContent = `${costsShare.toFixed(0)}%`;
-        if(costPerPieceDashboardEl) {
+        if (costPerPieceDashboardEl) {
             const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
             const monthlyProduction = JSON.parse(localStorage.getItem('monthlyProduction')) || [];
             const productionData = monthlyProduction.find(p => p.month === currentMonthStr);
@@ -1078,7 +1202,7 @@ const init = () => {
             let costPerPiece = piecesProduced > 0 ? totalIndirectCosts / piecesProduced : 0;
             costPerPieceDashboardEl.textContent = formatCurrency(costPerPiece);
         }
-        
+
         renderRecentTransactions();
         updateCharts(monthlyTransactions);
         saveTransactions();
@@ -1086,6 +1210,11 @@ const init = () => {
         updateDashboardBillsCard();
     };
 
+    // =========================================================================
+    // 13. CONSTRUÇÃO DOS GRÁFICOS
+    // =========================================================================
+
+    // Desenha as linhas e fatias coloridas da parte de Análises
     const updateCharts = (monthlyTransactions) => {
         const now = new Date();
         const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
@@ -1096,10 +1225,10 @@ const init = () => {
             else if (t.scope !== 'personal') monthlyData[month].expense += Math.abs(t.amount);
         });
         const chartOptions = { color: '#e0e0e0', family: 'Inter' };
-        
+
         const lineChartCtx = document.getElementById('incomeExpenseChart');
         if (lineChartCtx) { if (incomeExpenseChart) incomeExpenseChart.destroy(); incomeExpenseChart = new Chart(lineChartCtx, { type: 'line', data: { labels: months, datasets: [{ label: 'Receita', data: monthlyData.map(d => d.income), borderColor: '#34d399', backgroundColor: '#34d39920', tension: 0.3, fill: true }, { label: 'Despesa Empresarial', data: monthlyData.map(d => d.expense), borderColor: '#f87171', backgroundColor: '#f8717120', tension: 0.3, fill: true }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: chartOptions.color } } }, scales: { y: { beginAtZero: true, ticks: { color: chartOptions.color }, grid: { color: '#ffffff1a' } }, x: { ticks: { color: chartOptions.color }, grid: { color: '#ffffff1a' } } } } }); }
-        
+
         const doughnutChartCtx = document.getElementById('categoryChart');
         if (doughnutChartCtx) {
             const expenseByCategory = monthlyTransactions.filter(t => t.type === 'expense' && t.scope !== 'personal').reduce((acc, t) => { acc[t.category] = (acc[t.category] || 0) + Math.abs(t.amount); return acc; }, {});
@@ -1113,10 +1242,11 @@ const init = () => {
             if (incomeSourceChart) incomeSourceChart.destroy();
             incomeSourceChart = new Chart(incomeSourceChartCtx, { type: 'pie', data: { labels: Object.keys(incomeByCategory), datasets: [{ data: Object.values(incomeByCategory), backgroundColor: ['#22c55e', '#3b82f6', '#eab308', '#8b5cf6', '#ec4899'], borderColor: '#111827', borderWidth: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
         }
-        
+
         updateFabricChart(monthlyTransactions);
     };
-    
+
+    // Desenha o gráfico de barras duplo de Compra de Tecidos (Dinheiro gasto x Peso em Kg)
     const updateFabricChart = (monthlyTransactions) => {
         const fabricPurchases = monthlyTransactions.filter(t => t.weightKg > 0);
         const totalSpent = fabricPurchases.reduce((acc, t) => acc + Math.abs(t.amount), 0);
@@ -1151,15 +1281,15 @@ const init = () => {
     };
 
     // --- EVENT LISTENERS ---
-    if(addTransactionBtn) addTransactionBtn.addEventListener('click', openAddModal);
-    if(cancelBtn) cancelBtn.addEventListener('click', closeModal);
-    if(form) form.addEventListener('submit', handleFormSubmit);
-    if(typeInput) typeInput.addEventListener('change', () => { updateCategoryOptions(); toggleQuantityField(); toggleScopeField(); toggleFabricDetailsField(); });
-    if(categoryInput) categoryInput.addEventListener('change', () => { toggleQuantityField(); toggleFabricDetailsField(); });
-    if(linkClientCheckbox) linkClientCheckbox.addEventListener('change', () => {
+    if (addTransactionBtn) addTransactionBtn.addEventListener('click', openAddModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+    if (form) form.addEventListener('submit', handleFormSubmit);
+    if (typeInput) typeInput.addEventListener('change', () => { updateCategoryOptions(); toggleQuantityField(); toggleScopeField(); toggleFabricDetailsField(); });
+    if (categoryInput) categoryInput.addEventListener('change', () => { toggleQuantityField(); toggleFabricDetailsField(); });
+    if (linkClientCheckbox) linkClientCheckbox.addEventListener('change', () => {
         clientSelectionContainer.classList.toggle('hidden', !linkClientCheckbox.checked);
     });
-    if(isFabricCheckbox) isFabricCheckbox.addEventListener('change', () => {
+    if (isFabricCheckbox) isFabricCheckbox.addEventListener('change', () => {
         fabricDetailsContainer.classList.toggle('hidden', !isFabricCheckbox.checked);
     });
     if (clientSelect) {
@@ -1200,7 +1330,7 @@ const init = () => {
             for (let i = 0; i < options.length; i++) {
                 const option = options[i];
                 if (option.value === "") continue; // Skip placeholder
-                
+
                 const optionText = option.textContent.toLowerCase();
                 if (optionText.includes(searchTerm)) {
                     option.style.display = '';
@@ -1211,8 +1341,12 @@ const init = () => {
         });
     }
 
-    // --- INICIALIZAÇÃO ---
+    // =========================================================================
+    // 15. INICIALIZAÇÃO "BOOSTRAP" (A primeira coisa que roda)
+    // =========================================================================
     updateUI();
+
+    // Dá 2 segundinhos para o site carregar todo, pra então rodar a checagem de prazos
     setTimeout(() => {
         try {
             checkDeadlinesAndNotify();
@@ -1220,11 +1354,14 @@ const init = () => {
             console.error('Falha ao verificar lembretes de prazo:', error);
         }
     }, 2000);
+    // Liga os 3 carrosséis de arrastar da tela do celular
     setupCarousel('budget-carousel', 'budget-carousel-dots');
     setupCarousel('bills-carousel', 'bills-carousel-dots');
     setupCarousel('charts-carousel', 'charts-carousel-dots');
 };
 
+// Aqui o JS verifica se a tela "já abriu os olhos" (DOMContentLoaded). 
+// Se sim, roda tudo. Se não, espera a tela abrir.
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
 } else {

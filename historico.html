@@ -1,5 +1,6 @@
 ﻿<!DOCTYPE html>
 <html lang="pt-br" class="scroll-smooth">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -24,8 +25,12 @@
   <style>
   </style>
 </head>
+
 <body class="bg-gray-900 text-gray-200 neo-dashboard">
-  <!-- Skeleton Inicial Imediato -->
+  <!-- ========================================================================= -->
+  <!-- 1. TELA DE CARREGAMENTO (SKELETON) -->
+  <!-- Isso é o que aparece piscando na tela antes do sistema  carregar -->
+  <!-- ========================================================================= -->
   <div id="initial-loader" class="initial-skeleton" role="status" aria-live="polite" aria-label="Carregando conteúdo">
     <div class="initial-skeleton-shell" aria-hidden="true">
       <div class="initial-skeleton-topbar">
@@ -55,7 +60,10 @@
   </div>
 
   <div class="flex flex-col min-h-screen">
-    
+
+    <!-- ========================================================================= -->
+    <!-- 2. MENU SUPERIOR (APENAS COMPUTAODRES) -->
+    <!-- ========================================================================= -->
     <header class="hidden md:block desktop-topbar sticky top-0 z-40">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="desktop-topbar-inner flex items-center justify-between">
@@ -79,34 +87,68 @@
       </div>
     </header>
     <div id="mobile-menu" class="md:hidden hidden bg-gray-900 border-b border-white/10">
-        <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-gray-900 border-b border-white/10">
-          <a href="index.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Dashboard</a>
-          <a href="clientes.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Clientes</a>
-          <a href="processos.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Processos</a>
-          <a href="historico.html" class="bg-cyan-500/20 text-cyan-300 block px-3 py-2 rounded-md text-base font-medium">Histórico</a>
-          <a href="relatorios.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Relatórios</a>
-          <a href="configuracoes.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Configurações</a>
-          <button onclick="window.firebaseAuth.logout()" class="w-full text-left text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium hover:text-red-400">Sair</button>
-        </div>
+      <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-gray-900 border-b border-white/10">
+        <a href="index.html"
+          class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Dashboard</a>
+        <a href="clientes.html"
+          class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Clientes</a>
+        <a href="processos.html"
+          class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Processos</a>
+        <a href="historico.html"
+          class="bg-cyan-500/20 text-cyan-300 block px-3 py-2 rounded-md text-base font-medium">Histórico</a>
+        <a href="relatorios.html"
+          class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Relatórios</a>
+        <a href="configuracoes.html"
+          class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Configurações</a>
+        <button onclick="window.firebaseAuth.logout()"
+          class="w-full text-left text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium hover:text-red-400">Sair</button>
+      </div>
     </div>
 
     <main class="flex-1 p-4 md:p-6 lg:p-8">
+
+      <!-- ========================================================================= -->
+      <!-- 3. TÍTULO, SELETOR DE MÊS E BOTÃO DE NOVO LANÇAMENTO -->
+      <!-- ========================================================================= -->
       <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-          <h1 class="text-2xl md:text-3xl font-bold">Dashboard Histórico</h1>
-          <div class="flex items-center gap-4">
-            <input type="month" id="month-selector" class="p-2 rounded-md bg-white/10 border border-white/20">
-            <button id="add-transaction-btn" class="btn-shine py-2 px-4 font-bold rounded-lg">+ Lançamento</button>
-          </div>
+        <h1 class="text-2xl md:text-3xl font-bold">Dashboard Histórico</h1>
+        <div class="flex items-center gap-4">
+          <input type="month" id="month-selector" class="p-2 rounded-md bg-white/10 border border-white/20">
+          <button id="add-transaction-btn" class="btn-shine py-2 px-4 font-bold rounded-lg">+ Lançamento</button>
+        </div>
       </div>
 
+      <!-- ========================================================================= -->
+      <!-- 4. BLOCOS DE ATALHO PRINCIPAIS (Resumo do mês que o User selecionou na busca) -->
+      <!-- ========================================================================= -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        <div class="glass-card p-4 md:p-6"><div class="icon-label-container"><span class="text-2xl">💰</span><span class="info-tooltip" data-tooltip="Saldo (Final do Mês)">?</span></div><p id="balance" class="text-2xl md:text-4xl font-bold mt-2">R$ 0,00</p></div>
-        <div class="glass-card p-4 md:p-6"><div class="icon-label-container"><span class="text-2xl">📈</span><span class="info-tooltip" data-tooltip="Receitas (no Mês)">?</span></div><p id="total-income" class="text-2xl md:text-4xl font-bold mt-2 text-green-400">R$ 0,00</p></div>
-        <div class="glass-card p-4 md:p-6"><div class="icon-label-container"><span class="text-2xl">📉</span><span class="info-tooltip" data-tooltip="Despesas Emp. (no Mês)">?</span></div><p id="total-expense" class="text-2xl md:text-4xl font-bold mt-2 text-red-400">R$ 0,00</p></div>
-        <div class="glass-card p-4 md:p-6"><div class="icon-label-container"><span class="text-2xl">💎</span><span class="info-tooltip" data-tooltip="Lucro Empresarial (no Mês)">?</span></div><p id="profit" class="text-2xl md:text-4xl font-bold mt-2">R$ 0,00</p></div>
-        <div class="glass-card p-4 md:p-6 lg:col-span-2"><div class="icon-label-container"><span class="text-2xl">🏭</span><span class="info-tooltip" data-tooltip="Custo por Peça (no Mês)">?</span></div><p id="cost-per-piece-dashboard" class="text-2xl md:text-4xl font-bold mt-2 text-yellow-400">R$ 0,00</p></div>
+        <div class="glass-card p-4 md:p-6">
+          <div class="icon-label-container"><span class="text-2xl">💰</span><span class="info-tooltip"
+              data-tooltip="Saldo (Final do Mês)">?</span></div>
+          <p id="balance" class="text-2xl md:text-4xl font-bold mt-2">R$ 0,00</p>
+        </div>
+        <div class="glass-card p-4 md:p-6">
+          <div class="icon-label-container"><span class="text-2xl">📈</span><span class="info-tooltip"
+              data-tooltip="Receitas (no Mês)">?</span></div>
+          <p id="total-income" class="text-2xl md:text-4xl font-bold mt-2 text-green-400">R$ 0,00</p>
+        </div>
+        <div class="glass-card p-4 md:p-6">
+          <div class="icon-label-container"><span class="text-2xl">📉</span><span class="info-tooltip"
+              data-tooltip="Despesas Emp. (no Mês)">?</span></div>
+          <p id="total-expense" class="text-2xl md:text-4xl font-bold mt-2 text-red-400">R$ 0,00</p>
+        </div>
+        <div class="glass-card p-4 md:p-6">
+          <div class="icon-label-container"><span class="text-2xl">💎</span><span class="info-tooltip"
+              data-tooltip="Lucro Empresarial (no Mês)">?</span></div>
+          <p id="profit" class="text-2xl md:text-4xl font-bold mt-2">R$ 0,00</p>
+        </div>
+        <div class="glass-card p-4 md:p-6 lg:col-span-2">
+          <div class="icon-label-container"><span class="text-2xl">🏭</span><span class="info-tooltip"
+              data-tooltip="Custo por Peça (no Mês)">?</span></div>
+          <p id="cost-per-piece-dashboard" class="text-2xl md:text-4xl font-bold mt-2 text-yellow-400">R$ 0,00</p>
+        </div>
       </div>
-      
+
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <div class="glass-card p-6">
           <h3 class="text-xl font-bold mb-4">Compras de Malha (no Mês)</h3>
@@ -121,111 +163,177 @@
           </div>
         </div>
       </div>
-      
+
+      <!-- ========================================================================= -->
+      <!-- 5. PAINEL DE ONDE FICA O EXTRATO DE LANÇAMENTOS DO MÊS SELECIONADO NA BUSCA LÁ EM CIMA -->
+      <!-- ========================================================================= -->
       <div class="glass-card p-4 md:p-6">
         <h3 class="text-xl font-bold mb-4">Lançamentos do Mês Selecionado</h3>
         <div class="overflow-x-auto">
-            <table class="w-full text-left min-w-[600px]">
-                <thead>
-                    <tr class="border-b border-white/10">
-                        <th class="p-3">Nome</th>
-                        <th class="p-3">Descrição</th>
-                        <th class="p-3">Valor</th>
-                        <th class="p-3">Escopo</th>
-                        <th class="p-3">Categoria</th>
-                        <th class="p-3">Data</th>
-                        <th class="p-3">Ação</th>
-                    </tr>
-                </thead>
-                <tbody id="transaction-list"></tbody>
-            </table>
+          <table class="w-full text-left min-w-[600px]">
+            <thead>
+              <tr class="border-b border-white/10">
+                <th class="p-3">Nome</th>
+                <th class="p-3">Descrição</th>
+                <th class="p-3">Valor</th>
+                <th class="p-3">Escopo</th>
+                <th class="p-3">Categoria</th>
+                <th class="p-3">Data</th>
+                <th class="p-3">Ação</th>
+              </tr>
+            </thead>
+            <tbody id="transaction-list"></tbody>
+          </table>
         </div>
       </div>
     </main>
-    
-    <div id="modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-0 md:p-4">
-      <div class="glass-card w-full max-w-lg h-[95vh] md:h-auto md:max-h-[90vh] rounded-t-2xl md:rounded-xl flex flex-col">
-          <form id="form" class="p-6 md:p-8 flex-1 overflow-y-auto">
-              <h2 class="text-2xl font-bold mb-6">Novo Lançamento</h2>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div><label for="name" class="block mb-2 text-sm font-medium">Nome (Cliente/Fornecedor)</label><input type="text" id="name" class="w-full p-3 rounded-md bg-white/10 border border-white/20" placeholder="Ex: Cliente Vini"></div>
-                  <div><label for="description" class="block mb-2 text-sm font-medium">Descrição</label><input type="text" id="description" class="w-full p-3 rounded-md bg-white/10 border border-white/20" placeholder="Ex: 10 camisetas personalizadas" required></div>
+
+    <!-- ========================================================================= -->
+    <!-- 6. MODAL POP-UP PARA INSERÇÃO DE DADOS BÁSICA -->
+    <!-- ========================================================================= -->
+
+    <div id="modal"
+      class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[60] flex items-end md:items-center justify-center p-0 md:p-4">
+      <div
+        class="glass-card w-full max-w-lg h-[95vh] md:h-auto md:max-h-[90vh] rounded-t-2xl md:rounded-xl flex flex-col">
+        <form id="form" class="p-6 md:p-8 flex-1 overflow-y-auto">
+          <h2 class="text-2xl font-bold mb-6">Novo Lançamento</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div><label for="name" class="block mb-2 text-sm font-medium">Nome (Cliente/Fornecedor)</label><input
+                type="text" id="name" class="w-full p-3 rounded-md bg-white/10 border border-white/20"
+                placeholder="Ex: Cliente Vini"></div>
+            <div><label for="description" class="block mb-2 text-sm font-medium">Descrição</label><input type="text"
+                id="description" class="w-full p-3 rounded-md bg-white/10 border border-white/20"
+                placeholder="Ex: 10 camisetas personalizadas" required></div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div><label for="amount" class="block mb-2 text-sm font-medium">Valor</label><input type="number"
+                id="amount" step="0.01" class="w-full p-3 rounded-md bg-white/10 border border-white/20"
+                placeholder="2250.00" required></div>
+            <div><label for="date" class="block mb-2 text-sm font-medium">Data</label><input type="date" id="date"
+                class="w-full p-3 rounded-md bg-white/10 border border-white/20" required></div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div><label for="type" class="block mb-2 text-sm font-medium">Tipo</label><select id="type"
+                class="w-full p-3 rounded-md bg-white/10 border border-white/20">
+                <option value="income">Receita</option>
+                <option value="expense">Despesa</option>
+              </select></div>
+            <div><label for="category" class="block mb-2 text-sm font-medium">Categoria</label><select id="category"
+                class="w-full p-3 rounded-md bg-white/10 border border-white/20"></select></div>
+          </div>
+          <div id="scope-container" class="hidden mb-4"><label class="block mb-2 text-sm font-medium">Escopo da
+              Despesa</label>
+            <div class="grid grid-cols-2 gap-2"><button type="button" data-scope="business"
+                class="scope-btn p-3 rounded-md border-2 bg-white/10">🏢 Empresarial</button><button type="button"
+                data-scope="personal" class="scope-btn p-3 rounded-md border-2 bg-white/10">👤 Pessoal</button></div>
+          </div>
+          <div id="is-fabric-container" class="hidden mb-4"><label
+              class="flex items-center gap-2 text-sm font-medium cursor-pointer"><input type="checkbox"
+                id="is-fabric-checkbox" class="w-4 h-4 rounded text-cyan-500 bg-gray-700 border-gray-600">Esta despesa
+              é compra de malha?</label></div>
+          <div id="fabric-details-container"
+            class="hidden space-y-4 p-4 rounded-lg bg-white/5 border border-white/10 mb-4">
+            <h3 class="text-sm font-semibold text-cyan-300">Detalhes da Matéria-Prima</h3>
+            <div class="grid grid-cols-2 gap-4">
+              <div><label for="fabric-color" class="block mb-2 text-xs font-medium">Cor</label><input type="text"
+                  id="fabric-color" class="w-full p-2 rounded-md bg-white/10 border border-white/20 text-sm"
+                  placeholder="Ex: Preto"></div>
+              <div><label for="fabric-weight" class="block mb-2 text-xs font-medium">Peso (Kg)</label><input
+                  type="number" step="0.01" id="fabric-weight"
+                  class="w-full p-2 rounded-md bg-white/10 border border-white/20 text-sm" placeholder="Ex: 15.5">
               </div>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div><label for="amount" class="block mb-2 text-sm font-medium">Valor</label><input type="number" id="amount" step="0.01" class="w-full p-3 rounded-md bg-white/10 border border-white/20" placeholder="2250.00" required></div>
-                  <div><label for="date" class="block mb-2 text-sm font-medium">Data</label><input type="date" id="date" class="w-full p-3 rounded-md bg-white/10 border border-white/20" required></div>
-              </div>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div><label for="type" class="block mb-2 text-sm font-medium">Tipo</label><select id="type" class="w-full p-3 rounded-md bg-white/10 border border-white/20"><option value="income">Receita</option><option value="expense">Despesa</option></select></div>
-                  <div><label for="category" class="block mb-2 text-sm font-medium">Categoria</label><select id="category" class="w-full p-3 rounded-md bg-white/10 border border-white/20"></select></div>
-              </div>
-              <div id="scope-container" class="hidden mb-4"><label class="block mb-2 text-sm font-medium">Escopo da Despesa</label><div class="grid grid-cols-2 gap-2"><button type="button" data-scope="business" class="scope-btn p-3 rounded-md border-2 bg-white/10">🏢 Empresarial</button><button type="button" data-scope="personal" class="scope-btn p-3 rounded-md border-2 bg-white/10">👤 Pessoal</button></div></div>
-              <div id="is-fabric-container" class="hidden mb-4"><label class="flex items-center gap-2 text-sm font-medium cursor-pointer"><input type="checkbox" id="is-fabric-checkbox" class="w-4 h-4 rounded text-cyan-500 bg-gray-700 border-gray-600">Esta despesa é compra de malha?</label></div>
-              <div id="fabric-details-container" class="hidden space-y-4 p-4 rounded-lg bg-white/5 border border-white/10 mb-4">
-                <h3 class="text-sm font-semibold text-cyan-300">Detalhes da Matéria-Prima</h3>
-                <div class="grid grid-cols-2 gap-4">
-                    <div><label for="fabric-color" class="block mb-2 text-xs font-medium">Cor</label><input type="text" id="fabric-color" class="w-full p-2 rounded-md bg-white/10 border border-white/20 text-sm" placeholder="Ex: Preto"></div>
-                    <div><label for="fabric-weight" class="block mb-2 text-xs font-medium">Peso (Kg)</label><input type="number" step="0.01" id="fabric-weight" class="w-full p-2 rounded-md bg-white/10 border border-white/20 text-sm" placeholder="Ex: 15.5"></div>
-                </div>
-              </div>
-              <div id="quantity-field-container" class="hidden mb-4"><label for="transaction-quantity" class="block mb-2 text-sm font-medium">Quantidade de Peças</label><input type="number" id="transaction-quantity" class="w-full p-3 rounded-md bg-white/10 border border-white/20" placeholder="Ex: 10"></div>
-              <div class="border-t border-white/10 pt-4 mt-4">
-                <label class="flex items-center gap-2 text-sm font-medium cursor-pointer"><input type="checkbox" id="link-client-checkbox" class="w-4 h-4 rounded text-cyan-500 bg-gray-700 border-gray-600">Vincular esta transação a um cliente?</label>
-                <div id="client-selection-container" class="mt-2 hidden">
-                    <label for="client-select" class="block mb-2 text-sm font-medium text-gray-400">Selecione o Cliente</label>
-                    <input type="text" id="client-search" placeholder="Pesquisar cliente..." class="w-full p-2 mb-2 rounded-md bg-white/10 border border-white/20 text-sm">
-                    <select id="client-select" class="w-full p-3 rounded-md bg-white/10 border border-white/20"></select>
-                </div>
-              </div>
-              <div class="flex flex-col-reverse md:flex-row justify-end gap-4 mt-6 pt-4 border-t border-white/10 pb-4 md:pb-0">
-                  <button type="button" id="cancel-btn" class="py-3 px-6 rounded-lg bg-white/10 hover:bg-white/20 w-full md:w-auto">Cancelar</button>
-                  <button type="submit" class="btn-shine py-3 px-6 font-bold rounded-lg w-full md:w-auto justify-center">Adicionar</button>
-              </div>
-          </form>
+            </div>
+          </div>
+          <div id="quantity-field-container" class="hidden mb-4"><label for="transaction-quantity"
+              class="block mb-2 text-sm font-medium">Quantidade de Peças</label><input type="number"
+              id="transaction-quantity" class="w-full p-3 rounded-md bg-white/10 border border-white/20"
+              placeholder="Ex: 10"></div>
+          <div class="border-t border-white/10 pt-4 mt-4">
+            <label class="flex items-center gap-2 text-sm font-medium cursor-pointer"><input type="checkbox"
+                id="link-client-checkbox" class="w-4 h-4 rounded text-cyan-500 bg-gray-700 border-gray-600">Vincular
+              esta transação a um cliente?</label>
+            <div id="client-selection-container" class="mt-2 hidden">
+              <label for="client-select" class="block mb-2 text-sm font-medium text-gray-400">Selecione o
+                Cliente</label>
+              <input type="text" id="client-search" placeholder="Pesquisar cliente..."
+                class="w-full p-2 mb-2 rounded-md bg-white/10 border border-white/20 text-sm">
+              <select id="client-select" class="w-full p-3 rounded-md bg-white/10 border border-white/20"></select>
+            </div>
+          </div>
+          <div
+            class="flex flex-col-reverse md:flex-row justify-end gap-4 mt-6 pt-4 border-t border-white/10 pb-4 md:pb-0">
+            <button type="button" id="cancel-btn"
+              class="py-3 px-6 rounded-lg bg-white/10 hover:bg-white/20 w-full md:w-auto">Cancelar</button>
+            <button type="submit"
+              class="btn-shine py-3 px-6 font-bold rounded-lg w-full md:w-auto justify-center">Adicionar</button>
+          </div>
+        </form>
       </div>
     </div>
 
-  <!-- Barra de Navegação Inferior (Mobile) -->
+    <!-- ========================================================================= -->
+    <!-- 7. MENU DE NAVEGAÇÃO SECUNDÁRIO -->
+    <!-- ========================================================================= -->
+    <!-- Barra de Navegação Inferior (Mobile) -->
 
 
 
-  <nav class="bottom-nav">
-    <a href="index.html" class="bottom-nav-item">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
-      <span>Início</span>
-    </a>
-    <a href="central.html" class="bottom-nav-item">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-      <span>Central</span>
-    </a>
-    <a href="processos.html" class="bottom-nav-item">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
-      <span>Processos</span>
-    </a>
-    <a href="contas.html" class="bottom-nav-item">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H4a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
-      <span>Contas</span>
-    </a>
-    <a href="clientes.html" class="bottom-nav-item">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-      <span>Clientes</span>
-    </a>
-    <button id="mobile-menu-button" class="bottom-nav-item active" type="button">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
-      <span>Menu</span>
-    </button>
-  </nav>
+    <nav class="bottom-nav">
+      <a href="index.html" class="bottom-nav-item">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+        </svg>
+        <span>Início</span>
+      </a>
+      <a href="central.html" class="bottom-nav-item">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+        <span>Central</span>
+      </a>
+      <a href="processos.html" class="bottom-nav-item">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+        </svg>
+        <span>Processos</span>
+      </a>
+      <a href="contas.html" class="bottom-nav-item">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H4a3 3 0 00-3 3v8a3 3 0 003 3z" />
+        </svg>
+        <span>Contas</span>
+      </a>
+      <a href="clientes.html" class="bottom-nav-item">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+        <span>Clientes</span>
+      </a>
+      <button id="mobile-menu-button" class="bottom-nav-item active" type="button">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+        <span>Menu</span>
+      </button>
+    </nav>
 
   </div>
   <script>
     // Carrega historico.js apenas após o Backend inicializar
     const checkSync = setInterval(() => {
-        if (window.BackendInitialized) {
-            clearInterval(checkSync);
-            const s = document.createElement('script'); s.src = "historico.js"; document.body.appendChild(s);
-        }
+      if (window.BackendInitialized) {
+        clearInterval(checkSync);
+        const s = document.createElement('script'); s.src = "historico.js"; document.body.appendChild(s);
+      }
     }, 100);
   </script>
   <script src="theme-toggle.js"></script>
 </body>
+
 </html>
