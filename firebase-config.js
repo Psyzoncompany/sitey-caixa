@@ -50,7 +50,7 @@ const playSuccessSound = () => {
         gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.15);
         osc.start(audioCtx.currentTime);
         osc.stop(audioCtx.currentTime + 0.15);
-    } catch (e) {}
+    } catch (e) { }
 };
 
 // State for automatic cloud sync
@@ -343,7 +343,114 @@ const createFloatingNotes = () => {
     fab.type = 'button';
     fab.setAttribute('aria-label', 'Abrir bloco de anotações');
     fab.title = 'Anotações';
-    fab.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>';
+    fab.innerHTML = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%" aria-labelledby="notaTitle notaDesc" role="img">
+    <title id="notaTitle">Bloco de Notas Animado</title>
+    <desc id="notaDesc">Ícone animado circular de um bloco de notas minimalista com uma caneta escrevendo continuamente.</desc>
+
+    <style>
+        /* 🌀 Animação do anel externo */
+        .anim-ring {
+            animation: spin 4s linear infinite;
+            transform-origin: 100px 100px;
+        }
+        
+        /* ✍️ Animação da caneta se movendo */
+        .anim-pen {
+            animation: write 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
+        /* 📏 Animação da linha sendo desenhada */
+        .anim-line {
+            animation: draw-line 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
+        /* 💧 Efeito de ripple ao tocar no papel */
+        .anim-ripple {
+            animation: touch-ripple 3s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            transform-origin: 76px 104px;
+        }
+
+        /* 🎬 Keyframes */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes write {
+            0%, 15% { transform: translate(90px, 130px); opacity: 0; }
+            25% { transform: translate(76px, 104px); opacity: 1; } /* Toca no papel */
+            60% { transform: translate(124px, 104px); opacity: 1; } /* Termina linha */
+            75% { transform: translate(140px, 120px); opacity: 0; } /* Sai */
+            100% { transform: translate(90px, 130px); opacity: 0; }
+        }
+
+        @keyframes draw-line {
+            0%, 24% { stroke-dashoffset: 48; opacity: 0; }
+            25% { opacity: 0.8; }
+            60% { stroke-dashoffset: 0; opacity: 0.8; }
+            80% { stroke-dashoffset: 0; opacity: 0.8; }
+            90%, 100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+
+        @keyframes touch-ripple {
+            0%, 23% { r: 0; opacity: 0; stroke-width: 3px; }
+            25% { opacity: 0.4; }
+            40% { r: 14; opacity: 0; stroke-width: 0px; }
+            100% { r: 14; opacity: 0; stroke-width: 0px; }
+        }
+
+        /* 🛑 Respeito à preferência do usuário de não ter animações */
+        @media (prefers-reduced-motion: reduce) {
+            .anim-ring, .anim-pen, .anim-line, .anim-ripple {
+                animation: none !important;
+            }
+            .anim-pen { opacity: 0; } 
+            .anim-line { stroke-dashoffset: 0; opacity: 0.8; }
+        }
+    </style>
+
+    <!-- 1) ⭕ CÍRCULO EXTERNO -->
+    <g id="ring-container">
+        <circle cx="100" cy="100" r="86" fill="currentColor" opacity="0.03" />
+        <circle cx="100" cy="100" r="86" stroke="currentColor" stroke-width="2" fill="none" opacity="0.1" />
+        <circle class="anim-ring" cx="100" cy="100" r="86" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-dasharray="140 400" fill="none" opacity="0.9" />
+    </g>
+
+    <!-- 2) 📋 BLOCO DE NOTAS MINIMALISTA -->
+    <g id="notepad">
+        <!-- Prancheta/Papel -->
+        <rect x="64" y="44" width="72" height="100" rx="8" stroke="currentColor" stroke-width="4" fill="none" opacity="0.8" />
+        
+        <!-- Clipe superior -->
+        <rect x="80" y="38" width="40" height="12" rx="4" fill="currentColor" opacity="0.4" />
+        <rect x="90" y="34" width="20" height="6" rx="3" fill="currentColor" opacity="0.9" />
+
+        <!-- Linhas estáticas -->
+        <line x1="76" y1="68" x2="124" y2="68" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.3" />
+        <line x1="76" y1="86" x2="106" y2="86" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.3" />
+
+        <!-- Linha sendo escrita (Animada) -->
+        <line class="anim-line" x1="76" y1="104" x2="124" y2="104" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.8" stroke-dasharray="48" stroke-dashoffset="48" />
+    </g>
+
+    <!-- 3) 💧 EFEITO RIPPLE -->
+    <circle class="anim-ripple" cx="76" cy="104" r="0" fill="none" stroke="currentColor" stroke-width="2" />
+
+    <!-- 4) 🖊️ CANETA MINIMALISTA (Animada) -->
+    <g class="anim-pen">
+        <g transform="rotate(35)">
+            <!-- Ponta -->
+            <path d="M 0 0 L -3 -8 L 3 -8 Z" fill="currentColor" opacity="0.95" />
+            <!-- Corpo -->
+            <rect x="-3" y="-32" width="6" height="24" rx="2" stroke="currentColor" stroke-width="2" fill="none" opacity="0.8" />
+            <!-- Borracha/Topo -->
+            <rect x="-3" y="-38" width="6" height="6" rx="2" fill="currentColor" opacity="0.5" />
+        </g>
+    </g>
+
+</svg>
+`;
 
     const modal = document.createElement('div');
     modal.id = 'notes-modal-global';
@@ -469,7 +576,7 @@ const createFloatingNotes = () => {
                 };
                 return;
             }
-        } catch (_) {}
+        } catch (_) { }
         notesState = {
             activeId: null,
             tabs: [makeTab('Nota 1')]
@@ -834,7 +941,7 @@ Object.defineProperty(window, 'localStorage', {
             // Verifica se o valor realmente mudou para evitar "falsos positivos" de alterações não salvas
             const currentValue = memoryStore[key];
             const currentString = typeof currentValue === 'object' ? JSON.stringify(currentValue) : (currentValue === undefined ? null : String(currentValue));
-            
+
             // Se o valor for idêntico, não faz nada (não marca como não salvo)
             // Nota: localStorage sempre armazena strings. Se currentString for null (undefined), é mudança.
             if (currentString === stringValue) return;

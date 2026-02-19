@@ -1403,11 +1403,13 @@ body.is-dragging-kanban {
   font-weight: bold;
   font-size: 0.9rem;
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .qty-input::-webkit-outer-spin-button,
 .qty-input::-webkit-inner-spin-button {
   -webkit-appearance: none;
+  appearance: none;
   margin: 0;
 }
 
@@ -5567,8 +5569,8 @@ body.neo-dashboard {
 }
 
 .notes-fab svg {
-  width: 23px;
-  height: 23px;
+  width: 100%;
+  height: 100%;
 }
 
 .notes-modal {
