@@ -42,6 +42,40 @@
 </head>
 
 <body class="bg-gray-900 text-gray-200 neo-dashboard">
+  <!-- Video Background em Loop (GIF) sem som -->
+  <div class="fixed inset-0 w-full h-full z-0 overflow-hidden pointer-events-none bg-black">
+    <!-- Zoom (scale) para sumir bordas pretas, escurecido com opacity e bg-black -->
+    <video id="bg-video" autoplay muted playsinline aria-hidden="true"
+      class="absolute inset-0 w-full h-full object-cover opacity-90 block" style="transform: scale(1.3);">
+      <source src="img/Imagem_Animada_em_Vídeo.mp4" type="video/mp4">
+    </video>
+    <!-- Efeito leve de degrade escuro em cima -->
+    <div class="absolute inset-0 bg-gradient-to-b from-gray-900/80 via-gray-900/30 to-gray-900/80 mix-blend-multiply">
+    </div>
+    <!-- Efeito de desfoque leve (motion blur look) -->
+    <div class="absolute inset-0 backdrop-blur-[3px]"></div>
+    <!-- Script para Loop Boomerang (Vai e Volta) -->
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const bgVid = document.getElementById("bg-video");
+        if (bgVid) {
+          bgVid.addEventListener("ended", () => {
+            bgVid.pause();
+            let rewindInterval = setInterval(() => {
+              if (bgVid.currentTime <= 0.05) {
+                clearInterval(rewindInterval);
+                bgVid.currentTime = 0;
+                bgVid.play();
+              } else {
+                bgVid.currentTime -= 0.05; // Velocidade do retrocesso
+              }
+            }, 30);
+          });
+        }
+      });
+    </script>
+  </div>
+
   <div id="bg" class="neo-bg" aria-hidden="true"></div>
   <div id="lens" class="neo-lens" aria-hidden="true"></div>
   <!-- ========================================================================= -->
@@ -76,7 +110,7 @@
     <span class="initial-skeleton-text">Conectando ao servidor…</span>
   </div>
 
-  <div class="flex flex-col min-h-screen">
+  <div class="relative z-10 flex flex-col min-h-screen">
 
     <header class="hidden md:block desktop-topbar z-50">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
