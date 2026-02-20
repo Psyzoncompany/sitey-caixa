@@ -669,9 +669,235 @@
 
     <button id="add-launch-fab" class="add-launch-fab" type="button" aria-label="Adicionar lançamento"
       title="Adicionar lançamento">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M12 5v14M5 12h14" />
-        <rect x="3" y="3" width="18" height="18" rx="4" />
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%"
+        aria-labelledby="compTitle compDesc" role="img">
+        <title id="compTitle">Adicionar Pedido - Computador</title>
+        <desc id="compDesc">Ícone animado circular de uma pessoa digitando em um computador e clicando em um botão de
+          adicionar pedido.</desc>
+
+        <style>
+          /* 🌀 Animação do anel externo */
+          .anim-ring {
+            animation: spin 5s linear infinite;
+            transform-origin: 100px 100px;
+          }
+
+          /* 🖐️ Animação da mão esquerda (digitando) */
+          .anim-hand-l {
+            animation: type-left 5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+          }
+
+          /* 🖐️ Animação da mão direita (digitando e clicando) */
+          .anim-hand-r {
+            animation: type-right 5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            transform-origin: 118px 142px;
+            /* Centro da mão direita */
+          }
+
+          /* 💧 Efeito de clique no botão da tela */
+          .anim-ripple {
+            animation: ripple-click 5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            transform-origin: 126px 86px;
+          }
+
+          /* 📝 Nova linha aparecendo na tela */
+          .anim-new-order {
+            animation: draw-order 5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+          }
+
+          /* 🎬 Keyframes */
+          @keyframes spin {
+            0% {
+              transform: rotate(0deg);
+            }
+
+            100% {
+              transform: rotate(360deg);
+            }
+          }
+
+          @keyframes type-left {
+
+            0%,
+            10%,
+            20%,
+            30%,
+            40%,
+            50%,
+            100% {
+              transform: translateY(0);
+            }
+
+            5%,
+            15%,
+            25%,
+            35%,
+            45% {
+              transform: translateY(3px);
+            }
+          }
+
+          @keyframes type-right {
+
+            0%,
+            15%,
+            25%,
+            35%,
+            45% {
+              transform: translateY(0) scale(1);
+            }
+
+            7%,
+            20%,
+            30%,
+            40% {
+              transform: translateY(3px) scale(1);
+            }
+
+            55% {
+              transform: translate(8px, -40px) scale(1);
+            }
+
+            /* Move pro botão (+) */
+            60% {
+              transform: translate(8px, -38px) scale(0.9);
+            }
+
+            /* Clica */
+            65% {
+              transform: translate(8px, -40px) scale(1);
+            }
+
+            /* Solta */
+            75%,
+            100% {
+              transform: translate(0, 0) scale(1);
+            }
+
+            /* Volta pro teclado */
+          }
+
+          @keyframes ripple-click {
+
+            0%,
+            58% {
+              r: 0;
+              opacity: 0;
+              stroke-width: 3px;
+            }
+
+            60% {
+              opacity: 0.6;
+            }
+
+            75%,
+            100% {
+              r: 16;
+              opacity: 0;
+              stroke-width: 0px;
+            }
+          }
+
+          @keyframes draw-order {
+
+            0%,
+            62% {
+              stroke-dashoffset: 36;
+              opacity: 0;
+            }
+
+            63% {
+              opacity: 0.8;
+              stroke-dashoffset: 36;
+            }
+
+            75%,
+            90% {
+              stroke-dashoffset: 0;
+              opacity: 0.8;
+            }
+
+            95%,
+            100% {
+              opacity: 0;
+            }
+          }
+
+          /* 🛑 Respeito à preferência do usuário de não ter animações */
+          @media (prefers-reduced-motion: reduce) {
+
+            .anim-ring,
+            .anim-hand-l,
+            .anim-hand-r,
+            .anim-ripple,
+            .anim-new-order {
+              animation: none !important;
+            }
+
+            .anim-new-order {
+              stroke-dashoffset: 0;
+              opacity: 0.8;
+            }
+          }
+        </style>
+
+        <!-- 1) ⭕ CÍRCULO EXTERNO -->
+        <g id="ring-container">
+          <circle cx="100" cy="100" r="86" fill="currentColor" opacity="0.03" />
+          <circle cx="100" cy="100" r="86" stroke="currentColor" stroke-width="2" fill="none" opacity="0.1" />
+          <circle class="anim-ring" cx="100" cy="100" r="86" stroke="currentColor" stroke-width="4"
+            stroke-linecap="round" stroke-dasharray="140 400" fill="none" opacity="0.9" />
+        </g>
+
+        <!-- 2) 🖥️ COMPUTADOR / MONITOR -->
+        <g id="computer">
+          <!-- Base do Monitor -->
+          <path d="M 92 110 L 108 110 L 114 122 L 86 122 Z" fill="currentColor" opacity="0.4" />
+          <line x1="76" y1="124" x2="124" y2="124" stroke="currentColor" stroke-width="4" stroke-linecap="round"
+            opacity="0.8" />
+
+          <!-- Tela externa -->
+          <rect x="54" y="44" width="92" height="66" rx="6" stroke="currentColor" stroke-width="4" fill="none"
+            opacity="0.8" />
+          <!-- Vidro/Fundo da tela -->
+          <rect x="60" y="50" width="80" height="54" rx="3" fill="currentColor" opacity="0.05" />
+
+          <!-- Linhas de Pedidos Anteriores -->
+          <line x1="68" y1="62" x2="100" y2="62" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+            opacity="0.3" />
+          <line x1="68" y1="74" x2="114" y2="74" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+            opacity="0.3" />
+
+          <!-- Nova Linha de Pedido (Animada) -->
+          <line class="anim-new-order" x1="68" y1="86" x2="104" y2="86" stroke="currentColor" stroke-width="3"
+            stroke-linecap="round" opacity="0" stroke-dasharray="36" stroke-dashoffset="36" />
+
+          <!-- Botão (+) dentro da tela -->
+          <g opacity="0.8">
+            <rect x="116" y="78" width="16" height="16" rx="4" fill="currentColor" opacity="0.2" />
+            <path d="M 120 86 H 128 M 124 82 V 90" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </g>
+        </g>
+
+        <!-- 3) ⌨️ TECLADO -->
+        <g id="keyboard">
+          <rect x="64" y="136" width="72" height="14" rx="4" stroke="currentColor" stroke-width="2" fill="none"
+            opacity="0.6" />
+          <line x1="70" y1="143" x2="130" y2="143" stroke="currentColor" stroke-width="2" stroke-dasharray="4 4"
+            opacity="0.3" stroke-linecap="round" />
+        </g>
+
+        <!-- 4) 💧 EFEITO RIPPLE (Clique na tela) -->
+        <circle class="anim-ripple" cx="124" cy="86" r="0" fill="none" stroke="currentColor" stroke-width="2" />
+
+        <!-- 5) 🖐️ MÃOS DIGITANDO (Animadas) -->
+        <g id="hands">
+          <!-- Mão Esquerda -->
+          <rect class="anim-hand-l" x="76" y="130" width="12" height="20" rx="6" fill="currentColor" opacity="0.95" />
+          <!-- Mão Direita -->
+          <rect class="anim-hand-r" x="112" y="130" width="12" height="20" rx="6" fill="currentColor" opacity="0.95" />
+        </g>
+
       </svg>
     </button>
 

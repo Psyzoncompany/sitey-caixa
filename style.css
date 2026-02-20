@@ -746,8 +746,8 @@ select:focus {
 }
 
 #floating-save-btn svg {
-  width: 24px;
-  height: 24px;
+  width: 100%;
+  height: 100%;
 }
 
 #floating-save-btn:hover {
@@ -3526,15 +3526,19 @@ body.neo-dashboard {
   outline-offset: 2px;
 }
 
-.mobile-header-icon-btn svg,
-.mobile-add-bill-fab svg {
-  width: 1rem;
-  height: 1rem;
+.mobile-header-icon-btn svg {
+  width: 1.1rem;
+  height: 1.1rem;
   stroke: currentColor;
   stroke-width: 2;
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.mobile-add-bill-fab svg {
+  width: 100%;
+  height: 100%;
 }
 
 .mobile-bills-list {
@@ -5548,8 +5552,8 @@ body.neo-dashboard {
 }
 
 .add-launch-fab svg {
-  width: 25px;
-  height: 25px;
+  width: 100%;
+  height: 100%;
 }
 
 .notes-fab {
@@ -5927,93 +5931,117 @@ body.neo-dashboard {
 
 .due-soon-fab {
   position: fixed;
-  right: 16px;
+  right: 1rem;
   bottom: calc(var(--bottom-nav-height, 78px) + env(safe-area-inset-bottom) + 226px);
-  z-index: 10025;
-  display: inline-flex;
-  align-items: center;
-  gap: .45rem;
+  width: 58px;
+  height: 58px;
   border-radius: 999px;
-  border: 1px solid rgba(34, 211, 238, .45);
-  background: linear-gradient(135deg, rgba(8, 145, 178, .95), rgba(30, 64, 175, .95));
-  color: #ecfeff;
-  font-weight: 700;
-  padding: .65rem .9rem;
-  box-shadow: 0 12px 28px rgba(8, 47, 73, .45);
+  border: 1px solid rgba(139, 92, 246, 0.5);
+  /* Violeta para combinar com as tarefas */
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.95), rgba(76, 29, 149, 0.9));
+  color: #fff;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 16px 32px rgba(2, 6, 23, 0.5);
+  z-index: 10025;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.due-soon-fab:active {
+  transform: scale(0.95);
 }
 
 .due-soon-fab__count {
-  min-width: 1.5rem;
-  height: 1.5rem;
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 22px;
+  height: 22px;
   border-radius: 999px;
-  display: inline-flex;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  display: flex;
   align-items: center;
   justify-content: center;
-  font-size: .75rem;
-  background: rgba(239, 68, 68, .95);
-  color: #fff;
+  border: 2px solid #0f172a;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }
 
 .due-soon-fab.is-empty .due-soon-fab__count {
-  background: rgba(22, 163, 74, .9);
+  display: none;
+  /* Esconde se estiver vazio */
 }
 
 .due-soon-fab__icon {
-  width: 1.1rem;
-  height: 1.1rem;
-  display: inline-flex;
-}
-
-.due-soon-fab__icon svg {
   width: 100%;
   height: 100%;
+}
+
+.due-soon-fab__label {
+  display: none;
+  /* Removido para ser apenas circular */
 }
 
 .global-reminder-toast {
   position: fixed;
-  top: calc(env(safe-area-inset-top, 0px) + 16px);
-  right: 16px;
+  top: max(1rem, env(safe-area-inset-top));
+  left: 50%;
+  transform: translate(-50%, -20px);
   z-index: 11000;
-  max-width: min(92vw, 360px);
-  border-radius: 14px;
-  border: 1px solid rgba(250, 204, 21, .35);
-  background: rgba(15, 23, 42, .95);
-  color: #fde68a;
-  font-weight: 600;
-  padding: .7rem .9rem;
+  width: calc(100% - 2rem);
+  max-width: 400px;
+  border-radius: 16px;
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  background: linear-gradient(160deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98));
+  color: #fff;
+  padding: 1rem 1.25rem;
   display: flex;
   align-items: center;
-  gap: .55rem;
-  transform: translateY(-12px);
+  gap: 1rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   opacity: 0;
-  transition: all .25s ease;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: none;
 }
 
 .global-reminder-toast.show {
-  transform: translateY(0);
+  transform: translate(-50%, 0);
   opacity: 1;
+  pointer-events: auto;
 }
 
 .global-reminder-toast__icon {
-  width: 1.1rem;
-  height: 1.1rem;
-  display: inline-flex;
-  color: #facc15;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: rgba(139, 92, 246, 0.2);
+  display: grid;
+  place-items: center;
+  color: #a78bfa;
   flex-shrink: 0;
 }
 
 .global-reminder-toast__icon svg {
-  width: 100%;
-  height: 100%;
+  width: 20px;
+  height: 20px;
 }
 
 .global-reminder-toast__text {
-  line-height: 1.3;
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: #e2e8f0;
 }
 
 @media (min-width: 768px) {
   .due-soon-fab {
-    bottom: calc(1.4rem + 148px);
+    bottom: calc(1.4rem + 148px + 76px);
+    /* Ajustado para empilhar se necessário */
+    right: 1.4rem;
   }
 }
 

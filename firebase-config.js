@@ -97,7 +97,115 @@ const ensureFloatingSaveButton = () => {
     const btn = document.createElement('button');
     btn.id = 'floating-save-btn';
     btn.type = 'button';
-    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>';
+    btn.innerHTML = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%" aria-labelledby="cloudTitle cloudDesc" role="img">
+    <title id="cloudTitle">Salvar na Nuvem</title>
+    <desc id="cloudDesc">Ícone animado circular de um site enviando dados para a nuvem.</desc>
+
+    <style>
+        /* 🌀 Animação do anel externo */
+        .anim-ring {
+            animation: spin 5s linear infinite;
+            transform-origin: 100px 100px;
+        }
+
+        /* ⬆️ Animação da seta de upload */
+        .anim-arrow {
+            animation: upload-arrow 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
+        /* ☁️ Pulo da Nuvem ao receber o dado */
+        .anim-cloud {
+            animation: cloud-bounce 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            transform-origin: 100px 68px; /* Centro da nuvem */
+        }
+
+        /* 💧 Efeito de confirmação (Ripple) na nuvem */
+        .anim-ripple {
+            animation: cloud-ripple 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            transform-origin: 100px 68px;
+        }
+
+        /* 🎬 Keyframes */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes upload-arrow {
+            0%, 15% { transform: translateY(16px); opacity: 0; }
+            25% { transform: translateY(4px); opacity: 1; }
+            40% { transform: translateY(-12px); opacity: 1; }
+            45%, 100% { transform: translateY(-16px); opacity: 0; }
+        }
+
+        @keyframes cloud-bounce {
+            0%, 38% { transform: scale(1); }
+            42% { transform: scale(1.06); }
+            48%, 100% { transform: scale(1); }
+        }
+
+        @keyframes cloud-ripple {
+            0%, 40% { r: 0; opacity: 0; stroke-width: 3px; }
+            42% { opacity: 0.6; }
+            60%, 100% { r: 24; opacity: 0; stroke-width: 0px; }
+        }
+
+        /* 🛑 Respeito à preferência do usuário de não ter animações */
+        @media (prefers-reduced-motion: reduce) {
+            .anim-ring, .anim-arrow, .anim-cloud, .anim-ripple {
+                animation: none !important;
+            }
+            .anim-arrow { opacity: 1; transform: translateY(-6px); }
+        }
+    </style>
+
+    <!-- 1) ⭕ CÍRCULO EXTERNO -->
+    <g id="ring-container">
+        <circle cx="100" cy="100" r="86" fill="currentColor" opacity="0.03" />
+        <circle cx="100" cy="100" r="86" stroke="currentColor" stroke-width="2" fill="none" opacity="0.1" />
+        <circle class="anim-ring" cx="100" cy="100" r="86" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-dasharray="140 400" fill="none" opacity="0.9" />
+    </g>
+
+    <!-- 2) 🌐 NAVEGADOR / SITE -->
+    <g id="browser">
+        <!-- Corpo da janela -->
+        <rect x="50" y="110" width="100" height="54" rx="6" stroke="currentColor" stroke-width="4" fill="none" opacity="0.8" />
+        
+        <!-- Barra superior -->
+        <line x1="50" y1="126" x2="150" y2="126" stroke="currentColor" stroke-width="2" opacity="0.4" />
+        
+        <!-- Botões de controle da janela (pontinhos) -->
+        <circle cx="62" cy="118" r="2" fill="currentColor" opacity="0.5"/>
+        <circle cx="70" cy="118" r="2" fill="currentColor" opacity="0.5"/>
+        <circle cx="78" cy="118" r="2" fill="currentColor" opacity="0.5"/>
+        
+        <!-- Conteúdo do site (linhas abstratas) -->
+        <line x1="62" y1="140" x2="138" y2="140" stroke="currentColor" stroke-width="3" stroke-linecap="round" opacity="0.3" />
+        <line x1="62" y1="152" x2="100" y2="152" stroke="currentColor" stroke-width="3" stroke-linecap="round" opacity="0.3" />
+    </g>
+
+    <!-- 3) ⬆️ SETA DE UPLOAD (Animada) -->
+    <g class="anim-arrow" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0.9">
+        <line x1="100" y1="104" x2="100" y2="88" />
+        <polyline points="92 96 100 88 108 96" />
+    </g>
+
+    <!-- 4) 💧 RIPPLE DA NUVEM -->
+    <circle class="anim-ripple" cx="100" cy="68" r="0" fill="none" stroke="currentColor" stroke-width="2" />
+
+    <!-- 5) ☁️ NUVEM GEOMÉTRICA (Animada) -->
+    <g class="anim-cloud" fill="currentColor" opacity="0.95">
+        <!-- Estrutura feita de círculos perfeitamente alinhados -->
+        <circle cx="100" cy="60" r="16" /> <!-- Centro -->
+        <circle cx="84" cy="70" r="12" />  <!-- Esquerda -->
+        <circle cx="116" cy="70" r="12" /> <!-- Direita -->
+        <!-- Base retangular para unir tudo e arredondar os cantos inferiores -->
+        <rect x="72" y="70" width="56" height="12" rx="6" />
+    </g>
+
+</svg>
+    `;
     btn.addEventListener('click', () => saveToCloud({ force: true }));
     document.body.appendChild(btn);
     document.body.classList.add('has-manual-save-fab');
@@ -822,14 +930,149 @@ const createDueSoonTasksFab = () => {
     dueFab.title = 'Afazeres vencendo em até 2 dias';
     dueFab.innerHTML = `
         <span class="due-soon-fab__icon" aria-hidden="true">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M9 3h6"/>
-                <path d="M10 7h4"/>
-                <rect x="5" y="3" width="14" height="18" rx="2"/>
-                <path d="M9 12h6M9 16h6"/>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%" aria-labelledby="todoTitle todoDesc" role="img">
+                <title id="todoTitle">Lista de Afazeres</title>
+                <desc id="todoDesc">Ícone animado circular de uma lista de tarefas sendo preenchida com checkmarks por uma caneta.</desc>
+
+                <style>
+                    /* 🌀 Animação do anel externo */
+                    .anim-ring {
+                        animation: spin 6s linear infinite;
+                        transform-origin: 100px 100px;
+                    }
+
+                    /* ✍️ Animação da caneta marcando as opções */
+                    .anim-pen {
+                        animation: pen-move 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+                    }
+
+                    /* ✔️ Animação dos checkmarks se desenhando */
+                    .anim-check-1 { animation: draw-check-1 6s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+                    .anim-check-2 { animation: draw-check-2 6s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+                    .anim-check-3 { animation: draw-check-3 6s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+
+                    /* 💧 Efeitos Ripple para cada caixa marcada */
+                    .anim-ripple-1 { animation: ripple-1 6s cubic-bezier(0.4, 0, 0.2, 1) infinite; transform-origin: 76px 76px; }
+                    .anim-ripple-2 { animation: ripple-2 6s cubic-bezier(0.4, 0, 0.2, 1) infinite; transform-origin: 76px 106px; }
+                    .anim-ripple-3 { animation: ripple-3 6s cubic-bezier(0.4, 0, 0.2, 1) infinite; transform-origin: 76px 136px; }
+
+                    /* 🎬 Keyframes */
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+
+                    @keyframes pen-move {
+                        0%, 5% { transform: translate(160px, 160px); opacity: 0; }
+                        10% { transform: translate(80px, 80px); opacity: 1; } /* Caixa 1 */
+                        18% { transform: translate(80px, 80px); opacity: 1; }
+                        25% { transform: translate(80px, 110px); opacity: 1; } /* Caixa 2 */
+                        33% { transform: translate(80px, 110px); opacity: 1; }
+                        40% { transform: translate(80px, 140px); opacity: 1; } /* Caixa 3 */
+                        48% { transform: translate(80px, 140px); opacity: 1; }
+                        55%, 100% { transform: translate(160px, 180px); opacity: 0; }
+                    }
+
+                    @keyframes draw-check-1 {
+                        0%, 12% { stroke-dashoffset: 24; opacity: 0; }
+                        13% { opacity: 1; stroke-dashoffset: 24; }
+                        18%, 80% { stroke-dashoffset: 0; opacity: 1; }
+                        85%, 100% { stroke-dashoffset: 0; opacity: 0; }
+                    }
+
+                    @keyframes draw-check-2 {
+                        0%, 27% { stroke-dashoffset: 24; opacity: 0; }
+                        28% { opacity: 1; stroke-dashoffset: 24; }
+                        33%, 80% { stroke-dashoffset: 0; opacity: 1; }
+                        85%, 100% { stroke-dashoffset: 0; opacity: 0; }
+                    }
+
+                    @keyframes draw-check-3 {
+                        0%, 42% { stroke-dashoffset: 24; opacity: 0; }
+                        43% { opacity: 1; stroke-dashoffset: 24; }
+                        48%, 80% { stroke-dashoffset: 0; opacity: 1; }
+                        85%, 100% { stroke-dashoffset: 0; opacity: 0; }
+                    }
+
+                    @keyframes ripple-1 {
+                        0%, 12% { r: 0; opacity: 0; stroke-width: 3px; }
+                        14% { opacity: 0.6; }
+                        24%, 100% { r: 16; opacity: 0; stroke-width: 0px; }
+                    }
+                    @keyframes ripple-2 {
+                        0%, 27% { r: 0; opacity: 0; stroke-width: 3px; }
+                        29% { opacity: 0.6; }
+                        39%, 100% { r: 16; opacity: 0; stroke-width: 0px; }
+                    }
+                    @keyframes ripple-3 {
+                        0%, 42% { r: 0; opacity: 0; stroke-width: 3px; }
+                        44% { opacity: 0.6; }
+                        54%, 100% { r: 16; opacity: 0; stroke-width: 0px; }
+                    }
+
+                    /* 🛑 Respeito à preferência do usuário de não ter animações */
+                    @media (prefers-reduced-motion: reduce) {
+                        .anim-ring, .anim-pen, .anim-ripple-1, .anim-ripple-2, .anim-ripple-3 { animation: none !important; }
+                        .anim-check-1, .anim-check-2, .anim-check-3 { animation: none !important; stroke-dashoffset: 0; opacity: 1; }
+                        .anim-pen { opacity: 0; } 
+                    }
+                </style>
+
+                <!-- 1) ⭕ CÍRCULO EXTERNO -->
+                <g id="ring-container">
+                    <circle cx="100" cy="100" r="86" fill="currentColor" opacity="0.03" />
+                    <circle cx="100" cy="100" r="86" stroke="currentColor" stroke-width="2" fill="none" opacity="0.1" />
+                    <circle class="anim-ring" cx="100" cy="100" r="86" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-dasharray="140 400" fill="none" opacity="0.9" />
+                </g>
+
+                <!-- 2) 📋 PRANCHETA / LISTA -->
+                <g id="clipboard">
+                    <!-- Corpo da prancheta -->
+                    <rect x="54" y="36" width="92" height="128" rx="8" stroke="currentColor" stroke-width="4" fill="none" opacity="0.8" />
+                    
+                    <!-- Clipe superior -->
+                    <path d="M 80 36 V 30 C 80 26 84 26 84 26 H 116 C 116 26 120 26 120 30 V 36" fill="none" stroke="currentColor" stroke-width="4" opacity="0.5" stroke-linecap="round" stroke-linejoin="round" />
+                    <rect x="86" y="32" width="28" height="8" rx="4" fill="currentColor" opacity="0.9" />
+
+                    <!-- Linha 1 (Caixa + Texto) -->
+                    <rect x="68" y="68" width="16" height="16" rx="4" stroke="currentColor" stroke-width="2" fill="none" opacity="0.4" />
+                    <line x1="94" y1="76" x2="134" y2="76" stroke="currentColor" stroke-width="3" stroke-linecap="round" opacity="0.3" />
+
+                    <!-- Linha 2 (Caixa + Texto) -->
+                    <rect x="68" y="98" width="16" height="16" rx="4" stroke="currentColor" stroke-width="2" fill="none" opacity="0.4" />
+                    <line x1="94" y1="106" x2="124" y2="106" stroke="currentColor" stroke-width="3" stroke-linecap="round" opacity="0.3" />
+
+                    <!-- Linha 3 (Caixa + Texto) -->
+                    <rect x="68" y="128" width="16" height="16" rx="4" stroke="currentColor" stroke-width="2" fill="none" opacity="0.4" />
+                    <line x1="94" y1="136" x2="114" y2="136" stroke="currentColor" stroke-width="3" stroke-linecap="round" opacity="0.3" />
+                </g>
+
+                <!-- 3) ✔️ CHECKMARKS ANIMADOS -->
+                <g stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.9">
+                    <path class="anim-check-1" d="M 72 76 L 75 80 L 81 72" stroke-dasharray="24" stroke-dashoffset="24" />
+                    <path class="anim-check-2" d="M 72 106 L 75 110 L 81 102" stroke-dasharray="24" stroke-dashoffset="24" />
+                    <path class="anim-check-3" d="M 72 136 L 75 140 L 81 132" stroke-dasharray="24" stroke-dashoffset="24" />
+                </g>
+
+                <!-- 4) 💧 EFEITOS RIPPLE (Pulsos) -->
+                <circle class="anim-ripple-1" cx="76" cy="76" r="0" fill="none" stroke="currentColor" stroke-width="2" />
+                <circle class="anim-ripple-2" cx="76" cy="106" r="0" fill="none" stroke="currentColor" stroke-width="2" />
+                <circle class="anim-ripple-3" cx="76" cy="136" r="0" fill="none" stroke="currentColor" stroke-width="2" />
+
+                <!-- 5) 🖊️ CANETA MINIMALISTA -->
+                <g class="anim-pen">
+                    <g transform="rotate(35)">
+                        <!-- Ponta -->
+                        <path d="M 0 0 L -3 -8 L 3 -8 Z" fill="currentColor" opacity="0.95" />
+                        <!-- Corpo -->
+                        <rect x="-3" y="-32" width="6" height="24" rx="2" stroke="currentColor" stroke-width="2" fill="none" opacity="0.8" />
+                        <!-- Borracha/Topo -->
+                        <rect x="-3" y="-38" width="6" height="6" rx="2" fill="currentColor" opacity="0.5" />
+                    </g>
+                </g>
+
             </svg>
         </span>
-        <span class="due-soon-fab__label">Afazeres 2d</span>
         <span id="due-soon-fab-count" class="due-soon-fab__count">0</span>
     `;
     dueFab.addEventListener('click', () => {
