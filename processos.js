@@ -23,6 +23,15 @@ const init = () => {
     const orderDescriptionInput = document.getElementById('order-description');
     const orderClientSelect = document.getElementById('order-client');
     const orderClientSearchInput = document.getElementById('order-client-search');
+
+    // Quick Add Client
+    const quickAddClientBtn = document.getElementById('quick-add-client-btn');
+    const quickClientModal = document.getElementById('quick-client-modal');
+    const quickClientForm = document.getElementById('quick-client-form');
+    const cancelQuickClientBtn = document.getElementById('cancel-quick-client-btn');
+    const quickClientNameInput = document.getElementById('quick-client-name');
+    const quickClientPhoneInput = document.getElementById('quick-client-phone');
+    const quickClientInstagramInput = document.getElementById('quick-client-instagram');
     const orderDeadlineInput = document.getElementById('order-deadline');
     const orderClientContactInput = document.getElementById('order-client-contact');
     const orderChecklistContainer = document.getElementById('order-checklist');
@@ -443,6 +452,54 @@ const init = () => {
                 if (!opt.value) return;
                 opt.style.display = opt.textContent.toLowerCase().includes(term) ? '' : 'none';
             });
+        });
+    }
+
+    if (quickAddClientBtn && quickClientModal && quickClientForm && cancelQuickClientBtn) {
+        quickAddClientBtn.addEventListener('click', () => {
+            quickClientModal.classList.remove('hidden');
+            quickClientNameInput.focus();
+        });
+
+        cancelQuickClientBtn.addEventListener('click', () => {
+            quickClientModal.classList.add('hidden');
+            quickClientForm.reset();
+        });
+
+        quickClientForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const clientName = quickClientNameInput.value.trim();
+            if (!clientName) return;
+
+            let phoneStr = quickClientPhoneInput.value.trim();
+            const instaStr = quickClientInstagramInput.value.trim();
+            if (instaStr && !phoneStr) {
+                phoneStr = instaStr;
+            } else if (instaStr && phoneStr) {
+                phoneStr = phoneStr + " " + instaStr;
+            }
+
+            const newClient = {
+                id: Date.now(),
+                name: clientName,
+                gender: "not_informed",
+                phone: phoneStr,
+                email: "",
+                totalIncome: 0,
+                netProfit: 0
+            };
+
+            clients = JSON.parse(localStorage.getItem('clients')) || [];
+            clients.push(newClient);
+            localStorage.setItem('clients', JSON.stringify(clients));
+
+            populateClientSelect(); // Refresh list to include new client
+
+            // Auto-select the newly created client
+            orderClientSelect.value = newClient.id.toString();
+
+            quickClientModal.classList.add('hidden');
+            quickClientForm.reset();
         });
     }
 

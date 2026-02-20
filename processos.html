@@ -73,7 +73,7 @@
     <!-- ========================================================================= -->
     <!-- 2. MENU SUPERIOR (APENAS COMPUTAODRES) -->
     <!-- ========================================================================= -->
-        <header class="hidden md:block desktop-topbar z-50">
+    <header class="hidden md:block desktop-topbar z-50">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="desktop-topbar-inner flex items-center justify-between">
           <div class="flex items-center">
@@ -252,7 +252,12 @@
                   class="w-full p-3 rounded-md bg-white/10 border border-white/20" required></div>
               <div class="grid grid-cols-2 gap-4">
                 <div>
-                  <label for="order-client" class="block mb-2 text-sm font-medium">Cliente</label>
+                  <div class="flex items-center justify-between mb-2">
+                    <label for="order-client" class="block text-sm font-medium">Cliente</label>
+                    <button type="button" id="quick-add-client-btn"
+                      class="text-xs text-cyan-400 hover:text-cyan-300 transition-colors font-bold">+ Novo
+                      Cliente</button>
+                  </div>
                   <input type="text" id="order-client-search" placeholder="Pesquisar cliente..."
                     class="w-full p-2 mb-2 rounded-md bg-white/10 border border-white/20 text-sm">
                   <select id="order-client" class="w-full p-3 rounded-md bg-white/10 border border-white/20"
@@ -504,6 +509,38 @@
       </button>
     </nav>
 
+  </div>
+
+  <!-- MODAL DE CRIAR CLIENTE RÁPIDO -->
+  <div id="quick-client-modal"
+    class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] flex items-end md:items-center justify-center p-0 md:p-4">
+    <div class="glass-card w-full max-w-lg rounded-t-2xl md:rounded-xl flex flex-col p-6 max-h-[90vh] overflow-y-auto">
+      <h2 class="text-2xl font-bold mb-4">Novo Cliente</h2>
+      <form id="quick-client-form" class="space-y-4">
+        <div>
+          <label for="quick-client-name" class="block mb-2 text-sm font-medium">Nome do Cliente *</label>
+          <input type="text" id="quick-client-name" class="w-full p-3 rounded-md bg-white/10 border border-white/20"
+            required>
+        </div>
+        <div>
+          <label for="quick-client-phone" class="block mb-2 text-sm font-medium">Telefone / WhatsApp (Opcional)</label>
+          <input type="text" id="quick-client-phone" placeholder="Ex.: (11) 99999-0000"
+            class="w-full p-3 rounded-md bg-white/10 border border-white/20">
+        </div>
+        <div>
+          <label for="quick-client-instagram" class="block mb-2 text-sm font-medium">Instagram (Opcional)</label>
+          <input type="text" id="quick-client-instagram" placeholder="Ex.: @cliente"
+            class="w-full p-3 rounded-md bg-white/10 border border-white/20">
+        </div>
+        <div class="flex justify-end gap-3 mt-6">
+          <button type="button" id="cancel-quick-client-btn"
+            class="py-2 px-4 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">Cancelar</button>
+          <button type="submit"
+            class="btn-shine py-2 px-6 font-bold rounded-lg justify-center bg-cyan-600 hover:bg-cyan-500 text-white transition-colors">Salvar
+            Cliente</button>
+        </div>
+      </form>
+    </div>
   </div>
   <script>
     // Carrega processos.js apenas após o Backend inicializar
