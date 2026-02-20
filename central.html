@@ -53,6 +53,8 @@
 </head>
 
 <body class="bg-gray-900 text-gray-200 neo-dashboard">
+  <div id="bg" class="neo-bg" aria-hidden="true"></div>
+  <div id="lens" class="neo-lens" aria-hidden="true"></div>
     <!-- Skeleton Inicial Imediato -->
     <div id="initial-loader" class="initial-skeleton" role="status" aria-live="polite" aria-label="Carregando conteúdo">
         <div class="initial-skeleton-shell" aria-hidden="true">
@@ -177,24 +179,24 @@
                         <label for="setting-price" class="block mb-1 text-sm font-medium">Preço médio de venda por peça
                             (R$)</label>
                         <input type="number" id="setting-price"
-                            class="w-full p-2 rounded-md bg-white/10 border border-white/20">
+                            class="w-full p-2 rounded-md glass-input">
                     </div>
                     <div>
                         <label for="setting-cost" class="block mb-1 text-sm font-medium">Custo variável por peça
                             (R$)</label>
                         <input type="number" id="setting-cost"
-                            class="w-full p-2 rounded-md bg-white/10 border border-white/20">
+                            class="w-full p-2 rounded-md glass-input">
                     </div>
                     <div>
                         <label for="setting-deadline-days" class="block mb-1 text-sm font-medium">Antecedência de prazo
                             para "Ação" (dias)</label>
                         <input type="number" id="setting-deadline-days"
-                            class="w-full p-2 rounded-md bg-white/10 border border-white/20" value="3">
+                            class="w-full p-2 rounded-md glass-input" value="3">
                     </div>
                     <div>
                         <label for="setting-list-limit" class="block mb-1 text-sm font-medium">Itens por card</label>
                         <select id="setting-list-limit"
-                            class="w-full p-2 rounded-md bg-white/10 border border-white/20">
+                            class="w-full p-2 rounded-md glass-input">
                             <option value="3">3</option>
                             <option value="5" selected>5</option>
                             <option value="10">10</option>

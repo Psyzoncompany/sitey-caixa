@@ -26,6 +26,8 @@
 </head>
 
 <body class="bg-gray-900 text-gray-200 neo-dashboard">
+  <div id="bg" class="neo-bg" aria-hidden="true"></div>
+  <div id="lens" class="neo-lens" aria-hidden="true"></div>
   <!-- Skeleton Inicial Imediato -->
   <div id="initial-loader" class="initial-skeleton" role="status" aria-live="polite" aria-label="Carregando conteúdo">
     <div class="initial-skeleton-shell" aria-hidden="true">
@@ -109,27 +111,27 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
           <div class="lg:col-span-1"><label for="start-date" class="block mb-2 text-sm font-medium text-gray-400">Data
               Início</label><input type="date" id="start-date"
-              class="w-full p-2.5 rounded-md bg-white/10 border border-white/20"></div>
+              class="w-full p-2.5 rounded-md glass-input"></div>
           <div class="lg:col-span-1"><label for="end-date" class="block mb-2 text-sm font-medium text-gray-400">Data
               Fim</label><input type="date" id="end-date"
-              class="w-full p-2.5 rounded-md bg-white/10 border border-white/20"></div>
+              class="w-full p-2.5 rounded-md glass-input"></div>
           <div class="lg:col-span-1"><label for="type-filter"
               class="block mb-2 text-sm font-medium text-gray-400">Tipo</label><select id="type-filter"
-              class="w-full p-3 rounded-md bg-white/10 border border-white/20">
+              class="w-full p-3 rounded-md glass-input">
               <option value="all">Todos</option>
               <option value="income">Receita</option>
               <option value="expense">Despesa</option>
             </select></div>
           <div class="lg:col-span-1"><label for="scope-filter"
               class="block mb-2 text-sm font-medium text-gray-400">Escopo</label><select id="scope-filter"
-              class="w-full p-3 rounded-md bg-white/10 border border-white/20" disabled>
+              class="w-full p-3 rounded-md glass-input" disabled>
               <option value="all">Todos</option>
               <option value="business">Empresarial</option>
               <option value="personal">Pessoal</option>
             </select></div>
           <div class="lg:col-span-1"><label for="category-filter"
               class="block mb-2 text-sm font-medium text-gray-400">Categoria</label><select id="category-filter"
-              class="w-full p-3 rounded-md bg-white/10 border border-white/20" disabled>
+              class="w-full p-3 rounded-md glass-input" disabled>
               <option value="all">(Todos)</option>
             </select></div>
           <div class="lg:col-span-1"><button id="generate-report-btn"
@@ -159,11 +161,11 @@
         <h3 class="text-xl font-bold mb-4 border-b border-white/10 pb-3">Gestão de Produção Mensal 👕</h3>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
           <div><label for="production-month" class="block mb-2 text-sm font-medium text-gray-400">Mês/Ano</label><input
-              type="month" id="production-month" class="w-full p-2.5 rounded-md bg-white/10 border border-white/20">
+              type="month" id="production-month" class="w-full p-2.5 rounded-md glass-input">
           </div>
           <div><label for="production-quantity" class="block mb-2 text-sm font-medium text-gray-400">Adicionar Peças
               Produzidas</label><input type="number" id="production-quantity" placeholder="Ex: 15"
-              class="w-full p-2.5 rounded-md bg-white/10 border border-white/20"></div>
+              class="w-full p-2.5 rounded-md glass-input"></div>
           <div><button id="save-production-btn" class="btn-shine w-full py-3 font-bold rounded-lg">Adicionar à
               Produção</button></div>
         </div>
@@ -180,7 +182,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
           <div><label for="analysis-month" class="block mb-2 text-sm font-medium text-gray-400">Selecione o
               Mês</label><input type="month" id="analysis-month"
-              class="w-full p-2.5 rounded-md bg-white/10 border border-white/20"></div>
+              class="w-full p-2.5 rounded-md glass-input"></div>
           <div class="md:col-span-2"><button id="calculate-cost-btn"
               class="btn-shine w-full py-3 font-bold rounded-lg">Calcular Custo Real por Peça</button></div>
         </div>

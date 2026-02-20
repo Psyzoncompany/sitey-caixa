@@ -26,6 +26,8 @@
 </head>
 
 <body class="bg-gray-900 text-gray-200 neo-dashboard">
+  <div id="bg" class="neo-bg" aria-hidden="true"></div>
+  <div id="lens" class="neo-lens" aria-hidden="true"></div>
   <!-- ========================================================================= -->
   <!-- 1. TELA DE CARREGAMENTO (SKELETON) -->
   <!-- Isso é o que aparece piscando na tela antes do sistema  carregar -->
@@ -122,13 +124,13 @@
               <label for="business-limit" class="block mb-2 text-sm font-medium text-gray-400">Orçamento de Despesas
                 Empresariais (R$)</label>
               <input type="number" id="business-limit" placeholder="Ex: 5000.00"
-                class="w-full p-2.5 rounded-md bg-white/10 border border-white/20">
+                class="w-full p-2.5 rounded-md glass-input">
             </div>
             <div>
               <label for="personal-limit" class="block mb-2 text-sm font-medium text-gray-400">Limite de Gastos Pessoais
                 (R$)</label>
               <input type="number" id="personal-limit" placeholder="Ex: 1500.00"
-                class="w-full p-2.5 rounded-md bg-white/10 border border-white/20">
+                class="w-full p-2.5 rounded-md glass-input">
             </div>
           </div>
           <div class="mt-6 text-right">
@@ -147,7 +149,7 @@
               <ul id="income-categories-list" class="space-y-2 mb-4"> </ul>
               <div class="flex gap-2">
                 <input type="text" id="new-income-category" placeholder="Nova categoria de receita"
-                  class="flex-grow p-2 rounded-md bg-white/10 border border-white/20">
+                  class="flex-grow p-2 rounded-md glass-input">
                 <button id="add-income-category-btn"
                   class="p-2 px-4 font-bold rounded-md bg-green-500/80 hover:bg-green-500">Adicionar</button>
               </div>
@@ -157,7 +159,7 @@
               <ul id="expense-categories-list" class="space-y-2 mb-4"> </ul>
               <div class="flex gap-2">
                 <input type="text" id="new-expense-category" placeholder="Nova categoria de despesa"
-                  class="flex-grow p-2 rounded-md bg-white/10 border border-white/20">
+                  class="flex-grow p-2 rounded-md glass-input">
                 <button id="add-expense-category-btn"
                   class="p-2 px-4 font-bold rounded-md bg-red-500/80 hover:bg-red-500">Adicionar</button>
               </div>

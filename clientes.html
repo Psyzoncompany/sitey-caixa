@@ -26,6 +26,8 @@
 </head>
 
 <body class="bg-gray-900 text-gray-200 neo-dashboard clientes-page">
+  <div id="bg" class="neo-bg" aria-hidden="true"></div>
+  <div id="lens" class="neo-lens" aria-hidden="true"></div>
   <!-- Skeleton Inicial Imediato -->
   <div id="initial-loader" class="initial-skeleton" role="status" aria-live="polite" aria-label="Carregando conteúdo">
     <div class="initial-skeleton-shell" aria-hidden="true">
@@ -104,7 +106,7 @@
       <div class="flex justify-between items-center mb-8">
         <h1 class="text-2xl md:text-3xl font-bold">Meus Clientes</h1>
         <button id="add-client-btn"
-          class="btn-shine py-2 px-6 font-bold rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-600">+ Novo
+          class="btn-shine py-2 px-6 font-bold rounded-lg glass-button">+ Novo
           Cliente</button>
       </div>
 
@@ -112,19 +114,19 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
           <div>
             <label for="search-client" class="block mb-2 text-sm font-medium text-gray-400">Buscar por Nome</label>
-            <input type="text" id="search-client" class="w-full p-2.5 rounded-md bg-white/10 border border-white/20"
+            <input type="text" id="search-client" class="w-full p-2.5 rounded-md glass-input"
               placeholder="Digite o nome...">
           </div>
           <div>
             <label for="sort-by" class="block mb-2 text-sm font-medium text-gray-400">Ordenar por</label>
-            <select id="sort-by" class="w-full p-3 rounded-md bg-white/10 border border-white/20">
+            <select id="sort-by" class="w-full p-3 rounded-md glass-input">
               <option value="name_asc">Nome (A-Z)</option>
               <option value="profit_desc">Mais Lucrativos</option>
             </select>
           </div>
           <div>
             <label for="filter-gender" class="block mb-2 text-sm font-medium text-gray-400">Filtrar por Gênero</label>
-            <select id="filter-gender" class="w-full p-3 rounded-md bg-white/10 border border-white/20">
+            <select id="filter-gender" class="w-full p-3 rounded-md glass-input">
               <option value="all">Todos</option>
               <option value="male">Masculino</option>
               <option value="female">Feminino</option>
@@ -178,12 +180,12 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <label for="client-name" class="block mb-2 text-sm font-medium">Nome do Cliente</label>
-              <input type="text" id="client-name" class="w-full p-3 rounded-md bg-white/10 border border-white/20"
+              <input type="text" id="client-name" class="w-full p-3 rounded-md glass-input"
                 placeholder="Nome completo" required>
             </div>
             <div>
               <label for="client-gender" class="block mb-2 text-sm font-medium">Gênero</label>
-              <select id="client-gender" class="w-full p-3 rounded-md bg-white/10 border border-white/20">
+              <select id="client-gender" class="w-full p-3 rounded-md glass-input">
                 <option value="not_informed">Não Informar</option>
                 <option value="male">Masculino</option>
                 <option value="female">Feminino</option>
@@ -215,12 +217,12 @@
                 </span>
                 Telefone (WhatsApp)
               </label>
-              <input type="text" id="client-phone" class="w-full p-3 rounded-md bg-white/10 border border-white/20"
+              <input type="text" id="client-phone" class="w-full p-3 rounded-md glass-input"
                 placeholder="Ex: 11999998888">
             </div>
             <div>
               <label for="client-email" class="block mb-2 text-sm font-medium">E-mail</label>
-              <input type="email" id="client-email" class="w-full p-3 rounded-md bg-white/10 border border-white/20"
+              <input type="email" id="client-email" class="w-full p-3 rounded-md glass-input"
                 placeholder="cliente@email.com">
             </div>
           </div>
@@ -248,7 +250,7 @@
 
           <div class="flex flex-col-reverse md:flex-row justify-end gap-4 mt-8 pb-4">
             <button type="button" id="cancel-client-btn"
-              class="py-3 px-6 rounded-lg bg-white/10 hover:bg-white/20 transition w-full md:w-auto">Cancelar</button>
+              class="py-3 px-6 rounded-lg glass-button-secondary transition w-full md:w-auto">Cancelar</button>
             <button type="submit"
               class="btn-shine py-3 px-6 font-bold rounded-lg w-full md:w-auto justify-center">Salvar</button>
           </div>

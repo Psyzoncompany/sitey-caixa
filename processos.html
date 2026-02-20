@@ -36,6 +36,8 @@
 </head>
 
 <body class="bg-gray-900 text-gray-200 neo-dashboard">
+  <div id="bg" class="neo-bg" aria-hidden="true"></div>
+  <div id="lens" class="neo-lens" aria-hidden="true"></div>
   <!-- ========================================================================= -->
   <!-- 1. TELA DE CARREGAMENTO (SKELETON) -->
   <!-- Isso é o que aparece piscando na tela antes do sistema  carregar -->
@@ -128,7 +130,7 @@
       <div class="flex justify-between items-center mb-4">
         <h1 class="text-2xl md:text-3xl font-bold">Central de Produção</h1>
         <button id="add-order-btn"
-          class="btn-shine py-2 px-4 font-bold rounded-lg bg-gradient-to-br from-cyan-500 to-cyan-600">+ Novo
+          class="btn-shine py-2 px-4 font-bold rounded-lg glass-button">+ Novo
           Pedido</button>
       </div>
 
@@ -172,7 +174,7 @@
           </div>
           <div class="flex items-center gap-2">
             <label for="kanban-deadline-filter" class="text-sm text-gray-300">Mostrar:</label>
-            <select id="kanban-deadline-filter" class="p-2 rounded-md bg-white/10 border border-white/20 text-sm">
+            <select id="kanban-deadline-filter" class="p-2 rounded-md glass-input text-sm">
               <option value="all">Todos os pedidos</option>
               <option value="overdue">Atrasados</option>
               <option value="today">Vence hoje</option>
@@ -241,7 +243,7 @@
           <div class="py-1">
             <label class="flex items-center gap-2 cursor-pointer select-none">
               <input type="checkbox" id="is-art-only"
-                class="w-5 h-5 rounded text-cyan-500 bg-gray-700 border-gray-600 focus:ring-cyan-600">
+                class="w-5 h-5 rounded text-cyan-500 glass-input focus:ring-cyan-600">
               <span class="font-bold text-cyan-300">Pedido Exclusivo de Arte/Design</span>
             </label>
           </div>
@@ -249,7 +251,7 @@
             <div class="space-y-4">
               <div><label for="order-description" class="block mb-2 text-sm font-medium">Descrição do
                   Pedido</label><input type="text" id="order-description"
-                  class="w-full p-3 rounded-md bg-white/10 border border-white/20" required></div>
+                  class="w-full p-3 rounded-md glass-input" required></div>
               <div class="grid grid-cols-2 gap-4">
                 <div>
                   <div class="flex items-center justify-between mb-2">
@@ -259,20 +261,20 @@
                       Cliente</button>
                   </div>
                   <input type="text" id="order-client-search" placeholder="Pesquisar cliente..."
-                    class="w-full p-2 mb-2 rounded-md bg-white/10 border border-white/20 text-sm">
-                  <select id="order-client" class="w-full p-3 rounded-md bg-white/10 border border-white/20"
+                    class="w-full p-2 mb-2 rounded-md glass-input text-sm">
+                  <select id="order-client" class="w-full p-3 rounded-md glass-input"
                     required></select>
                 </div>
                 <div><label for="order-deadline" class="block mb-2 text-sm font-medium">Prazo de Entrega</label><input
-                    type="date" id="order-deadline" class="w-full p-3 rounded-md bg-white/10 border border-white/20"
+                    type="date" id="order-deadline" class="w-full p-3 rounded-md glass-input"
                     required></div>
               </div>
               <div><label for="order-client-contact" class="block mb-2 text-sm font-medium">Contato do Cliente
                   (WhatsApp/Instagram)</label><input type="text" id="order-client-contact"
-                  class="w-full p-3 rounded-md bg-white/10 border border-white/20"
+                  class="w-full p-3 rounded-md glass-input"
                   placeholder="Ex.: (11) 99999-0000 ou @cliente"></div>
               <div><label for="order-notes" class="block mb-2 text-sm font-medium">Anotações do Pedido</label><textarea
-                  id="order-notes" rows="5" class="w-full p-3 rounded-md bg-white/10 border border-white/20"></textarea>
+                  id="order-notes" rows="5" class="w-full p-3 rounded-md glass-input"></textarea>
               </div>
               <div id="payment-section" class="border-t border-white/10 pt-4">
                 <h3 class="text-lg font-semibold mb-3">Checklist de Pagamento</h3>
@@ -280,10 +282,10 @@
                   <div class="grid grid-cols-2 gap-4">
                     <div><label for="order-total-value" class="block mb-2 text-sm font-medium">Valor Total
                         (R$)</label><input type="number" id="order-total-value" step="0.01"
-                        class="w-full p-3 rounded-md bg-white/10 border border-white/20" required></div>
+                        class="w-full p-3 rounded-md glass-input" required></div>
                     <div><label for="order-amount-paid" class="block mb-2 text-sm font-medium">Valor Pago
                         (R$)</label><input type="number" id="order-amount-paid" step="0.01"
-                        class="w-full p-3 rounded-md bg-white/10 border border-white/20"></div>
+                        class="w-full p-3 rounded-md glass-input"></div>
                   </div>
                   <label class="flex items-center gap-2 text-sm font-medium cursor-pointer"><input type="checkbox"
                       id="order-is-paid" class="w-5 h-5 rounded text-cyan-500">Marcar como Pago (Sinal ou Total)</label>
@@ -298,7 +300,7 @@
               <div id="cutting-details-section" class="hidden mt-4 p-4 rounded-lg bg-white/5 border border-white/10">
                 <div class="flex justify-between items-center mb-3">
                   <h4 class="text-md font-semibold text-cyan-300">Detalhes do Corte</h4>
-                  <div id="cutting-total-badge" class="text-sm font-bold bg-gray-700 px-2 py-1 rounded text-white">
+                  <div id="cutting-total-badge" class="text-sm font-bold glass-button-secondary px-2 py-1 rounded text-white">
                     Total: 0</div>
                 </div>
 
@@ -325,7 +327,7 @@
                       placeholder="João&#10;Maria&#10;Pedro..."></textarea>
                     <div class="flex gap-2 justify-end">
                       <button type="button" id="copy-names-btn"
-                        class="text-xs bg-white/10 hover:bg-white/20 px-2 py-1 rounded">Copiar Lista</button>
+                        class="text-xs glass-button-secondary px-2 py-1 rounded">Copiar Lista</button>
                     </div>
                   </div>
                 </div>
@@ -344,7 +346,7 @@
           <div id="print-type-section" class="grid grid-cols-2 gap-4">
             <div>
               <label for="order-print-type" class="block mb-2 text-sm font-medium">Tipo de Estampa</label>
-              <select id="order-print-type" class="w-full p-3 rounded-md bg-white/10 border border-white/20">
+              <select id="order-print-type" class="w-full p-3 rounded-md glass-input">
                 <option value="dtf">DTF</option>
                 <option value="silk">Silk</option>
                 <option value="art">Arte (Design)</option>
@@ -519,24 +521,24 @@
       <form id="quick-client-form" class="space-y-4">
         <div>
           <label for="quick-client-name" class="block mb-2 text-sm font-medium">Nome do Cliente *</label>
-          <input type="text" id="quick-client-name" class="w-full p-3 rounded-md bg-white/10 border border-white/20"
+          <input type="text" id="quick-client-name" class="w-full p-3 rounded-md glass-input"
             required>
         </div>
         <div>
           <label for="quick-client-phone" class="block mb-2 text-sm font-medium">Telefone / WhatsApp (Opcional)</label>
           <input type="text" id="quick-client-phone" placeholder="Ex.: (11) 99999-0000"
-            class="w-full p-3 rounded-md bg-white/10 border border-white/20">
+            class="w-full p-3 rounded-md glass-input">
         </div>
         <div>
           <label for="quick-client-instagram" class="block mb-2 text-sm font-medium">Instagram (Opcional)</label>
           <input type="text" id="quick-client-instagram" placeholder="Ex.: @cliente"
-            class="w-full p-3 rounded-md bg-white/10 border border-white/20">
+            class="w-full p-3 rounded-md glass-input">
         </div>
         <div class="flex justify-end gap-3 mt-6">
           <button type="button" id="cancel-quick-client-btn"
-            class="py-2 px-4 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">Cancelar</button>
+            class="py-2 px-4 rounded-lg glass-button-secondary transition-colors">Cancelar</button>
           <button type="submit"
-            class="btn-shine py-2 px-6 font-bold rounded-lg justify-center bg-cyan-600 hover:bg-cyan-500 text-white transition-colors">Salvar
+            class="btn-shine py-2 px-6 font-bold rounded-lg justify-center glass-button text-white transition-colors">Salvar
             Cliente</button>
         </div>
       </form>
