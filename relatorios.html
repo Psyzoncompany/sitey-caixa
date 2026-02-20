@@ -1,28 +1,30 @@
 <!DOCTYPE html>
 <html lang="pt-br" class="scroll-smooth">
+
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="icon" type="image/png" href="img/logo.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png">
-    <meta name="apple-mobile-web-app-title" content="PSYZON Caixa">
-    <meta name="application-name" content="PSYZON Caixa">
-    <meta name="theme-color" content="#0f172a">
-    <link rel="manifest" href="manifest.webmanifest">
-    <title>PSYZON - Relatórios Detalhados</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
-    <link href="style.css" rel="stylesheet">
-    <!-- Firebase Config -->
-    <script type="module" src="firebase-config.js"></script>
-    <style>
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="icon" type="image/png" href="img/logo.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png">
+  <meta name="apple-mobile-web-app-title" content="PSYZON Caixa">
+  <meta name="application-name" content="PSYZON Caixa">
+  <meta name="theme-color" content="#0f172a">
+  <link rel="manifest" href="manifest.webmanifest">
+  <title>PSYZON - Relatórios Detalhados</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link href="style.css" rel="stylesheet">
+  <!-- Firebase Config -->
+  <script type="module" src="firebase-config.js"></script>
+  <style>
+  </style>
 </head>
+
 <body class="bg-gray-900 text-gray-200 neo-dashboard">
   <!-- Skeleton Inicial Imediato -->
   <div id="initial-loader" class="initial-skeleton" role="status" aria-live="polite" aria-label="Carregando conteúdo">
@@ -54,7 +56,7 @@
   </div>
 
   <div class="flex flex-col min-h-screen">
-    
+
     <header class="hidden md:block desktop-topbar sticky top-0 z-40">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="desktop-topbar-inner flex items-center justify-between">
@@ -65,12 +67,14 @@
           </div>
           <div class="hidden md:block">
             <nav class="desktop-topbar-nav">
-              <a href="index.html" class="desktop-nav-link">Dashboard</a>
-              <a href="clientes.html" class="desktop-nav-link">Clientes</a>
-              <a href="processos.html" class="desktop-nav-link">Processos</a>
-              <a href="historico.html" class="desktop-nav-link">Histórico</a>
-              <a href="relatorios.html" class="desktop-nav-link is-active">Relatórios</a>
-              <a href="configuracoes.html" class="desktop-nav-link">Configurações</a>
+              <a href="central.html" class="desktop-nav-link">CENTRAL</a>
+              <a href="index.html" class="desktop-nav-link">DASHBOARD</a>
+              <a href="clientes.html" class="desktop-nav-link">CLIENTES</a>
+              <a href="processos.html" class="desktop-nav-link">PROCESSOS</a>
+              <a href="contas.html" class="desktop-nav-link">CONTAS MENSAIS</a>
+              <a href="historico.html" class="desktop-nav-link">HISTÓRICO</a>
+              <a href="relatorios.html" class="desktop-nav-link is-active">RELATÓRIOS</a>
+              <a href="configuracoes.html" class="desktop-nav-link">CONFIGURAÇÕES</a>
               <button onclick="window.firebaseAuth.logout()" class="desktop-nav-link desktop-nav-logout">Sair</button>
             </nav>
           </div>
@@ -78,135 +82,222 @@
       </div>
     </header>
     <div id="mobile-menu" class="md:hidden hidden bg-gray-900 border-b border-white/10">
-        <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-gray-900 border-b border-white/10">
-          <a href="index.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Dashboard</a>
-          <a href="clientes.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Clientes</a>
-          <a href="processos.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Processos</a>
-          <a href="historico.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Histórico</a>
-          <a href="relatorios.html" class="bg-gray-300/20 text-cyan-300 block px-3 py-2 rounded-md text-base font-medium">Relatórios</a>
-          <a href="configuracoes.html" class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Configurações</a>
-          <button onclick="window.firebaseAuth.logout()" class="w-full text-left text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium hover:text-red-400">Sair</button>
-        </div>
+      <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-gray-900 border-b border-white/10">
+        <a href="index.html"
+          class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Dashboard</a>
+        <a href="clientes.html"
+          class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Clientes</a>
+        <a href="processos.html"
+          class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Processos</a>
+        <a href="historico.html"
+          class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Histórico</a>
+        <a href="relatorios.html"
+          class="bg-gray-300/20 text-cyan-300 block px-3 py-2 rounded-md text-base font-medium">Relatórios</a>
+        <a href="configuracoes.html"
+          class="text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium">Configurações</a>
+        <button onclick="window.firebaseAuth.logout()"
+          class="w-full text-left text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium hover:text-red-400">Sair</button>
+      </div>
     </div>
 
     <main class="flex-1 p-4 md:p-6 lg:p-8">
       <div class="flex justify-between items-center mb-8">
         <h1 class="text-2xl md:text-3xl font-bold">Relatórios Detalhados</h1>
       </div>
-      
+
       <div class="glass-card p-6 mb-8">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
-          <div class="lg:col-span-1"><label for="start-date" class="block mb-2 text-sm font-medium text-gray-400">Data Início</label><input type="date" id="start-date" class="w-full p-2.5 rounded-md bg-white/10 border border-white/20"></div>
-          <div class="lg:col-span-1"><label for="end-date" class="block mb-2 text-sm font-medium text-gray-400">Data Fim</label><input type="date" id="end-date" class="w-full p-2.5 rounded-md bg-white/10 border border-white/20"></div>
-          <div class="lg:col-span-1"><label for="type-filter" class="block mb-2 text-sm font-medium text-gray-400">Tipo</label><select id="type-filter" class="w-full p-3 rounded-md bg-white/10 border border-white/20"><option value="all">Todos</option><option value="income">Receita</option><option value="expense">Despesa</option></select></div>
-          <div class="lg:col-span-1"><label for="scope-filter" class="block mb-2 text-sm font-medium text-gray-400">Escopo</label><select id="scope-filter" class="w-full p-3 rounded-md bg-white/10 border border-white/20" disabled><option value="all">Todos</option><option value="business">Empresarial</option><option value="personal">Pessoal</option></select></div>
-          <div class="lg:col-span-1"><label for="category-filter" class="block mb-2 text-sm font-medium text-gray-400">Categoria</label><select id="category-filter" class="w-full p-3 rounded-md bg-white/10 border border-white/20" disabled><option value="all">(Todos)</option></select></div>
-          <div class="lg:col-span-1"><button id="generate-report-btn" class="btn-shine w-full py-3 font-bold rounded-lg">Gerar Relatório</button></div>
+          <div class="lg:col-span-1"><label for="start-date" class="block mb-2 text-sm font-medium text-gray-400">Data
+              Início</label><input type="date" id="start-date"
+              class="w-full p-2.5 rounded-md bg-white/10 border border-white/20"></div>
+          <div class="lg:col-span-1"><label for="end-date" class="block mb-2 text-sm font-medium text-gray-400">Data
+              Fim</label><input type="date" id="end-date"
+              class="w-full p-2.5 rounded-md bg-white/10 border border-white/20"></div>
+          <div class="lg:col-span-1"><label for="type-filter"
+              class="block mb-2 text-sm font-medium text-gray-400">Tipo</label><select id="type-filter"
+              class="w-full p-3 rounded-md bg-white/10 border border-white/20">
+              <option value="all">Todos</option>
+              <option value="income">Receita</option>
+              <option value="expense">Despesa</option>
+            </select></div>
+          <div class="lg:col-span-1"><label for="scope-filter"
+              class="block mb-2 text-sm font-medium text-gray-400">Escopo</label><select id="scope-filter"
+              class="w-full p-3 rounded-md bg-white/10 border border-white/20" disabled>
+              <option value="all">Todos</option>
+              <option value="business">Empresarial</option>
+              <option value="personal">Pessoal</option>
+            </select></div>
+          <div class="lg:col-span-1"><label for="category-filter"
+              class="block mb-2 text-sm font-medium text-gray-400">Categoria</label><select id="category-filter"
+              class="w-full p-3 rounded-md bg-white/10 border border-white/20" disabled>
+              <option value="all">(Todos)</option>
+            </select></div>
+          <div class="lg:col-span-1"><button id="generate-report-btn"
+              class="btn-shine w-full py-3 font-bold rounded-lg">Gerar Relatório</button></div>
         </div>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div class="glass-card p-6"><div class="icon-label-container"><span class="text-2xl">📈</span><span class="info-tooltip" data-tooltip="Receita no Período">?</span></div><p id="income-period" class="text-4xl font-bold mt-2 text-green-400">R$ 0,00</p></div>
-        <div class="glass-card p-6"><div class="icon-label-container"><span class="text-2xl">📉</span><span class="info-tooltip" data-tooltip="Despesa no Período">?</span></div><p id="expense-period" class="text-4xl font-bold mt-2 text-red-400">R$ 0,00</p></div>
-        <div class="glass-card p-6"><div class="icon-label-container"><span class="text-2xl">💰</span><span class="info-tooltip" data-tooltip="Saldo do Período">?</span></div><p id="balance-period" class="text-4xl font-bold mt-2">R$ 0,00</p></div>
+        <div class="glass-card p-6">
+          <div class="icon-label-container"><span class="text-2xl">📈</span><span class="info-tooltip"
+              data-tooltip="Receita no Período">?</span></div>
+          <p id="income-period" class="text-4xl font-bold mt-2 text-green-400">R$ 0,00</p>
+        </div>
+        <div class="glass-card p-6">
+          <div class="icon-label-container"><span class="text-2xl">📉</span><span class="info-tooltip"
+              data-tooltip="Despesa no Período">?</span></div>
+          <p id="expense-period" class="text-4xl font-bold mt-2 text-red-400">R$ 0,00</p>
+        </div>
+        <div class="glass-card p-6">
+          <div class="icon-label-container"><span class="text-2xl">💰</span><span class="info-tooltip"
+              data-tooltip="Saldo do Período">?</span></div>
+          <p id="balance-period" class="text-4xl font-bold mt-2">R$ 0,00</p>
+        </div>
       </div>
-      
+
       <div class="glass-card p-6 mb-8">
         <h3 class="text-xl font-bold mb-4 border-b border-white/10 pb-3">Gestão de Produção Mensal 👕</h3>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-          <div><label for="production-month" class="block mb-2 text-sm font-medium text-gray-400">Mês/Ano</label><input type="month" id="production-month" class="w-full p-2.5 rounded-md bg-white/10 border border-white/20"></div>
-          <div><label for="production-quantity" class="block mb-2 text-sm font-medium text-gray-400">Adicionar Peças Produzidas</label><input type="number" id="production-quantity" placeholder="Ex: 15" class="w-full p-2.5 rounded-md bg-white/10 border border-white/20"></div>
-          <div><button id="save-production-btn" class="btn-shine w-full py-3 font-bold rounded-lg">Adicionar à Produção</button></div>
+          <div><label for="production-month" class="block mb-2 text-sm font-medium text-gray-400">Mês/Ano</label><input
+              type="month" id="production-month" class="w-full p-2.5 rounded-md bg-white/10 border border-white/20">
+          </div>
+          <div><label for="production-quantity" class="block mb-2 text-sm font-medium text-gray-400">Adicionar Peças
+              Produzidas</label><input type="number" id="production-quantity" placeholder="Ex: 15"
+              class="w-full p-2.5 rounded-md bg-white/10 border border-white/20"></div>
+          <div><button id="save-production-btn" class="btn-shine w-full py-3 font-bold rounded-lg">Adicionar à
+              Produção</button></div>
         </div>
         <div class="mt-6">
-            <h4 class="text-lg font-semibold mb-2">Registros Salvos</h4>
-            <div id="production-list" class="max-h-40 overflow-y-auto pr-2"><p class="text-gray-500">Nenhum registro.</p></div>
+          <h4 class="text-lg font-semibold mb-2">Registros Salvos</h4>
+          <div id="production-list" class="max-h-40 overflow-y-auto pr-2">
+            <p class="text-gray-500">Nenhum registro.</p>
+          </div>
         </div>
       </div>
 
       <div class="glass-card p-6 mb-8">
         <h3 class="text-xl font-bold mb-4 border-b border-white/10 pb-3">🔥 Análise de Custo por Peça</h3>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-          <div><label for="analysis-month" class="block mb-2 text-sm font-medium text-gray-400">Selecione o Mês</label><input type="month" id="analysis-month" class="w-full p-2.5 rounded-md bg-white/10 border border-white/20"></div>
-          <div class="md:col-span-2"><button id="calculate-cost-btn" class="btn-shine w-full py-3 font-bold rounded-lg">Calcular Custo Real por Peça</button></div>
+          <div><label for="analysis-month" class="block mb-2 text-sm font-medium text-gray-400">Selecione o
+              Mês</label><input type="month" id="analysis-month"
+              class="w-full p-2.5 rounded-md bg-white/10 border border-white/20"></div>
+          <div class="md:col-span-2"><button id="calculate-cost-btn"
+              class="btn-shine w-full py-3 font-bold rounded-lg">Calcular Custo Real por Peça</button></div>
         </div>
         <div id="cost-analysis-results" class="mt-6 border-t border-white/10 pt-4 hidden">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-                <div><h4 class="text-gray-400">Custos Indiretos no Mês</h4><p id="total-indirect-costs" class="text-3xl font-bold mt-1 text-red-400">R$ 0,00</p></div>
-                <div><h4 class="text-gray-400">Peças Produzidas no Mês</h4><p id="total-pieces-produced" class="text-3xl font-bold mt-1 text-teal-300">0</p></div>
-                <div class="bg-white/10 p-4 rounded-xl"><h4 class="text-gray-300">Custo Adicional por Peça</h4><p id="cost-per-piece" class="text-3xl font-bold mt-1 text-yellow-400">R$ 0,00</p></div>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+            <div>
+              <h4 class="text-gray-400">Custos Indiretos no Mês</h4>
+              <p id="total-indirect-costs" class="text-3xl font-bold mt-1 text-red-400">R$ 0,00</p>
             </div>
+            <div>
+              <h4 class="text-gray-400">Peças Produzidas no Mês</h4>
+              <p id="total-pieces-produced" class="text-3xl font-bold mt-1 text-teal-300">0</p>
+            </div>
+            <div class="bg-white/10 p-4 rounded-xl">
+              <h4 class="text-gray-300">Custo Adicional por Peça</h4>
+              <p id="cost-per-piece" class="text-3xl font-bold mt-1 text-yellow-400">R$ 0,00</p>
+            </div>
+          </div>
         </div>
       </div>
 
       <div class="glass-card p-4 md:p-6">
         <div class="flex justify-between items-center mb-4">
-            <h3 class="text-xl font-bold">Resultados do Filtro</h3>
-            <button id="export-csv-btn" class="flex items-center gap-2 btn-shine py-2 px-4 font-semibold text-sm rounded-lg bg-green-500/20 text-green-300">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                <span>Exportar para CSV (Excel)</span>
-            </button>
+          <h3 class="text-xl font-bold">Resultados do Filtro</h3>
+          <button id="export-csv-btn"
+            class="flex items-center gap-2 btn-shine py-2 px-4 font-semibold text-sm rounded-lg bg-green-500/20 text-green-300">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+            </svg>
+            <span>Exportar para CSV (Excel)</span>
+          </button>
         </div>
         <div class="overflow-x-auto">
-            <table class="w-full text-left min-w-[700px]">
-                <thead>
-                  <tr class="border-b border-white/10">
-                    <th class="p-3">Descrição</th>
-                    <th class="p-3">Valor</th>
-                    <th class="p-3">Tipo</th>
-                    <th class="p-3">Escopo</th>
-                    <th class="p-3">Categoria</th>
-                    <th class="p-3">Data</th>
-                  </tr>
-                </thead>
-                <tbody id="report-table-body">
-                </tbody>
-            </table>
+          <table class="w-full text-left min-w-[700px]">
+            <thead>
+              <tr class="border-b border-white/10">
+                <th class="p-3">Descrição</th>
+                <th class="p-3">Valor</th>
+                <th class="p-3">Tipo</th>
+                <th class="p-3">Escopo</th>
+                <th class="p-3">Categoria</th>
+                <th class="p-3">Data</th>
+              </tr>
+            </thead>
+            <tbody id="report-table-body">
+            </tbody>
+          </table>
         </div>
       </div>
 
-  <!-- Barra de Navegação Inferior (Mobile) -->
+      <!-- Barra de Navegação Inferior (Mobile) -->
 
 
 
-  <nav class="bottom-nav">
-    <a href="index.html" class="bottom-nav-item">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
-      <span>Início</span>
-    </a>
-    <a href="central.html" class="bottom-nav-item">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-      <span>Central</span>
-    </a>
-    <a href="processos.html" class="bottom-nav-item">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
-      <span>Processos</span>
-    </a>
-    <a href="contas.html" class="bottom-nav-item">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H4a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
-      <span>Contas</span>
-    </a>
-    <a href="clientes.html" class="bottom-nav-item">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-      <span>Clientes</span>
-    </a>
-    <button id="mobile-menu-button" class="bottom-nav-item active" type="button">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
-      <span>Menu</span>
-    </button>
-  </nav>
+      <nav class="bottom-nav">
+        <a href="index.html" class="bottom-nav-item">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+          <span>Início</span>
+        </a>
+        <a href="central.html" class="bottom-nav-item">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <span>Central</span>
+        </a>
+        <a href="processos.html" class="bottom-nav-item">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+          </svg>
+          <span>Processos</span>
+        </a>
+        <a href="contas.html" class="bottom-nav-item">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H4a3 3 0 00-3 3v8a3 3 0 003 3z" />
+          </svg>
+          <span>Contas</span>
+        </a>
+        <a href="clientes.html" class="bottom-nav-item">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+          </svg>
+          <span>Clientes</span>
+        </a>
+        <button id="mobile-menu-button" class="bottom-nav-item active" type="button">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+          <span>Menu</span>
+        </button>
+      </nav>
 
     </main>
   </div>
   <script>
     // Carrega relatorios.js apenas após o Backend inicializar
     const checkSync = setInterval(() => {
-        if (window.BackendInitialized) {
-            clearInterval(checkSync);
-            const s = document.createElement('script'); s.src = "relatorios.js"; document.body.appendChild(s);
-        }
+      if (window.BackendInitialized) {
+        clearInterval(checkSync);
+        const s = document.createElement('script'); s.src = "relatorios.js"; document.body.appendChild(s);
+      }
     }, 100);
   </script>
   <script src="theme-toggle.js"></script>
 </body>
+
 </html>

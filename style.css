@@ -42,13 +42,14 @@ body {
 
 /* --- Header desktop moderno (abas principais) --- */
 .desktop-topbar {
-  background:
-    radial-gradient(circle at 12% -40%, rgba(34, 211, 238, 0.24), transparent 58%),
-    radial-gradient(circle at 82% -55%, rgba(59, 130, 246, 0.25), transparent 62%),
-    rgba(2, 6, 23, 0.78);
-  border-bottom: 1px solid rgba(148, 163, 184, 0.28);
-  box-shadow: 0 20px 40px rgba(2, 6, 23, 0.55);
-  backdrop-filter: blur(16px);
+  background: rgba(15, 23, 42, 0.75);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+  position: sticky;
+  top: 0;
+  z-index: 10000;
 }
 
 .desktop-topbar-inner {
@@ -57,11 +58,11 @@ body {
 }
 
 .desktop-topbar-logo {
-  padding: 0.4rem;
-  border-radius: 14px;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  background: linear-gradient(140deg, rgba(30, 41, 59, 0.82), rgba(15, 23, 42, 0.6));
-  transition: transform 180ms ease, border-color 180ms ease;
+  padding: 0.5rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .desktop-topbar-logo:hover {
@@ -72,37 +73,39 @@ body {
 .desktop-topbar-nav {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.45rem;
+  gap: 0.5rem;
+  padding: 0.4rem;
   border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  background: linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.65));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .desktop-nav-link {
-  color: #cbd5e1;
-  padding: 0.55rem 0.95rem;
+  color: rgba(255, 255, 255, 0.6);
+  padding: 0.6rem 1.2rem;
   border-radius: 999px;
-  font-size: 0.72rem;
-  line-height: 1;
-  font-weight: 600;
-  letter-spacing: 0.07em;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  transition: color 180ms ease, background-color 180ms ease, transform 180ms ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  text-decoration: none;
+  border: 1px solid transparent;
 }
 
 .desktop-nav-link:hover {
-  color: #f8fafc;
-  background: rgba(148, 163, 184, 0.14);
+  color: white;
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.1);
   transform: translateY(-1px);
 }
 
 .desktop-nav-link.is-active {
-  color: #ecfeff;
-  border: 1px solid rgba(103, 232, 249, 0.45);
-  background: linear-gradient(135deg, rgba(34, 211, 238, 0.28), rgba(37, 99, 235, 0.32));
-  box-shadow: 0 10px 20px rgba(6, 182, 212, 0.25);
+  color: white;
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.4), rgba(37, 99, 235, 0.4));
+  border-color: rgba(6, 182, 212, 0.4);
+  box-shadow: 0 4px 15px rgba(6, 182, 212, 0.2);
 }
 
 .desktop-nav-logout:hover {
@@ -734,15 +737,19 @@ select:focus {
   width: 58px;
   height: 58px;
   border-radius: 999px;
-  border: 2px solid rgba(14, 165, 233, 0.8);
-  background: linear-gradient(180deg, #1d4ed8, #1e40af);
-  color: #eff6ff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: rgba(255, 255, 255, 0.4);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 14px 30px rgba(30, 64, 175, 0.45);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
   z-index: 10035;
-  transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  padding: 0;
 }
 
 #floating-save-btn svg {
@@ -751,14 +758,32 @@ select:focus {
 }
 
 #floating-save-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 16px 34px rgba(30, 64, 175, 0.5);
+  background: rgba(15, 23, 42, 0.9);
+  color: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
+  transform: translateY(-2px);
 }
 
 #floating-save-btn.unsaved {
-  background: linear-gradient(180deg, #ef4444, #b91c1c);
-  border-color: rgba(248, 113, 113, 0.92);
-  box-shadow: 0 16px 32px rgba(127, 29, 29, 0.5);
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+  border-color: rgba(248, 113, 113, 0.5);
+  color: white;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.4), 0 16px 32px rgba(127, 29, 29, 0.5);
+  animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-red {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7), 0 16px 32px rgba(127, 29, 29, 0.5);
+  }
+
+  70% {
+    box-shadow: 0 0 0 15px rgba(239, 68, 68, 0), 0 16px 32px rgba(127, 29, 29, 0.5);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0), 0 16px 32px rgba(127, 29, 29, 0.5);
+  }
 }
 
 @media (max-width: 768px) {
@@ -5937,14 +5962,16 @@ body.neo-dashboard {
   height: 58px;
   border-radius: 999px;
   border: 1px solid rgba(139, 92, 246, 0.5);
-  /* Violeta para combinar com as tarefas */
   background: linear-gradient(135deg, rgba(124, 58, 237, 0.95), rgba(76, 29, 149, 0.9));
   color: #fff;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   box-shadow: 0 16px 32px rgba(2, 6, 23, 0.5);
   z-index: 10025;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0;
+  overflow: hidden;
 }
 
 .due-soon-fab:active {
@@ -5977,6 +6004,11 @@ body.neo-dashboard {
 .due-soon-fab__icon {
   width: 100%;
   height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: scale(1.1);
+  /* Aumenta um pouco pra preencher o círculo como solicitado */
 }
 
 .due-soon-fab__label {
@@ -5984,14 +6016,23 @@ body.neo-dashboard {
   /* Removido para ser apenas circular */
 }
 
-.global-reminder-toast {
+#global-reminder-container {
   position: fixed;
   top: max(1rem, env(safe-area-inset-top));
   left: 50%;
-  transform: translate(-50%, -20px);
+  transform: translateX(-50%);
   z-index: 11000;
   width: calc(100% - 2rem);
   max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  pointer-events: none;
+}
+
+.global-reminder-toast {
+  position: relative;
+  width: 100%;
   border-radius: 16px;
   border: 1px solid rgba(139, 92, 246, 0.4);
   background: linear-gradient(160deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98));
@@ -6004,12 +6045,13 @@ body.neo-dashboard {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   opacity: 0;
+  transform: translateY(-20px);
   transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   pointer-events: none;
 }
 
 .global-reminder-toast.show {
-  transform: translate(-50%, 0);
+  transform: translateY(0);
   opacity: 1;
   pointer-events: auto;
 }

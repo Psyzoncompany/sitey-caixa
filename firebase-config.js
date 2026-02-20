@@ -1112,9 +1112,16 @@ const setupAutomaticTaskReminders = () => {
         text.className = 'global-reminder-toast__text';
         text.textContent = message;
 
+        let container = document.getElementById('global-reminder-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'global-reminder-container';
+            document.body.appendChild(container);
+        }
+
         toast.appendChild(icon);
         toast.appendChild(text);
-        document.body.appendChild(toast);
+        container.appendChild(toast);
         setTimeout(() => toast.classList.add('show'), 40);
         setTimeout(() => {
             toast.classList.remove('show');

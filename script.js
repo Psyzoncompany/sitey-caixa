@@ -177,44 +177,6 @@ const init = () => {
     };
 
     // Verifica os prazos de produção da equipe e avisa se algo está vencendo hoje
-    const checkDeadlinesAndNotify = () => {
-        productionOrders = JSON.parse(localStorage.getItem('production_orders')) || [];
-        clients = JSON.parse(localStorage.getItem('clients')) || [];
-
-        // Carrega os nomes das tarefas, se estiverem no arquivo processos.js
-        const checklistItemsFromData = (typeof window !== 'undefined' && window.PROCESS_CHECKLIST_ITEMS && typeof window.PROCESS_CHECKLIST_ITEMS === 'object')
-            ? window.PROCESS_CHECKLIST_ITEMS
-            : {};
-
-        if (!Array.isArray(productionOrders) || productionOrders.length === 0) return;
-
-        // Pega apenas a data de hoje, ignorando o fuso-horário para evitar bugs
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const todayString = today.toISOString().split('T')[0];
-
-        // Passa por todos os pedidos que ainda não foram finalizados
-        productionOrders.forEach(order => {
-            if (order.status !== 'done' && order.checklist) {
-                const checklistEntries = Object.entries(order.checklist || {});
-                if (checklistEntries.length === 0) return;
-
-                // Passa por todas as tarefinhas de cada pedido
-                checklistEntries.forEach(([key, task]) => {
-                    // Se a tarefa não tem a data de hoje ou se já foi concluída, ignora
-                    if (!task || task.deadline !== todayString || task.completed) return;
-
-                    const client = clients.find(c => c.id === order.clientId);
-                    const clientName = client ? client.name : 'Cliente';
-                    const taskName = checklistItemsFromData[key] || key || 'Tarefa';
-
-                    // Dispara a caixinha pop-up avisando que vai vencer hoje!
-                    const message = `Lembrete: A etapa "${taskName}" do pedido de ${clientName} vence HOJE!`;
-                    showNotification(message, 'warning');
-                });
-            }
-        });
-    };
 
     // =========================================================================
     // 5. CARROSSEL DA TELA INICIAL (Caixinhas que deslizam para o lado)
@@ -1349,7 +1311,7 @@ const init = () => {
     // Dá 2 segundinhos para o site carregar todo, pra então rodar a checagem de prazos
     setTimeout(() => {
         try {
-            checkDeadlinesAndNotify();
+
         } catch (error) {
             console.error('Falha ao verificar lembretes de prazo:', error);
         }
