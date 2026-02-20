@@ -9,10 +9,10 @@ const init = () => {
     const urlParams = new URLSearchParams(window.location.search);
     let currentTab = urlParams.get('tab') || 'quadro';
 
-    const columns = { 
-        todo: document.getElementById('column-todo'), 
-        doing: document.getElementById('column-doing'), 
-        done: document.getElementById('column-done') 
+    const columns = {
+        todo: document.getElementById('column-todo'),
+        doing: document.getElementById('column-doing'),
+        done: document.getElementById('column-done')
     };
     const kanbanDeadlineFilter = document.getElementById('kanban-deadline-filter');
 
@@ -119,7 +119,7 @@ const init = () => {
                 const ok = document.execCommand('copy');
                 temp.remove();
                 return ok;
-            } catch (__){
+            } catch (__) {
                 return false;
             }
         }
@@ -145,24 +145,24 @@ const init = () => {
         if (!isArtOnlyCheckbox) return;
         const isArt = isArtOnlyCheckbox.checked;
         const deadlineLabel = document.querySelector('label[for="order-deadline"]');
-        
+
         if (isArt) {
-            if(paymentSection) paymentSection.classList.add('hidden');
-            if(productionSection) productionSection.classList.add('hidden');
-            if(printTypeSection) printTypeSection.classList.add('hidden');
-            if(colorsSection) colorsSection.classList.add('hidden');
-            if(artOnlyBlock) artOnlyBlock.classList.remove('hidden');
-            if(deadlineLabel) deadlineLabel.textContent = "Data de Entrega da Arte";
+            if (paymentSection) paymentSection.classList.add('hidden');
+            if (productionSection) productionSection.classList.add('hidden');
+            if (printTypeSection) printTypeSection.classList.add('hidden');
+            if (colorsSection) colorsSection.classList.add('hidden');
+            if (artOnlyBlock) artOnlyBlock.classList.remove('hidden');
+            if (deadlineLabel) deadlineLabel.textContent = "Data de Entrega da Arte";
             // Disable required on hidden fields if any (total value is required)
-            if(orderTotalValueInput) orderTotalValueInput.removeAttribute('required');
+            if (orderTotalValueInput) orderTotalValueInput.removeAttribute('required');
         } else {
-            if(paymentSection) paymentSection.classList.remove('hidden');
-            if(productionSection) productionSection.classList.remove('hidden');
-            if(printTypeSection) printTypeSection.classList.remove('hidden');
-            if(colorsSection) colorsSection.classList.remove('hidden');
-            if(artOnlyBlock) artOnlyBlock.classList.add('hidden');
-            if(deadlineLabel) deadlineLabel.textContent = "Prazo de Entrega";
-            if(orderTotalValueInput) orderTotalValueInput.setAttribute('required', 'true');
+            if (paymentSection) paymentSection.classList.remove('hidden');
+            if (productionSection) productionSection.classList.remove('hidden');
+            if (printTypeSection) printTypeSection.classList.remove('hidden');
+            if (colorsSection) colorsSection.classList.remove('hidden');
+            if (artOnlyBlock) artOnlyBlock.classList.add('hidden');
+            if (deadlineLabel) deadlineLabel.textContent = "Prazo de Entrega";
+            if (orderTotalValueInput) orderTotalValueInput.setAttribute('required', 'true');
         }
     };
     if (isArtOnlyCheckbox) isArtOnlyCheckbox.addEventListener('change', toggleArtOnlyMode);
@@ -297,13 +297,13 @@ const init = () => {
         }
     };
     const categoryIcons = {
-        art: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg>`,
-        mockup: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>`,
-        fabric: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>`,
-        cutting: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121M12 12l2.879 2.879M12 12L9.121 14.879M12 12L14.879 9.121M4 4h.01M4 10h.01M4 16h.01M10 4h.01M16 4h.01M10 10h.01M10 16h.01M16 10h.01M16 16h.01" /></svg>`,
-        sewing: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2 1m0 0l-2-1m2 1V2M8 7l2 1M8 7l2-1M8 7V4.5M12 21.5v-2.5M12 12v2.5m0 0l2 1m-2-1l-2 1m2-1v4.5M6 14l2-1m2 1l2-1m-2 1v2.5m-8 0l2 1m-2-1l2-1m-2 1v-2.5m14-2.5l2 1m-2-1l2-1m-2 1V14" /></svg>`,
-        printing: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>`,
-        finishing: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l-3 3m6 0l-3 3M11 3l3 3m0 6l3 3m-6 0l3 3m-3-3l-3 3m6-6l-3 3" /></svg>`
+        art: `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.536L16.732 3.732z" /></svg>`,
+        mockup: `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>`,
+        fabric: `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" /></svg>`,
+        cutting: `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121M12 12l2.879 2.879M12 12L9.121 14.879M12 12L14.879 9.121M4 4h.01M4 10h.01M4 16h.01M10 4h.01M16 4h.01M10 10h.01M10 16h.01M16 10h.01M16 16h.01" /></svg>`,
+        sewing: `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>`,
+        printing: `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>`,
+        finishing: `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>`
     };
 
     const enableDragScroll = (el) => {
@@ -331,7 +331,7 @@ const init = () => {
             if (!isDown) return;
             e.preventDefault();
             const x = e.pageX - el.offsetLeft;
-            const walk = (x - startX) * 2; 
+            const walk = (x - startX) * 2;
             el.scrollLeft = scrollLeft - walk;
         });
         el.style.cursor = 'grab';
@@ -339,13 +339,13 @@ const init = () => {
 
     const applyDragScroll = () => {
         document.querySelectorAll('.overflow-x-auto').forEach(el => {
-           if(!el.dataset.dragScroll) {
-               enableDragScroll(el);
-               el.dataset.dragScroll = 'true';
-           }
+            if (!el.dataset.dragScroll) {
+                enableDragScroll(el);
+                el.dataset.dragScroll = 'true';
+            }
         });
     };
-    
+
     // Refresh views on save
     const normalizeHistoryFlags = () => {
         const now = Date.now();
@@ -369,7 +369,7 @@ const init = () => {
         localStorage.setItem('production_orders', JSON.stringify(productionOrders));
         // Mantém o quadro sincronizado quando alterações acontecem em outras abas (Cortes/Artes/DTF)
         renderProcessBoard();
-        applyDragScroll(); 
+        applyDragScroll();
     };
     const formatCurrency = (amount) => amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -440,7 +440,7 @@ const init = () => {
         orderClientSearchInput.addEventListener('input', () => {
             const term = orderClientSearchInput.value.toLowerCase();
             Array.from(orderClientSelect.options).forEach(opt => {
-                if (!opt.value) return; 
+                if (!opt.value) return;
                 opt.style.display = opt.textContent.toLowerCase().includes(term) ? '' : 'none';
             });
         });
@@ -564,11 +564,11 @@ const init = () => {
 
         const genders = ['Feminina', 'Masculina', 'Infantil'];
         const variations = ['Normal', 'Babylook', 'Oversized', 'Regata', 'Manga Longa', 'Gola Polo'];
-        
+
         // Compatibilidade com dados antigos
         const currentGender = subtask.gender || (genders.includes(subtask.type) ? subtask.type : 'Masculina');
         const currentVariation = subtask.variation || subtask.style || 'Normal';
-        
+
         const isInfantil = currentGender === 'Infantil';
         const currentSizeList = isInfantil ? sizeOptions.infantil : sizeOptions.adulto;
 
@@ -601,8 +601,8 @@ const init = () => {
         const qtyInput = item.querySelector('.subtask-total');
         const colorPickerInput = item.querySelector('.subtask-color-picker');
         const colorHexInput = item.querySelector('.subtask-color-hex');
-        item.querySelector('.plus').onclick = () => { qtyInput.value = parseInt(qtyInput.value||0) + 1; updateCuttingTotals(); };
-        item.querySelector('.minus').onclick = () => { qtyInput.value = Math.max(0, parseInt(qtyInput.value||0) - 1); updateCuttingTotals(); };
+        item.querySelector('.plus').onclick = () => { qtyInput.value = parseInt(qtyInput.value || 0) + 1; updateCuttingTotals(); };
+        item.querySelector('.minus').onclick = () => { qtyInput.value = Math.max(0, parseInt(qtyInput.value || 0) - 1); updateCuttingTotals(); };
         qtyInput.oninput = updateCuttingTotals;
 
         colorPickerInput.oninput = () => {
@@ -621,9 +621,9 @@ const init = () => {
             colorHexInput.value = pickedColor;
             colorPickerInput.value = pickedColor;
         };
-        
+
         item.querySelector('.del-btn').onclick = () => {
-            if(confirm('Excluir este item de corte?')) { item.remove(); updateCuttingTotals(); }
+            if (confirm('Excluir este item de corte?')) { item.remove(); updateCuttingTotals(); }
         };
 
         item.querySelector('.dup-btn').onclick = () => {
@@ -656,14 +656,14 @@ const init = () => {
     const updateCuttingTotals = () => {
         let totalCuts = 0;
         document.querySelectorAll('.subtask-total').forEach(inp => totalCuts += parseInt(inp.value || 0));
-        
+
         if (cuttingTotalBadge) cuttingTotalBadge.textContent = `Total: ${totalCuts}`;
-        
+
         // Validação com Total do Pedido (se houver campo de qtd total de impressão ou se for calculado)
         // Como o sistema original não tinha um campo "Total do Pedido" explícito além do printing.total, vamos usar esse ou criar um alerta visual apenas.
         // O prompt pede validação. Vamos assumir que o usuário deve preencher o total em algum lugar ou que a soma É o total.
         // Se houver nomes, validamos nomes vs totalCuts.
-        
+
         if (personalizationNamesInput) {
             const names = personalizationNamesInput.value.split('\n').filter(l => l.trim() !== '');
             const namesCount = names.length;
@@ -774,10 +774,10 @@ const init = () => {
             // coleta cores dos inputs reais (hex text inputs ou compatíveis)
             const colors = orderColorsContainer
                 ? Array.from(orderColorsContainer.querySelectorAll('.color-hex, .color-input'))
-                      .map(i => (i.value || '').trim())
-                      .filter(v => v)
+                    .map(i => (i.value || '').trim())
+                    .filter(v => v)
                 : [];
-            
+
             const isArtOnly = isArtOnlyCheckbox ? isArtOnlyCheckbox.checked : false;
 
             const orderData = {
@@ -800,7 +800,7 @@ const init = () => {
                     notes: orderPrintingNotesInput ? (orderPrintingNotesInput.value || '').trim() : ''
                 }
             };
-            
+
             if (isArtOnly) {
                 orderData.art = {
                     images: activeArtOnlyImages.slice()
@@ -812,7 +812,7 @@ const init = () => {
             } else {
                 const newOrder = { id: Date.now(), status: 'todo', ...orderData };
                 productionOrders.push(newOrder);
-                
+
                 // HOOK HIPOCAMPO: Pedido Criado
             }
             saveOrders();
@@ -836,15 +836,15 @@ const init = () => {
             mobileTabs.forEach(t => t.classList.remove('active'));
             // Add active to clicked
             tab.classList.add('active');
-            
+
             // Hide all columns on mobile
             Object.values(columnWrappers).forEach(wrapper => {
-                if(wrapper) wrapper.classList.remove('active-mobile-view');
+                if (wrapper) wrapper.classList.remove('active-mobile-view');
             });
-            
+
             // Show target column
             const targetId = tab.dataset.target;
-            if(columnWrappers[targetId]) columnWrappers[targetId].classList.add('active-mobile-view');
+            if (columnWrappers[targetId]) columnWrappers[targetId].classList.add('active-mobile-view');
         });
     });
 
@@ -864,7 +864,7 @@ const init = () => {
         today.setHours(0, 0, 0, 0);
         const diffTime = deadline - today;
         const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-        
+
         // Progresso do Processo
         const totalTasks = order.checklist ? Object.keys(order.checklist).length : 0;
         const completedTasks = order.checklist ? Object.values(order.checklist).filter(task => task.completed).length : 0;
@@ -1072,15 +1072,15 @@ const init = () => {
 
     const renderKanban = () => {
         Object.values(columns).forEach(col => { if (col) col.innerHTML = ''; });
-        
+
         // --- Filtro de URL (ex: vindo do Dashboard "A Receber") ---
         const urlParams = new URLSearchParams(window.location.search);
         const filterMode = urlParams.get('filter');
 
         // --- Botão Limpar Filtro (Melhoria de UX) ---
-        const headerTitle = document.querySelector('h1'); 
+        const headerTitle = document.querySelector('h1');
         let clearBtn = document.getElementById('clear-filter-btn');
-        
+
         if (filterMode === 'receivables') {
             if (!clearBtn && headerTitle) {
                 clearBtn = document.createElement('button');
@@ -1112,14 +1112,14 @@ const init = () => {
                 columns[order.status].appendChild(card);
             }
         });
-        
+
         // Update Mobile Tab Badges
         const counts = { todo: 0, doing: 0, done: 0 };
         productionOrders.forEach(o => {
             if (o.status === 'done' && o.inHistory) return;
             if (counts[o.status] !== undefined) counts[o.status]++;
         });
-        
+
         mobileTabs.forEach(tab => {
             const target = tab.dataset.target.replace('column-', '');
             const label = target === 'todo' ? 'A Fazer' : (target === 'doing' ? 'Em Andamento' : 'Concluído');
@@ -1295,7 +1295,7 @@ const init = () => {
             card.style.userSelect = '';
             card.style.touchAction = '';
             if (dragState.pointerId !== null && card.hasPointerCapture?.(dragState.pointerId)) {
-                try { card.releasePointerCapture(dragState.pointerId); } catch (_) {}
+                try { card.releasePointerCapture(dragState.pointerId); } catch (_) { }
             }
         }
 
@@ -1438,9 +1438,13 @@ const init = () => {
                 today.setHours(0, 0, 0, 0);
                 const deadline = new Date(`${task.deadline}T00:00:00`);
                 const diff = Math.ceil((deadline.getTime() - today.getTime()) / 86400000);
-                return Number.isFinite(diff) && diff >= 0 && diff <= 2;
+                // Allow diff <= 2 to include negative values (overdue tasks)
+                return Number.isFinite(diff) && diff <= 2;
             })
             : allTasks;
+
+        // Sort tasks by nearest deadline first
+        visibleTasks.sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
 
         const groupedTasks = visibleTasks.reduce((acc, task) => {
             const groupName = task.taskName;
@@ -1448,24 +1452,54 @@ const init = () => {
             acc[groupName].push(task);
             return acc;
         }, {});
+
         if (visibleTasks.length === 0) {
             const emptyState = document.createElement('div');
-            emptyState.className = 'glass-card p-6 text-center text-gray-400 md:col-span-2 xl:col-span-3';
-            emptyState.innerHTML = dueSoonFilter ? 'Nenhuma tarefa vencendo em até 2 dias.' : 'Nenhuma tarefa com prazo definido encontrada.';
+            emptyState.className = 'glass-card p-10 flex flex-col items-center justify-center text-center text-gray-400 w-full min-h-[300px] md:col-span-2 xl:col-span-3 border border-white/5';
+            emptyState.innerHTML = `<svg class="w-16 h-16 mb-4 text-white/20" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 13l4 4L19 7"/></svg><p class="text-lg font-medium text-white/50">${dueSoonFilter ? 'Nenhuma tarefa vencendo em até 2 dias ou atrasada.' : 'Nenhuma tarefa pendente encontrada.'}</p><p class="text-sm mt-2 text-white/30">Bom trabalho! Tudo está em dia.</p>`;
             tasksContainer.appendChild(emptyState);
             return;
         }
+
         for (const groupKey in checklistItems) {
             const groupName = checklistItems[groupKey];
             if (groupedTasks[groupName]) {
                 const tasks = groupedTasks[groupName];
                 const card = document.createElement('div');
-                card.className = 'glass-card p-4 flex flex-col';
+                card.className = 'glass-card flex flex-col overflow-hidden border border-white/10 shadow-xl bg-gray-900/50 backdrop-blur-md';
                 let tasksHTML = tasks.map(task => {
                     const client = clients.find(c => c.id === task.clientId);
-                    return `<div class="flex items-center justify-between p-3 border-l-4 border-cyan-500/50 bg-white/5 rounded-r-md"><label class="flex items-center gap-3 cursor-pointer"><input type="checkbox" data-order-id="${task.orderId}" data-task-key="${task.taskKey}" class="task-checkbox w-5 h-5 rounded text-cyan-500 bg-gray-700 border-gray-600 focus:ring-cyan-600"><div><p class="font-semibold text-sm">${task.description}</p><p class="text-xs text-cyan-300">${client ? client.name : 'Cliente não encontrado'}</p></div></label><span class="text-sm text-gray-400">Prazo: ${new Date(task.deadline + 'T03:00:00').toLocaleDateString('pt-BR')}</span></div>`;
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const deadlineDate = new Date(`${task.deadline}T00:00:00`);
+                    const isOverdue = deadlineDate < today;
+                    let borderClass = isOverdue ? 'border-red-500' : 'border-cyan-500/50';
+                    let textClass = isOverdue ? 'text-red-400/80' : 'text-cyan-300/80';
+                    let bgClass = isOverdue ? 'bg-red-500/10 hover:bg-red-500/20' : 'bg-white/5 hover:bg-white/10';
+                    let alertHtml = isOverdue ? '<span class="inline-flex items-center text-[10px] font-bold uppercase tracking-wider bg-red-500/20 text-red-400 px-2 py-0.5 rounded ml-2 shadow-[0_0_10px_rgba(239,68,68,0.2)] animate-pulse"><svg class="w-3 h-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>Atrasado</span>' : '';
+
+                    return `<div class="group flex flex-col justify-between p-4 border-l-4 ${borderClass} ${bgClass} transition-colors duration-200 cursor-pointer border-b border-white/5 last:border-0 relative overflow-hidden">
+                        ${isOverdue ? '<div class="absolute top-0 right-0 w-16 h-16 bg-red-500/5 rounded-bl-full -mr-8 -mt-8 pointer-events-none"></div>' : ''}
+                        <label class="flex items-start gap-3 cursor-pointer w-full relative z-10">
+                            <input type="checkbox" data-order-id="${task.orderId}" data-task-key="${task.taskKey}" class="task-checkbox mt-0.5 w-5 h-5 rounded ${isOverdue ? 'text-red-500 focus:ring-red-600 border-red-500/30 bg-red-500/10' : 'text-cyan-500 focus:ring-cyan-600 bg-gray-800 border-gray-600'} transition-all cursor-pointer">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center flex-wrap gap-y-1">
+                                    <p class="font-bold text-sm text-gray-100 ${isOverdue ? 'text-red-100' : 'group-hover:text-white'} transition-colors truncate">${task.description}</p>
+                                    ${alertHtml}
+                                </div>
+                                <p class="text-xs ${textClass} mt-1 font-medium flex items-center gap-1.5 w-full truncate">
+                                    <svg class="w-3 h-3 opacity-70 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                                    <span class="truncate">${client ? client.name : 'Cliente não encontrado'}</span>
+                                </p>
+                            </div>
+                        </label>
+                        <div class="mt-3 flex items-center text-[11px] font-medium tracking-wide ${isOverdue ? 'text-red-400' : 'text-gray-400'} ml-8">
+                            <svg class="w-3.5 h-3.5 mr-1 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            ${new Date(task.deadline + 'T03:00:00').toLocaleDateString('pt-BR')}
+                        </div>
+                    </div>`;
                 }).join('');
-                card.innerHTML = `<div class="flex items-center justify-between mb-4"><div class="flex items-center gap-3 text-cyan-300">${categoryIcons[groupKey]}<h2 class="text-lg font-bold">${groupName}</h2></div><span class="task-badge">${tasks.length}</span></div><div class="space-y-3">${tasksHTML}</div>`;
+                card.innerHTML = `<div class="p-4 bg-gradient-to-r from-gray-800 to-gray-800/50 border-b border-white/10 flex items-center justify-between"><div class="flex items-center gap-3"><div class="p-2 bg-cyan-500/20 text-cyan-400 rounded-lg shadow-inner ring-1 ring-cyan-500/30">${categoryIcons[groupKey]}</div><h2 class="text-base font-bold text-white tracking-wide uppercase">${groupName}</h2></div><span class="flex items-center justify-center bg-gray-900 border border-white/10 text-cyan-400 font-bold text-xs h-7 w-7 rounded-full shadow-inner">${tasks.length}</span></div><div class="flex flex-col divide-y divide-white/5">${tasksHTML}</div>`;
                 tasksContainer.appendChild(card);
             }
         }
@@ -1732,7 +1766,7 @@ const init = () => {
                         <span>Cor</span>
                         <div class="color-swatches" data-field="color">
                             <button type="button" class="is-active" data-value="Sem cor">Sem cor</button>
-                            ${colors.map(c => `<button type="button" data-value="${sanitizeHtml(c)}" style="${/^#([0-9A-F]{3}){1,2}$/i.test((c||'').trim()) ? `--sw:${c}` : ''}">${sanitizeHtml(c)}</button>`).join('')}
+                            ${colors.map(c => `<button type="button" data-value="${sanitizeHtml(c)}" style="${/^#([0-9A-F]{3}){1,2}$/i.test((c || '').trim()) ? `--sw:${c}` : ''}">${sanitizeHtml(c)}</button>`).join('')}
                         </div>
                     </div>
                     <div class="cut-form-row">
@@ -2088,7 +2122,7 @@ const init = () => {
             return;
         }
         artTasksContainer.innerHTML = '';
-        
+
         // Mostra apenas pedidos que ainda possuem arte pendente
         const artOrders = productionOrders.filter(order => {
             if (order.status === 'done') return false;
@@ -2101,7 +2135,7 @@ const init = () => {
         });
 
         if (artOrders.length === 0) {
-            artTasksContainer.innerHTML = '<div class="glass-card p-6 text-center text-gray-400">Nenhum pedido pendente para arte.</div>'; 
+            artTasksContainer.innerHTML = '<div class="glass-card p-6 text-center text-gray-400">Nenhum pedido pendente para arte.</div>';
             return;
         }
 
@@ -2121,10 +2155,10 @@ const init = () => {
             const artData = order.art || {};
             const artControl = order.artControl || { versions: [] };
             const lastVersion = artControl.versions.length > 0 ? artControl.versions[artControl.versions.length - 1] : null;
-            
+
             let statusClass = 'bg-gray-700 text-gray-300';
             let statusText = 'Em criação';
-            
+
             if (lastVersion) {
                 if (lastVersion.status === 'finalizada') { statusClass = 'bg-green-500/20 text-green-400 border border-green-500/30'; statusText = `Finalizada V${lastVersion.version}`; }
                 else if (lastVersion.status === 'ajuste_interno') { statusClass = 'bg-amber-500/20 text-amber-300 border border-amber-500/30'; statusText = `Ajuste interno V${lastVersion.version}`; }
@@ -2137,7 +2171,7 @@ const init = () => {
                 ? deadlineDate.toLocaleDateString('pt-BR').slice(0, 5)
                 : 'Sem prazo';
             const isLate = deadlineDate && deadlineDate < new Date() && (!lastVersion || lastVersion.status !== 'approved');
-            
+
             // New Compact Card HTML
             const card = document.createElement('div');
             card.className = `art-card-compact`;
