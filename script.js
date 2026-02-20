@@ -1157,12 +1157,169 @@ const init = () => {
         breakEvenCostsBar.textContent = `${costsShare.toFixed(0)}%`;
         if (costPerPieceDashboardEl) {
             const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-            const monthlyProduction = JSON.parse(localStorage.getItem('monthlyProduction')) || [];
-            const productionData = monthlyProduction.find(p => p.month === currentMonthStr);
-            const piecesProduced = productionData ? productionData.quantity : 0;
-            const totalIndirectCosts = monthlyTransactions.filter(t => t.type === 'expense' && t.scope !== 'personal' && t.category.includes('Indireto')).reduce((sum, t) => sum + Math.abs(t.amount), 0);
-            let costPerPiece = piecesProduced > 0 ? totalIndirectCosts / piecesProduced : 0;
+
+            // CUSTOS: Todas despesas empresariais do mês (exclui gastos pessoais)
+            const businessExpenses = monthlyTransactions
+                .filter(t => t.type === 'expense' && t.scope !== 'personal');
+            const totalBusinessCosts = businessExpenses
+                .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+            // Custos agrupados por categoria
+            const costsByCategory = {};
+            businessExpenses.forEach(t => {
+                const cat = t.category || 'Outros';
+                costsByCategory[cat] = (costsByCategory[cat] || 0) + Math.abs(t.amount);
+            });
+
+            // PEÇAS: Soma as peças dos pedidos de produção do mês
+            const allOrders = JSON.parse(localStorage.getItem('production_orders')) || [];
+            const monthOrders = allOrders.filter(o => {
+                const ref = o.createdAt || o.deadline;
+                if (!ref) return false;
+                return String(ref).substring(0, 7) === currentMonthStr;
+            });
+            const piecesFromOrders = monthOrders.reduce((sum, o) => sum + (parseInt(o.quantity, 10) || 0), 0);
+
+            // PEÇAS: Soma as vendas avulsas do mês (monthlyProduction)
+            const monthlyProd = JSON.parse(localStorage.getItem('monthlyProduction')) || [];
+            const prodData = monthlyProd.find(p => p.month === currentMonthStr);
+            const piecesFromSales = prodData ? (prodData.quantity || 0) : 0;
+
+            // TOTAL de peças = pedidos + vendas avulsas
+            const totalPieces = piecesFromOrders + piecesFromSales;
+
+            const costPerPiece = totalPieces > 0 ? totalBusinessCosts / totalPieces : 0;
             costPerPieceDashboardEl.textContent = formatCurrency(costPerPiece);
+
+            // Armazena os dados para o modal de explicação
+            window._costBreakdown = {
+                totalBusinessCosts, costsByCategory, piecesFromOrders,
+                piecesFromSales, totalPieces, costPerPiece,
+                incomeMonth, monthOrders: monthOrders.length
+            };
+
+            // Atualiza sub-texto com quantidade de peças
+            const costDetailEl = document.getElementById('cost-per-piece-detail');
+            if (costDetailEl) {
+                costDetailEl.textContent = `${totalPieces} peça${totalPieces !== 1 ? 's' : ''} no mês`;
+            }
+
+            // Atualiza a mini-bar (proporção custo/receita)
+            const miniBar = costPerPieceDashboardEl.closest('article')?.querySelector('.mini-bar span');
+            if (miniBar) {
+                const ratio = incomeMonth > 0 ? Math.min((totalBusinessCosts / incomeMonth) * 100, 100) : 0;
+                miniBar.style.width = `${ratio}%`;
+            }
+        }
+
+        // --- MODAL: Explicação do Custo por Peça ---
+        const costCard = document.getElementById('cost-per-piece-card');
+        const costModal = document.getElementById('cost-breakdown-modal');
+        const costModalBody = document.getElementById('cost-breakdown-body');
+        const closeCostModalBtn = document.getElementById('close-cost-modal');
+
+        if (costCard && costModal && !costCard._listenerAttached) {
+            costCard._listenerAttached = true;
+
+            const openCostModal = () => {
+                const d = window._costBreakdown || {};
+                const fmt = formatCurrency;
+
+                // Monta as linhas de categorias de custo
+                let categoryRows = '';
+                const cats = Object.entries(d.costsByCategory || {}).sort((a, b) => b[1] - a[1]);
+                if (cats.length > 0) {
+                    categoryRows = cats.map(([cat, val]) => {
+                        const pct = d.totalBusinessCosts > 0 ? ((val / d.totalBusinessCosts) * 100).toFixed(1) : '0.0';
+                        return `<div class="breakdown-row"><span class="label">${cat}</span><span class="value">${fmt(val)} <span style="color:#9ca3af;font-weight:400;font-size:.75rem">(${pct}%)</span></span></div>`;
+                    }).join('');
+                } else {
+                    categoryRows = '<div class="text-gray-500">Nenhuma despesa empresarial neste mês</div>';
+                }
+
+                // Identifica a maior categoria de custo
+                let topCategory = '—';
+                if (cats.length > 0) topCategory = cats[0][0];
+
+                // Margem por peça
+                const avgPrice = d.totalPieces > 0 && d.incomeMonth > 0 ? d.incomeMonth / d.totalPieces : 0;
+                const marginPerPiece = avgPrice - d.costPerPiece;
+                const marginPct = avgPrice > 0 ? ((marginPerPiece / avgPrice) * 100).toFixed(1) : '0.0';
+
+                // Dica inteligente
+                let tip = '';
+                if (d.totalPieces === 0) {
+                    tip = `<div class="breakdown-tip"><div class="tip-title">⚠️ Sem produção registrada</div>Cadastre pedidos de produção na aba <strong>Processos</strong> ou registre vendas de produto no Dashboard para calcular o custo por peça.</div>`;
+                } else if (d.costPerPiece > avgPrice && avgPrice > 0) {
+                    tip = `<div class="breakdown-tip" style="border-color:rgba(239,68,68,.2);background:linear-gradient(135deg,rgba(239,68,68,.06),rgba(239,68,68,.02));color:#fca5a5"><div class="tip-title">🚨 Margem negativa!</div>Seu custo por peça (${fmt(d.costPerPiece)}) é maior que o preço médio de venda (${fmt(avgPrice)}). A maior despesa é <strong>${topCategory}</strong>. Revise seus custos ou ajuste o preço de venda.</div>`;
+                } else if (marginPct < 30 && avgPrice > 0) {
+                    tip = `<div class="breakdown-tip" style="border-color:rgba(234,179,8,.2);background:linear-gradient(135deg,rgba(234,179,8,.06),rgba(234,179,8,.02));color:#fde68a"><div class="tip-title">⚠️ Margem apertada (${marginPct}%)</div>A margem ideal para vestuário é acima de 40%. Considere renegociar custos de <strong>${topCategory}</strong> ou reajustar preços.</div>`;
+                } else {
+                    tip = `<div class="breakdown-tip"><div class="tip-title">✅ Margem saudável (${marginPct}%)</div>Seu custo está controlado. A receita de ${fmt(d.incomeMonth)} contra ${fmt(d.totalBusinessCosts)} em custos indica boa eficiência operacional.</div>`;
+                }
+
+                costModalBody.innerHTML = `
+                    <div class="breakdown-formula">
+                        <div class="formula-main">Custos Empresariais ÷ Peças Produzidas</div>
+                        <div class="formula-sub">${fmt(d.totalBusinessCosts)} ÷ ${d.totalPieces} peças</div>
+                    </div>
+
+                    <div class="result-big">${fmt(d.costPerPiece)} / peça</div>
+
+                    <div class="breakdown-section">
+                        <h4>💰 Custos Empresariais do Mês</h4>
+                        ${categoryRows}
+                        <div class="breakdown-total">
+                            <span>Total de Custos</span>
+                            <span class="text-red-400">${fmt(d.totalBusinessCosts)}</span>
+                        </div>
+                    </div>
+
+                    <div class="breakdown-section">
+                        <h4>📦 Peças Produzidas no Mês</h4>
+                        <div class="breakdown-row">
+                            <span class="label">Pedidos de produção (${d.monthOrders || 0} pedidos)</span>
+                            <span class="value">${d.piecesFromOrders} peças</span>
+                        </div>
+                        <div class="breakdown-row">
+                            <span class="label">Vendas avulsas (Dashboard)</span>
+                            <span class="value">${d.piecesFromSales} peças</span>
+                        </div>
+                        <div class="breakdown-total">
+                            <span>Total de Peças</span>
+                            <span class="text-yellow-400">${d.totalPieces} peças</span>
+                        </div>
+                    </div>
+
+                    ${avgPrice > 0 ? `
+                    <div class="breakdown-section">
+                        <h4>📊 Análise de Margem</h4>
+                        <div class="breakdown-row">
+                            <span class="label">Preço médio de venda</span>
+                            <span class="value text-green-400">${fmt(avgPrice)}</span>
+                        </div>
+                        <div class="breakdown-row">
+                            <span class="label">Custo por peça</span>
+                            <span class="value text-red-400">- ${fmt(d.costPerPiece)}</span>
+                        </div>
+                        <div class="breakdown-total">
+                            <span>Margem por peça</span>
+                            <span class="${marginPerPiece >= 0 ? 'text-green-400' : 'text-red-400'}">${fmt(marginPerPiece)} (${marginPct}%)</span>
+                        </div>
+                    </div>` : ''}
+
+                    ${tip}
+                `;
+
+                costModal.classList.remove('hidden');
+            };
+
+            const closeCostModal = () => costModal.classList.add('hidden');
+
+            costCard.addEventListener('click', openCostModal);
+            if (closeCostModalBtn) closeCostModalBtn.addEventListener('click', closeCostModal);
+            costModal.addEventListener('click', (e) => { if (e.target === costModal) closeCostModal(); });
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !costModal.classList.contains('hidden')) closeCostModal(); });
         }
 
         renderRecentTransactions();

@@ -38,7 +38,7 @@
   <style>
   </style>
 
-  
+
 </head>
 
 <body class="bg-gray-900 text-gray-200 neo-dashboard">
@@ -78,7 +78,7 @@
 
   <div class="flex flex-col min-h-screen">
 
-        <header class="hidden md:block desktop-topbar z-50">
+    <header class="hidden md:block desktop-topbar z-50">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="desktop-topbar-inner flex items-center justify-between">
           <div class="flex items-center">
@@ -222,7 +222,9 @@
               class="text-2xl md:text-4xl font-bold mt-2 text-rose-300 metric-value metric-value--bad">R$ 0,00</p>
             <p class="metric-sub">Empresarial + pessoal</p>
           </article>
-          <article class="glass-card metric-tile metric-card metric-card--compact p-4 md:p-6">
+          <article id="cost-per-piece-card"
+            class="glass-card metric-tile metric-card metric-card--compact p-4 md:p-6 cursor-pointer hover:ring-1 hover:ring-yellow-400/30 transition-all"
+            title="Clique para ver detalhes do cálculo">
             <h3 class="text-gray-400 text-base md:text-lg inline-flex items-center gap-2 metric-head"><span
                 class="metric-ic"><svg class="syt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.9" d="M5 12a7 7 0 1 0 7-7" />
@@ -230,7 +232,9 @@
                 </svg></span>Custo por Peça (Mês Atual)</h3>
             <p id="cost-per-piece-dashboard"
               class="text-2xl md:text-4xl font-bold mt-2 text-yellow-400 metric-value metric-value--warn">R$ 0,00</p>
-            <div class="mini-bar"><span style="width:18%"></span></div>
+            <p id="cost-per-piece-detail" class="metric-sub">0 peças no mês</p>
+            <div class="mini-bar"><span style="width:0%"></span></div>
+            <p class="text-[10px] text-gray-500 mt-1 text-right">toque para detalhes ℹ️</p>
           </article>
         </div>
       </section>
@@ -410,11 +414,11 @@
             <div class="step-group md:contents" data-step="1">
               <div class="md:col-span-2"><label for="description"
                   class="block mb-2 text-sm font-medium">Descrição</label><input type="text" id="description"
-                  class="w-full p-3 rounded-md glass-input"
-                  placeholder="Ex: 10 camisetas personalizadas" required></div>
+                  class="w-full p-3 rounded-md glass-input" placeholder="Ex: 10 camisetas personalizadas" required>
+              </div>
               <div><label for="amount" class="block mb-2 text-sm font-medium">Valor</label><input type="number"
-                  id="amount" step="0.01" class="w-full p-3 rounded-md glass-input"
-                  placeholder="2250.00" required></div>
+                  id="amount" step="0.01" class="w-full p-3 rounded-md glass-input" placeholder="2250.00" required>
+              </div>
               <div><label for="date" class="block mb-2 text-sm font-medium">Data</label><input type="date" id="date"
                   class="w-full p-3 rounded-md glass-input" required></div>
             </div>
@@ -431,8 +435,7 @@
                   </label>
                 </div>
                 <div id="name-input-wrapper" class="name-input-wrapper mt-2">
-                  <input type="text" id="name" class="w-full p-3 rounded-md glass-input"
-                    placeholder="Ex: Cliente Vini">
+                  <input type="text" id="name" class="w-full p-3 rounded-md glass-input" placeholder="Ex: Cliente Vini">
                 </div>
               </div>
               <div><label for="type" class="block mb-2 text-sm font-medium">Tipo</label><select id="type"
@@ -454,8 +457,7 @@
             <div class="step-group hidden md:contents" data-step="3">
               <div id="quantity-field-container" class="hidden md:col-span-2"><label for="transaction-quantity"
                   class="block mb-2 text-sm font-medium">Quantidade de Peças</label><input type="number"
-                  id="transaction-quantity" class="w-full p-3 rounded-md glass-input"
-                  placeholder="Ex: 10"></div>
+                  id="transaction-quantity" class="w-full p-3 rounded-md glass-input" placeholder="Ex: 10"></div>
               <div id="is-fabric-container" class="hidden md:col-span-2"><label
                   class="flex items-center gap-2 text-sm font-medium cursor-pointer"><input type="checkbox"
                     id="is-fabric-checkbox" class="w-4 h-4 rounded text-cyan-500 glass-input">Esta
@@ -465,11 +467,10 @@
                 <h3 class="text-sm font-semibold text-cyan-300">Detalhes da Matéria-Prima</h3>
                 <div class="grid grid-cols-2 gap-4">
                   <div><label for="fabric-color" class="block mb-2 text-xs font-medium">Cor</label><input type="text"
-                      id="fabric-color" class="w-full p-2 rounded-md glass-input text-sm"
-                      placeholder="Ex: Preto"></div>
+                      id="fabric-color" class="w-full p-2 rounded-md glass-input text-sm" placeholder="Ex: Preto"></div>
                   <div><label for="fabric-weight" class="block mb-2 text-xs font-medium">Peso (Kg)</label><input
-                      type="number" step="0.01" id="fabric-weight"
-                      class="w-full p-2 rounded-md glass-input text-sm" placeholder="Ex: 15.5">
+                      type="number" step="0.01" id="fabric-weight" class="w-full p-2 rounded-md glass-input text-sm"
+                      placeholder="Ex: 15.5">
                   </div>
                 </div>
               </div>
@@ -482,8 +483,7 @@
                     Cliente</label>
                   <input type="text" id="client-search" placeholder="Digite para buscar..."
                     class="w-full p-3 rounded-md glass-input mb-2">
-                  <select id="client-select"
-                    class="w-full p-1 rounded-md glass-input cursor-pointer relative z-10"
+                  <select id="client-select" class="w-full p-1 rounded-md glass-input cursor-pointer relative z-10"
                     size="5"></select>
                 </div>
               </div>
@@ -1259,6 +1259,144 @@
       }, 100);
     })();
   </script>
+
+  <!-- MODAL: Explicação do Custo por Peça -->
+  <div id="cost-breakdown-modal"
+    class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] flex items-center justify-center p-4"
+    style="animation: fadeIn .2s ease-out">
+    <div class="glass-card w-full max-w-lg max-h-[85vh] rounded-xl flex flex-col overflow-hidden"
+      style="animation: slideUp .25s ease-out">
+      <div class="flex items-center justify-between p-5 border-b border-white/10">
+        <h2 class="text-lg font-bold inline-flex items-center gap-2">
+          <svg class="syt-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="width:22px;height:22px">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.9" d="M5 12a7 7 0 1 0 7-7" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.9" d="M12 8.3V12l2.6 1.5" />
+          </svg>
+          Como funciona o Custo por Peça
+        </h2>
+        <button id="close-cost-modal"
+          class="text-gray-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10" aria-label="Fechar">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div id="cost-breakdown-body" class="p-5 overflow-y-auto space-y-4 text-sm text-gray-300">
+        <!-- Populated dynamically by JS -->
+      </div>
+    </div>
+  </div>
+  <style>
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(24px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    #cost-breakdown-modal .breakdown-formula {
+      background: linear-gradient(135deg, rgba(234, 179, 8, .08), rgba(234, 179, 8, .02));
+      border: 1px solid rgba(234, 179, 8, .2);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    #cost-breakdown-modal .breakdown-formula .formula-main {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #facc15;
+      margin-bottom: 4px;
+    }
+
+    #cost-breakdown-modal .breakdown-formula .formula-sub {
+      font-size: .75rem;
+      color: #9ca3af;
+    }
+
+    #cost-breakdown-modal .breakdown-section {
+      background: rgba(255, 255, 255, .03);
+      border: 1px solid rgba(255, 255, 255, .06);
+      border-radius: 10px;
+      padding: 14px;
+    }
+
+    #cost-breakdown-modal .breakdown-section h4 {
+      font-size: .8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 8px;
+      color: #d1d5db;
+    }
+
+    #cost-breakdown-modal .breakdown-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, .04);
+    }
+
+    #cost-breakdown-modal .breakdown-row:last-child {
+      border-bottom: none;
+    }
+
+    #cost-breakdown-modal .breakdown-row .label {
+      color: #9ca3af;
+    }
+
+    #cost-breakdown-modal .breakdown-row .value {
+      font-weight: 600;
+    }
+
+    #cost-breakdown-modal .breakdown-total {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0 0;
+      margin-top: 4px;
+      border-top: 1px solid rgba(255, 255, 255, .1);
+      font-weight: 700;
+    }
+
+    #cost-breakdown-modal .breakdown-tip {
+      background: linear-gradient(135deg, rgba(34, 197, 94, .06), rgba(34, 197, 94, .02));
+      border: 1px solid rgba(34, 197, 94, .15);
+      border-radius: 10px;
+      padding: 12px;
+      font-size: .78rem;
+      color: #86efac;
+    }
+
+    #cost-breakdown-modal .breakdown-tip .tip-title {
+      font-weight: 700;
+      margin-bottom: 4px;
+      font-size: .82rem;
+    }
+
+    #cost-breakdown-modal .result-big {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: #facc15;
+      text-align: center;
+    }
+  </style>
+
   <script src="theme-toggle.js"></script>
   <script src="gemini-chat.js"></script>
 </body>
