@@ -52,11 +52,22 @@
             <form id="login-form" class="space-y-5" novalidate>
                 <div>
                     <label for="email" class="block text-sm font-medium text-gray-300 mb-2">Email</label>
-                    <input type="email" id="email" value="admin@sitey.com" class="w-full px-4 py-3 rounded-xl bg-slate-900/75 border border-slate-700 text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none transition" required>
+                    <input type="email" id="email" autocomplete="username" class="w-full px-4 py-3 rounded-xl bg-slate-900/75 border border-slate-700 text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none transition" required>
                 </div>
                 <div>
                     <label for="password" class="block text-sm font-medium text-gray-300 mb-2">Senha</label>
-                    <input type="password" id="password" value="451021" class="w-full px-4 py-3 rounded-xl bg-slate-900/75 border border-slate-700 text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none transition" required>
+                    <input type="password" id="password" autocomplete="current-password" class="w-full px-4 py-3 rounded-xl bg-slate-900/75 border border-slate-700 text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none transition" required>
+                </div>
+
+                <div class="grid gap-2 sm:grid-cols-2">
+                    <label for="remember-me" class="flex items-center gap-2 text-sm text-gray-300 rounded-lg border border-slate-700 bg-slate-900/40 px-3 py-2 cursor-pointer select-none">
+                        <input type="checkbox" id="remember-me" class="h-4 w-4 rounded border-slate-500 text-cyan-500 focus:ring-cyan-500" checked>
+                        <span>Lembrar senha</span>
+                    </label>
+                    <label for="disconnect-devices" class="flex items-center gap-2 text-sm text-gray-300 rounded-lg border border-slate-700 bg-slate-900/40 px-3 py-2 cursor-pointer select-none">
+                        <input type="checkbox" id="disconnect-devices" class="h-4 w-4 rounded border-slate-500 text-cyan-500 focus:ring-cyan-500">
+                        <span>Desconectar outros dispositivos</span>
+                    </label>
                 </div>
 
                 <div id="error-msg" class="text-red-300 text-sm text-center bg-red-950/40 border border-red-500/25 rounded-lg px-3 py-2 hidden"></div>
@@ -90,6 +101,8 @@
         const loginBtn = document.getElementById('login-btn');
         const googleBtn = document.getElementById('google-login-btn');
         const errorMsg = document.getElementById('error-msg');
+        const rememberMeInput = document.getElementById('remember-me');
+        const disconnectDevicesInput = document.getElementById('disconnect-devices');
 
         const GOOGLE_BUTTON_DEFAULT = googleBtn.innerHTML;
 
@@ -127,7 +140,10 @@
             setLoading({ google: true });
             try {
                 const firebaseAuth = await waitForFirebaseAuth();
-                await firebaseAuth.loginWithGoogle();
+                await firebaseAuth.loginWithGoogle({
+                    remember: rememberMeInput.checked,
+                    disconnectOtherDevices: disconnectDevicesInput.checked
+                });
             } catch (error) {
                 console.error(error);
                 showError('Erro ao entrar com Google: ' + friendlyGoogleError(error));
@@ -141,7 +157,14 @@
             setLoading({ email: true });
             try {
                 const firebaseAuth = await waitForFirebaseAuth();
-                await firebaseAuth.login(document.getElementById('email').value, document.getElementById('password').value);
+                await firebaseAuth.login(
+                    document.getElementById('email').value,
+                    document.getElementById('password').value,
+                    {
+                        remember: rememberMeInput.checked,
+                        disconnectOtherDevices: disconnectDevicesInput.checked
+                    }
+                );
             } catch (error) {
                 console.error(error);
                 showError('Erro ao entrar: ' + (error.message || 'Verifique seus dados e tente novamente.'));
