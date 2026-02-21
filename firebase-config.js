@@ -1,7 +1,7 @@
 // c:\Users\AAAA\Desktop\sitey-caixa\firebase-config.js
 
 // Importa as funções do Firebase (versão compat para facilitar o uso com scripts existentes)
-import { onAuthStateChanged, setPersistence, browserLocalPersistence, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { onAuthStateChanged, setPersistence, browserLocalPersistence, inMemoryPersistence, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, onSnapshot, setDoc, updateDoc, serverTimestamp, deleteField } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 import { app, auth, db } from "./js/firebase-init.js";
@@ -14,15 +14,79 @@ googleProvider.setCustomParameters({
 googleProvider.addScope('email');
 googleProvider.addScope('profile');
 
-const ensureAuthPersistence = async () => {
+
+const setAuthPersistence = async ({ remember = true } = {}) => {
+    const target = remember ? browserLocalPersistence : inMemoryPersistence;
     try {
-        await setPersistence(auth, browserLocalPersistence);
+        await setPersistence(auth, target);
     } catch (error) {
-        console.warn('Não foi possível definir persistência local de auth:', error);
+        console.warn('Não foi possível definir persistência de auth:', error);
     }
 };
 
-ensureAuthPersistence();
+const signOutOtherDevices = async () => {
+    try {
+        const tokenResult = await auth.currentUser?.getIdTokenResult(true);
+        const authTimeMs = Number.parseInt(tokenResult?.claims?.auth_time || '0', 10) * 1000;
+        if (authTimeMs > 0) {
+            await auth.currentUser.reload();
+            const refreshedToken = await auth.currentUser.getIdTokenResult(true);
+            const refreshedAuthTimeMs = Number.parseInt(refreshedToken?.claims?.auth_time || '0', 10) * 1000;
+            if (refreshedAuthTimeMs !== authTimeMs) {
+                console.log('ℹ️ Sessões antigas devem ser invalidadas após alteração de credenciais.');
+            }
+        }
+    } catch (error) {
+        console.warn('Não foi possível confirmar revogação de sessões antigas:', error);
+    }
+};
+
+const loginWithOptions = async (email, password, options = {}) => {
+    await setAuthPersistence(options);
+    const credential = await signInWithEmailAndPassword(auth, email, password);
+    if (options.disconnectOtherDevices && auth.currentUser) {
+        await updateDoc(doc(db, "users", auth.currentUser.uid), {
+            lastLoginAt: serverTimestamp(),
+            revokeSessionsAt: serverTimestamp(),
+            disconnectOtherDevicesRequested: true
+        }).catch((error) => {
+            console.warn('Falha ao registrar solicitação de desconectar dispositivos:', error);
+        });
+        await signOutOtherDevices();
+    }
+    return credential;
+};
+
+const loginWithGoogleOptions = async (options = {}) => {
+    await setAuthPersistence(options);
+    let credential;
+    try {
+        credential = await signInWithPopup(auth, googleProvider);
+    } catch (error) {
+        const fallbackCodes = new Set([
+            'auth/popup-blocked',
+            'auth/cancelled-popup-request',
+            'auth/popup-closed-by-user'
+        ]);
+        if (fallbackCodes.has(error?.code)) {
+            return signInWithRedirect(auth, googleProvider);
+        }
+        throw error;
+    }
+
+    if (options.disconnectOtherDevices && auth.currentUser) {
+        await updateDoc(doc(db, "users", auth.currentUser.uid), {
+            lastLoginAt: serverTimestamp(),
+            revokeSessionsAt: serverTimestamp(),
+            disconnectOtherDevicesRequested: true
+        }).catch((error) => {
+            console.warn('Falha ao registrar solicitação de desconectar dispositivos:', error);
+        });
+        await signOutOtherDevices();
+    }
+
+    return credential;
+};
 
 // Som de sucesso sutil (Web Audio API)
 let audioCtx = null;
@@ -1418,22 +1482,8 @@ onAuthStateChanged(auth, async (user) => {
 
 // Expõe funções de auth globalmente para uso nos botões
 window.firebaseAuth = {
-    login: (email, password) => signInWithEmailAndPassword(auth, email, password),
-    loginWithGoogle: async () => {
-        try {
-            return await signInWithPopup(auth, googleProvider);
-        } catch (error) {
-            const fallbackCodes = new Set([
-                'auth/popup-blocked',
-                'auth/cancelled-popup-request',
-                'auth/popup-closed-by-user'
-            ]);
-            if (fallbackCodes.has(error?.code)) {
-                return signInWithRedirect(auth, googleProvider);
-            }
-            throw error;
-        }
-    },
+    login: (email, password, options = {}) => loginWithOptions(email, password, options),
+    loginWithGoogle: (options = {}) => loginWithGoogleOptions(options),
     logout: () => signOut(auth),
     currentUser: () => auth.currentUser,
 
