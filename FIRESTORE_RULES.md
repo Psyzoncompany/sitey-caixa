@@ -29,6 +29,10 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    match /users/{uid}/pedidos_arte/{pedidoId} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
     // =========================
     // CLIENTE (feedback legado)
     // =========================

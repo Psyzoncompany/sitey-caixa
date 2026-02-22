@@ -33,8 +33,20 @@
 
       <article class="glass-card p-5 border border-cyan-500/20">
         <div class="flex items-center justify-between gap-3 mb-2">
-          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.19</h2>
+          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.20</h2>
           <span class="text-xs text-gray-400">Atual</span>
+        </div>
+        <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
+          <li>Correção de permissão do módulo Arte Online: geração de link agora prioriza escrita em <code>users/{uid}/pedidos_arte</code> com usuário autenticado.</li>
+          <li>Página do cliente atualizada para ler pedido por caminho seguro (owner + token/código), incluindo fallback por <code>collectionGroup</code> quando necessário.</li>
+          <li>Mensagens de erro melhoradas para indicar claramente quando o Firestore está bloqueando por regras.</li>
+        </ul>
+      </article>
+
+      <article class="glass-card p-5 border border-cyan-500/20">
+        <div class="flex items-center justify-between gap-3 mb-2">
+          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.19</h2>
+          <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
           <li>Módulo <strong>Arte Online</strong> criado com link exclusivo por token + PIN de 4 dígitos e gravação automática na coleção <code>pedidos_arte</code>.</li>

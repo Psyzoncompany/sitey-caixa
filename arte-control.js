@@ -1,4 +1,4 @@
-import { db, storage } from './js/firebase-init.js';
+import { auth, db, storage } from './js/firebase-init.js';
 import {
   addDoc,
   collection,
@@ -31,6 +31,18 @@ const state = {
   initialized: false
 };
 
+const getPedidosArteCollection = () => {
+  const uid = auth?.currentUser?.uid;
+  if (!uid) return collection(db, 'pedidos_arte');
+  return collection(db, 'users', uid, 'pedidos_arte');
+};
+
+const getPedidosArteQuery = () => {
+  const uid = auth?.currentUser?.uid;
+  if (!uid) return query(collection(db, 'pedidos_arte'), orderBy('atualizado_em', 'desc'));
+  return query(collection(db, 'users', uid, 'pedidos_arte'), orderBy('atualizado_em', 'desc'));
+};
+
 const fmtDate = (v) => {
   const d = v?.toDate ? v.toDate() : (v ? new Date(v) : null);
   return d ? d.toLocaleString('pt-BR') : '—';
@@ -46,9 +58,10 @@ const toast = (msg) => {
 };
 
 async function generateUniqueCode() {
+  const targetCollection = getPedidosArteCollection();
   for (let i = 0; i < 25; i++) {
     const code = String(Math.floor(1000 + Math.random() * 9000));
-    const q = query(collection(db, 'pedidos_arte'), where('codigo', '==', code), limit(1));
+    const q = query(targetCollection, where('codigo', '==', code), limit(1));
     const snap = await getDocs(q);
     if (snap.empty) return code;
   }
@@ -56,9 +69,10 @@ async function generateUniqueCode() {
 }
 
 async function generateUniqueToken() {
+  const targetCollection = getPedidosArteCollection();
   for (let i = 0; i < 25; i++) {
     const token = crypto.randomUUID().replace(/-/g, '').slice(0, 10);
-    const q = query(collection(db, 'pedidos_arte'), where('token', '==', token), limit(1));
+    const q = query(targetCollection, where('token', '==', token), limit(1));
     const snap = await getDocs(q);
     if (snap.empty) return token;
   }
@@ -162,9 +176,11 @@ function bindEvents(selected) {
       btn.disabled = true;
       btn.textContent = 'Gerando...';
       const [codigo, token] = await Promise.all([generateUniqueCode(), generateUniqueToken()]);
-      await addDoc(collection(db, 'pedidos_arte'), {
+      const uid = auth?.currentUser?.uid || '';
+      const pedidoRef = await addDoc(getPedidosArteCollection(), {
         token,
         codigo,
+        owner_uid: uid,
         clienteId: '',
         status: 'aguardando_envio',
         revisoes_usadas: 0,
@@ -177,7 +193,18 @@ function bindEvents(selected) {
         atualizado_em: serverTimestamp(),
         last_event: 'link_gerado'
       });
-      const link = `${window.location.origin}/Arte-Online.html?token=${token}`;
+      const link = `${window.location.origin}/Arte-Online.html?token=${token}${uid ? `&owner=${uid}` : ''}`;
+
+      if (uid) {
+        await updateDoc(doc(db, 'users', uid), {
+          [`arte_link_index.${token}`]: {
+            pedidoId: pedidoRef.id,
+            ownerUid: uid,
+            codigo,
+            atualizado_em: new Date().toISOString()
+          }
+        });
+      }
       card.classList.remove('hidden');
       card.innerHTML = `<p class="text-xs uppercase tracking-[0.14em] text-cyan-200">Acesso do cliente</p>
         <p class="text-5xl font-black tracking-[0.25em] mt-2 text-white">${codigo}</p>
@@ -187,7 +214,11 @@ function bindEvents(selected) {
       card.querySelector('.copy-code').onclick = () => navigator.clipboard.writeText(codigo).then(() => toast('Código copiado!'));
       toast('Link de arte criado com sucesso.');
     } catch (e) {
-      toast(e.message || 'Erro ao gerar link.');
+      if (e?.code === 'permission-denied') {
+        toast('Sem permissão no Firestore para criar pedidos_arte. Verifique as regras da coleção users/{uid}/pedidos_arte.');
+      } else {
+        toast(e.message || 'Erro ao gerar link.');
+      }
     } finally {
       btn.disabled = false;
       btn.textContent = '+ Gerar Link de Arte';
@@ -209,7 +240,9 @@ function bindEvents(selected) {
 
   document.getElementById('admin-art-status')?.addEventListener('change', async (e) => {
     if (!selected) return;
-    await updateDoc(doc(db, 'pedidos_arte', selected.id), { status: e.target.value, atualizado_em: serverTimestamp() });
+    const uid = auth?.currentUser?.uid;
+    const targetDoc = uid ? doc(db, 'users', uid, 'pedidos_arte', selected.id) : doc(db, 'pedidos_arte', selected.id);
+    await updateDoc(targetDoc, { status: e.target.value, atualizado_em: serverTimestamp() });
     toast('Status atualizado.');
   });
 
@@ -224,7 +257,9 @@ function bindEvents(selected) {
     await uploadBytes(fileRef, file);
     const url = await getDownloadURL(fileRef);
     versoes.push({ numero: versoes.length + 1, imagem: url, mensagem: msg, status: 'arte_enviada', criado_em: new Date().toISOString() });
-    await updateDoc(doc(db, 'pedidos_arte', selected.id), {
+    const uid = auth?.currentUser?.uid;
+    const targetDoc = uid ? doc(db, 'users', uid, 'pedidos_arte', selected.id) : doc(db, 'pedidos_arte', selected.id);
+    await updateDoc(targetDoc, {
       versoes,
       status: 'arte_enviada',
       atualizado_em: serverTimestamp(),
@@ -237,7 +272,7 @@ function bindEvents(selected) {
 
 function initRealtime() {
   if (state.unsubscribe) return;
-  const q = query(collection(db, 'pedidos_arte'), orderBy('atualizado_em', 'desc'));
+  const q = getPedidosArteQuery();
   state.unsubscribe = onSnapshot(q, (snap) => {
     const prev = new Map(state.pedidos.map((p) => [p.id, p]));
     state.pedidos = snap.docs.map((d) => ({ id: d.id, ...d.data() }));

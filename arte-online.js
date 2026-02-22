@@ -1,8 +1,9 @@
 import { db, storage } from './js/firebase-init.js';
-import { collection, doc, getDocs, limit, onSnapshot, query, serverTimestamp, updateDoc, where } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
+import { collection, collectionGroup, doc, getDocs, limit, onSnapshot, query, serverTimestamp, updateDoc, where } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js';
 import { getDownloadURL, ref, uploadBytes } from 'https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js';
 
 const token = new URLSearchParams(window.location.search).get('token');
+const owner = new URLSearchParams(window.location.search).get('owner');
 const accessForm = document.getElementById('access-form');
 const accessError = document.getElementById('access-error');
 const accessStep = document.getElementById('access-step');
@@ -38,11 +39,27 @@ accessForm.addEventListener('submit', async (e) => {
   const code = document.getElementById('access-code').value.trim();
   if (!/^\d{4}$/.test(code)) return showError('Digite um código válido com 4 números.');
 
-  const q = query(collection(db, 'pedidos_arte'), where('token', '==', token), where('codigo', '==', code), limit(1));
-  const snap = await getDocs(q);
+  let snap;
+  if (owner) {
+    const qOwner = query(
+      collection(db, 'users', owner, 'pedidos_arte'),
+      where('token', '==', token),
+      where('codigo', '==', code),
+      limit(1)
+    );
+    snap = await getDocs(qOwner);
+  } else {
+    const qGlobal = query(collection(db, 'pedidos_arte'), where('token', '==', token), where('codigo', '==', code), limit(1));
+    snap = await getDocs(qGlobal);
+    if (snap.empty) {
+      const qGroup = query(collectionGroup(db, 'pedidos_arte'), where('token', '==', token), where('codigo', '==', code), limit(1));
+      snap = await getDocs(qGroup);
+    }
+  }
   if (snap.empty) return showError('Token ou código inválido. Confira e tente novamente.');
 
   pedido = { id: snap.docs[0].id, ...snap.docs[0].data() };
+  pedido.path = snap.docs[0].ref.path;
   accessStep.classList.add('hidden');
   clientPanel.classList.remove('hidden');
   startRealtime();
@@ -85,7 +102,7 @@ document.getElementById('send-order-btn').addEventListener('click', async () => 
   if (!text) return alert('Descreva a arte antes de enviar.');
 
   const urls = await uploadClientFiles(refFiles, 'referencias');
-  await updateDoc(doc(db, 'pedidos_arte', pedido.id), {
+  await updateDoc(doc(db, pedido.path), {
     descricao_cliente: text,
     imagens: urls,
     status: 'em_producao',
@@ -98,7 +115,7 @@ document.getElementById('send-order-btn').addEventListener('click', async () => 
 });
 
 function startRealtime() {
-  onSnapshot(doc(db, 'pedidos_arte', pedido.id), (snap) => {
+  onSnapshot(doc(db, pedido.path), (snap) => {
     if (!snap.exists()) return;
     pedido = { id: snap.id, ...snap.data() };
     renderPedido();
@@ -143,7 +160,7 @@ document.getElementById('revision-form').addEventListener('submit', async (e) =>
   const historico = Array.isArray(pedido.revision_history) ? pedido.revision_history : [];
   historico.push({ texto: txt, referencias: extraRefs, criado_em: new Date().toISOString(), pago: extraCost > 0, valor: extraCost });
 
-  await updateDoc(doc(db, 'pedidos_arte', pedido.id), {
+  await updateDoc(doc(db, pedido.path), {
     revisoes_usadas: revisoes,
     custo_adicional: (pedido.custo_adicional || 0) + extraCost,
     revision_history: historico,
