@@ -53,6 +53,7 @@ const init = () => {
 
     const tasksContainer = document.getElementById('tasks-container');
     const cuttingTasksContainer = document.getElementById('cutting-tasks-container');
+    const finishingTasksContainer = document.getElementById('finishing-tasks-container');
     const ordersHistoryContainer = document.getElementById('orders-history-container');
     const cuttingModal = document.getElementById('cutting-modal');
     const cuttingModalTitle = document.getElementById('cutting-modal-title');
@@ -382,7 +383,7 @@ const init = () => {
     };
     const formatCurrency = (amount) => amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-    const validTabs = new Set(['quadro', 'afazeres', 'artes', 'cortes', 'dtf', 'historico-pedidos']);
+    const validTabs = new Set(['quadro', 'afazeres', 'artes', 'cortes', 'finalizacao', 'dtf', 'historico-pedidos']);
     if (!validTabs.has(currentTab)) currentTab = 'quadro';
 
     const renderProcessBoard = () => {
@@ -395,6 +396,9 @@ const init = () => {
                 break;
             case 'cortes':
                 renderCuttingTasks();
+                break;
+            case 'finalizacao':
+                renderFinishingTasks();
                 break;
             case 'dtf':
                 renderDTFTasks();
@@ -1659,6 +1663,82 @@ const init = () => {
             }
         });
     }
+
+    const renderFinishingTasks = () => {
+        if (!finishingTasksContainer) return;
+        finishingTasksContainer.innerHTML = '';
+
+        const getOrderReadiness = (order) => {
+            const checklist = order?.checklist || {};
+            const total = Object.keys(checklistItems).length;
+            let done = 0;
+            Object.keys(checklistItems).forEach((key) => {
+                if (checklist[key]?.completed) done += 1;
+            });
+
+            const subtasks = checklist?.cutting?.subtasks || [];
+            const totalCut = subtasks.reduce((acc, item) => acc + (parseInt(item.total || 0, 10) || 0), 0);
+            const cutDone = subtasks.reduce((acc, item) => acc + (parseInt(item.cut || 0, 10) || 0), 0);
+            const hasCutting = subtasks.length > 0;
+            const cuttingDone = hasCutting && totalCut > 0 && cutDone >= totalCut;
+            const dtfDone = order.printType !== 'dtf' || !!order?.printing?.completed;
+            const ready = done === total && cuttingDone && dtfDone;
+
+            return { done, total, totalCut, cutDone, hasCutting, cuttingDone, dtfDone, ready };
+        };
+
+        const activeOrders = productionOrders.filter((order) => !order.isArtOnly && order.status !== 'done' && !order.inHistory);
+
+        if (!activeOrders.length) {
+            finishingTasksContainer.innerHTML = '<div class="glass-card p-6 text-center text-gray-400">Nenhum pedido ativo para validar na finalização.</div>';
+            return;
+        }
+
+        const rows = activeOrders.map((order) => ({ order, readiness: getOrderReadiness(order) }));
+        const pending = rows.filter((row) => !row.readiness.ready);
+        const readyRows = rows.filter((row) => row.readiness.ready);
+
+        const section = (title, subtitle, list, emptyText, tone = '') => {
+            const shell = document.createElement('section');
+            shell.className = `finishing-board-row ${tone}`.trim();
+            shell.innerHTML = `
+                <header class="finishing-board-row-head">
+                    <div>
+                        <h3>${title}</h3>
+                        <p>${subtitle}</p>
+                    </div>
+                    <span class="task-badge">${list.length}</span>
+                </header>
+                <div class="finishing-board-row-grid">
+                    ${list.length ? list.map(({ order, readiness }) => {
+                        const client = clients.find(c => c.id === order.clientId);
+                        const deadline = order.deadline ? new Date(order.deadline + 'T03:00:00').toLocaleDateString('pt-BR') : 'Sem prazo';
+                        const progressPct = Math.round((readiness.done / Math.max(readiness.total, 1)) * 100);
+                        return `
+                            <article class="glass-card finishing-card">
+                                <div class="finishing-card-head">
+                                    <div>
+                                        <p class="font-bold">${sanitizeHtml(order.description || 'Pedido')}</p>
+                                        <p class="text-sm text-cyan-300">${sanitizeHtml(client ? client.name : 'Cliente')}</p>
+                                        <p class="text-xs text-gray-400">Prazo: ${sanitizeHtml(deadline)}</p>
+                                    </div>
+                                    <span class="finishing-pill ${readiness.ready ? 'is-ok' : 'is-pending'}">${readiness.ready ? 'Pronto para entrega' : 'Em conferência'}</span>
+                                </div>
+                                <div class="finishing-kpis">
+                                    <div><span>Checklist</span><strong>${readiness.done}/${readiness.total}</strong></div>
+                                    <div><span>Cortes</span><strong>${readiness.hasCutting ? `${readiness.cutDone}/${readiness.totalCut}` : 'Sem corte'}</strong></div>
+                                    <div><span>DTF</span><strong>${readiness.dtfDone ? 'OK' : 'Pendente'}</strong></div>
+                                </div>
+                                <div class="finishing-progress"><span style="width:${progressPct}%"></span></div>
+                            </article>`;
+                    }).join('') : `<div class="glass-card p-4 text-sm text-gray-400">${emptyText}</div>`}
+                </div>`;
+            return shell;
+        };
+
+        finishingTasksContainer.appendChild(section('Finalização pendente', 'Pedidos que ainda precisam de revisão para entrega.', pending, 'Nenhum pedido pendente de finalização.'));
+        finishingTasksContainer.appendChild(section('Prontos para entregar', 'Pedidos com checklist validado e produção concluída.', readyRows, 'Nenhum pedido pronto para entrega no momento.', 'is-completed'));
+    };
 
     const getCuttingTotalPieces = (subtasks = []) => subtasks.reduce((acc, sub) => acc + (parseInt(sub.total, 10) || 0), 0);
 
