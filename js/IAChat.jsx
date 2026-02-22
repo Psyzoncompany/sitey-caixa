@@ -141,19 +141,10 @@ window.IAChat = function IAChat() {
                 // Add Google search instruction dynamically
                 body.system = SYSTEM_PROMPT + "\\n\\nSe precisar buscar, use a tool web_search_google e pesquise na internet de 2024 e 2025.";
             }
-
-            // O seu frontend não deve armazenar a API KEY do Anthropic, isso vai causar erro no client-side
-            // Essa API Key NUNCA pode ser exposta no client-side React em produção (CORS vai bloquear)
-            // Aqui seria ideal chamar o seu /api/chat.js (se criarmos uma rota Anthropic para ele) ou manter a de teste
-
-            // TEMPORARY: Utilizando um Proxy publico, se quiser Anthropic puro será via Vercel Backend
-            const res = await fetch("https://api.anthropic.com/v1/messages", {
+            const res = await fetch("/api/chat", {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json",
-                    "x-api-key": process.env.ANTHROPIC_API_KEY || "COLOQUE_A_CHAVE_AQUI", // Erro CORS garantido no Browser
-                    "anthropic-version": "2023-06-01",
-                    "anthropic-cors-bypass": "true"
+                    "Content-Type": "application/json"
                 },
                 body: JSON.stringify(body),
             });
