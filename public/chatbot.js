@@ -306,23 +306,92 @@
         fab.id = 'chatbot-fab';
         fab.className = 'chatbot-fab';
         fab.innerHTML = `
-            <svg viewBox="0 0 200 200" width="100%" height="100%" role="img">
+            <svg viewBox="0 0 200 200" width="100%" height="100%" aria-labelledby="aiTitle aiDesc" role="img">
+                <title id="aiTitle">Inteligência Artificial</title>
+                <desc id="aiDesc">Ícone animado de um cérebro digital a pulsar com nós de rede neuronal e uma estrela mágica.</desc>
                 <style>
-                    .anim-ring { animation: spin 6s linear infinite; transform-origin: 100px 100px; }
-                    .anim-brain { animation: breathe 3s ease-in-out infinite; transform-origin: 100px 90px; }
-                    .anim-node { animation: pulse-node 2s infinite; }
-                    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-                    @keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
-                    @keyframes pulse-node { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+                    /* 🌀 Animação do anel externo */
+                    .anim-ring {
+                        animation: spin 6s linear infinite;
+                        transform-origin: 100px 100px;
+                    }
+
+                    /* 🧠 Cérebro "respirando" (escala suave) */
+                    .anim-brain {
+                        animation: breathe 3s ease-in-out infinite;
+                        transform-origin: 100px 90px;
+                    }
+
+                    /* 💡 Pulsar dos Neurónios (Opacidade) */
+                    .anim-node-1 { animation: pulse-node 2s infinite 0.0s; }
+                    .anim-node-2 { animation: pulse-node 2s infinite 0.5s; }
+                    .anim-node-3 { animation: pulse-node 2s infinite 1.0s; }
+
+                    /* ✨ Estrela Mágica da IA */
+                    .anim-sparkle {
+                        animation: sparkle-magic 3s ease-in-out infinite;
+                        transform-origin: 145px 55px;
+                    }
+
+                    /* 🎬 Keyframes */
+                    @keyframes spin {
+                        0% { transform: rotate(0deg); }
+                        100% { transform: rotate(360deg); }
+                    }
+
+                    @keyframes breathe {
+                        0%, 100% { transform: scale(1); }
+                        50% { transform: scale(1.03); }
+                    }
+
+                    @keyframes pulse-node {
+                        0%, 100% { opacity: 0.3; r: 3; }
+                        50% { opacity: 1; r: 5; }
+                    }
+
+                    @keyframes sparkle-magic {
+                        0%, 100% { transform: scale(0.8) rotate(0deg); opacity: 0.5; }
+                        50% { transform: scale(1.2) rotate(45deg); opacity: 1; }
+                    }
+
+                    /* 🛑 Respeito à preferência do utilizador de não ter animações */
+                    @media (prefers-reduced-motion: reduce) {
+                        .anim-ring, .anim-brain, .anim-node-1, .anim-node-2, .anim-node-3, .anim-sparkle { 
+                            animation: none !important; 
+                        }
+                        .anim-node-1, .anim-node-2, .anim-node-3 { opacity: 0.8; }
+                        .anim-sparkle { opacity: 1; }
+                    }
                 </style>
-                <circle cx="100" cy="100" r="86" stroke="currentColor" stroke-width="2" fill="none" opacity="0.1" />
-                <circle class="anim-ring" cx="100" cy="100" r="86" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-dasharray="140 400" fill="none" />
-                <g class="anim-brain">
-                    <path d="M 100 46 C 75 46 60 65 64 85 C 50 95 55 115 65 125 C 75 135 90 135 100 128 C 110 135 125 135 135 125 C 145 115 150 95 136 85 C 140 65 125 46 100 46 Z" stroke="currentColor" stroke-width="4" fill="none" />
-                    <circle class="anim-node" cx="72" cy="76" r="4" fill="currentColor" />
-                    <circle class="anim-node" cx="128" cy="76" r="4" fill="currentColor" />
-                    <circle class="anim-node" cx="100" cy="96" r="5" fill="currentColor" />
+
+                <!-- 1) ⭕ CÍRCULO EXTERNO -->
+                <g id="ring-container">
+                    <circle cx="100" cy="100" r="86" fill="currentColor" opacity="0.03" />
+                    <circle cx="100" cy="100" r="86" stroke="currentColor" stroke-width="2" fill="none" opacity="0.1" />
+                    <circle class="anim-ring" cx="100" cy="100" r="86" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-dasharray="140 400" fill="none" opacity="0.9" />
                 </g>
+
+                <!-- 2) 🧠 CÉREBRO & REDE NEURONAL -->
+                <g class="anim-brain">
+                    <!-- Contorno do Cérebro (Lóbulos curvos) -->
+                    <path d="M 100 46 C 75 46 60 65 64 85 C 50 95 55 115 65 125 C 75 135 90 135 100 128 C 110 135 125 135 135 125 C 145 115 150 95 136 85 C 140 65 125 46 100 46 Z" stroke="currentColor" stroke-width="4" stroke-linejoin="round" fill="none" opacity="0.8" />
+                    
+                    <!-- Divisão Central (Hemisférios) -->
+                    <line x1="100" y1="46" x2="100" y2="128" stroke="currentColor" stroke-width="2" stroke-dasharray="6 4" opacity="0.3" stroke-linecap="round" />
+
+                    <!-- Conexões de Dados (Linhas internas) -->
+                    <path d="M 72 76 L 100 96 L 128 76 M 78 114 L 100 96 L 122 114" stroke="currentColor" stroke-width="2" fill="none" opacity="0.4" stroke-linecap="round" stroke-linejoin="round" />
+
+                    <!-- Nós da Rede Neuronal (Pulsantes) -->
+                    <circle class="anim-node-1" cx="72" cy="76" r="4" fill="currentColor" />
+                    <circle class="anim-node-2" cx="128" cy="76" r="4" fill="currentColor" />
+                    <circle class="anim-node-3" cx="100" cy="96" r="5" fill="currentColor" opacity="0.9" />
+                    <circle class="anim-node-1" cx="78" cy="114" r="4" fill="currentColor" />
+                    <circle class="anim-node-2" cx="122" cy="114" r="4" fill="currentColor" />
+                </g>
+
+                <!-- 3) ✨ ESTRELA DA IA (Brilho superior direito) -->
+                <path class="anim-sparkle" d="M 145 40 Q 148 50 155 55 Q 148 58 145 68 Q 142 58 135 55 Q 142 50 145 40 Z" fill="currentColor" opacity="0.9" />
             </svg>
         `;
 
