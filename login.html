@@ -109,15 +109,6 @@
                     Entrar com Google
                 </button>
 
-                <button type="button" id="local-login-btn"
-                    class="w-full py-3 px-4 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl shadow transition flex items-center justify-center gap-2 mt-4 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none"
-                        viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    Entrar Local (Salvar no dispositivo)
-                </button>
             </form>
         </section>
     </main>
@@ -128,7 +119,6 @@
         const loginForm = document.getElementById('login-form');
         const loginBtn = document.getElementById('login-btn');
         const googleBtn = document.getElementById('google-login-btn');
-        const localBtn = document.getElementById('local-login-btn');
         const rememberCheckbox = document.getElementById('remember-device');
         const emailInput = document.getElementById('email');
         const passwordInput = document.getElementById('password');
@@ -176,13 +166,6 @@
                 }
             })();
         }
-
-        // --- ENTRAR LOCAL ---
-        localBtn.addEventListener('click', () => {
-            const storage = getNativeStorage();
-            storage.setItem('forceLocalMode', 'true');
-            window.location.href = 'index.html';
-        });
 
         // --- FIREBASE ---
         function waitForFirebaseAuth(timeoutMs = 12000) {
