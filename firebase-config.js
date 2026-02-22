@@ -1,7 +1,7 @@
 // c:\Users\AAAA\Desktop\sitey-caixa\firebase-config.js
 
 // Importa as funções do Firebase (versão compat para facilitar o uso com scripts existentes)
-import { onAuthStateChanged, setPersistence, browserLocalPersistence, browserSessionPersistence, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { onAuthStateChanged, setPersistence, browserLocalPersistence, browserSessionPersistence, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, signInWithRedirect, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, onSnapshot, setDoc, updateDoc, serverTimestamp, deleteField } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 import { app, auth, db } from "./js/firebase-init.js";
@@ -1468,6 +1468,10 @@ if (!window.isLocalMode) {
         login: async (email, password, remember = false) => {
             await setAuthPersistence(remember);
             return signInWithEmailAndPassword(auth, email, password);
+        },
+        signup: async (email, password, remember = false) => {
+            await setAuthPersistence(remember);
+            return createUserWithEmailAndPassword(auth, email, password);
         },
         loginWithGoogle: async () => {
             try {

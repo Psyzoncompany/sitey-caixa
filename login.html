@@ -54,8 +54,8 @@
         <section class="glass-pro rounded-2xl p-6 md:p-8 w-full">
             <div class="text-center mb-7">
                 <img src="img/logo.png" alt="Logo" class="h-14 mx-auto mb-4 drop-shadow">
-                <h2 class="text-2xl font-bold text-white">Entrar no sistema</h2>
-                <p class="text-gray-400 text-sm">Use seu e-mail/senha ou continue com Google</p>
+                <h2 id="form-title" class="text-2xl font-bold text-white">Entrar no sistema</h2>
+                <p id="form-subtitle" class="text-gray-400 text-sm">Use seu e-mail/senha ou continue com Google</p>
             </div>
 
             <form id="login-form" class="space-y-5" novalidate autocomplete="off">
@@ -71,6 +71,13 @@
                         class="w-full px-4 py-3 rounded-xl bg-slate-900/75 border border-slate-700 text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none transition"
                         required autocomplete="new-password">
                 </div>
+                <div id="confirm-password-field" class="hidden">
+                    <label for="confirm-password" class="block text-sm font-medium text-gray-300 mb-2">Confirmar
+                        Senha</label>
+                    <input type="password" id="confirm-password" placeholder="••••••"
+                        class="w-full px-4 py-3 rounded-xl bg-slate-900/75 border border-slate-700 text-white focus:ring-2 focus:ring-cyan-500 focus:border-transparent outline-none transition"
+                        autocomplete="new-password">
+                </div>
                 <label for="remember-device" class="flex items-center gap-2 cursor-pointer select-none">
                     <input type="checkbox" id="remember-device"
                         class="w-4 h-4 rounded bg-slate-800 border-slate-600 text-cyan-500 focus:ring-cyan-500 cursor-pointer">
@@ -79,6 +86,9 @@
 
                 <div id="error-msg"
                     class="text-red-300 text-sm text-center bg-red-950/40 border border-red-500/25 rounded-lg px-3 py-2 hidden">
+                </div>
+                <div id="success-msg"
+                    class="text-green-300 text-sm text-center bg-green-950/40 border border-green-500/25 rounded-lg px-3 py-2 hidden">
                 </div>
 
                 <button type="submit" id="login-btn"
@@ -109,6 +119,13 @@
                     Entrar com Google
                 </button>
 
+                <p class="text-center text-sm text-gray-400 mt-2">
+                    <span id="toggle-mode-text">Não tem conta?</span>
+                    <button type="button" id="toggle-mode-btn"
+                        class="text-cyan-400 hover:text-cyan-300 font-semibold ml-1 underline underline-offset-2 cursor-pointer">Criar
+                        conta</button>
+                </p>
+
             </form>
         </section>
     </main>
@@ -122,10 +139,44 @@
         const rememberCheckbox = document.getElementById('remember-device');
         const emailInput = document.getElementById('email');
         const passwordInput = document.getElementById('password');
+        const confirmPasswordInput = document.getElementById('confirm-password');
+        const confirmPasswordField = document.getElementById('confirm-password-field');
         const errorMsg = document.getElementById('error-msg');
+        const successMsg = document.getElementById('success-msg');
+        const toggleModeBtn = document.getElementById('toggle-mode-btn');
+        const toggleModeText = document.getElementById('toggle-mode-text');
+        const formTitle = document.getElementById('form-title');
+        const formSubtitle = document.getElementById('form-subtitle');
 
         const GOOGLE_BUTTON_DEFAULT = googleBtn.innerHTML;
         const REMEMBER_KEY = 'psyzon_remember_device';
+        let isSignupMode = false;
+
+        // --- ALTERNAR MODO LOGIN / CRIAR CONTA ---
+        toggleModeBtn.addEventListener('click', () => {
+            isSignupMode = !isSignupMode;
+            errorMsg.classList.add('hidden');
+            successMsg.classList.add('hidden');
+
+            if (isSignupMode) {
+                formTitle.textContent = 'Criar conta';
+                formSubtitle.textContent = 'Preencha seus dados para criar uma nova conta';
+                loginBtn.textContent = 'Criar conta';
+                toggleModeText.textContent = 'Já tem conta?';
+                toggleModeBtn.textContent = 'Entrar';
+                confirmPasswordField.classList.remove('hidden');
+                confirmPasswordInput.required = true;
+            } else {
+                formTitle.textContent = 'Entrar no sistema';
+                formSubtitle.textContent = 'Use seu e-mail/senha ou continue com Google';
+                loginBtn.textContent = 'Entrar';
+                toggleModeText.textContent = 'Não tem conta?';
+                toggleModeBtn.textContent = 'Criar conta';
+                confirmPasswordField.classList.add('hidden');
+                confirmPasswordInput.required = false;
+                confirmPasswordInput.value = '';
+            }
+        });
 
         // --- LEMBRAR DISPOSITIVO ---
         const getNativeStorage = () => window.__nativeLS || window.localStorage;
@@ -153,7 +204,6 @@
             passwordInput.value = saved.password;
             rememberCheckbox.checked = true;
 
-            // Auto-login automático após o Firebase carregar
             (async () => {
                 try {
                     setLoading({ email: true });
@@ -182,32 +232,53 @@
         function setLoading({ email = false, google = false } = {}) {
             loginBtn.disabled = email || google;
             googleBtn.disabled = email || google;
-            loginBtn.textContent = email ? 'Entrando...' : 'Entrar';
+            if (email) {
+                loginBtn.textContent = isSignupMode ? 'Criando conta...' : 'Entrando...';
+            } else {
+                loginBtn.textContent = isSignupMode ? 'Criar conta' : 'Entrar';
+            }
             googleBtn.innerHTML = google ? 'Conectando Google...' : GOOGLE_BUTTON_DEFAULT;
         }
 
         const showError = (message) => {
+            successMsg.classList.add('hidden');
             errorMsg.textContent = message;
             errorMsg.classList.remove('hidden');
         };
 
-        const friendlyGoogleError = (error) => {
+        const showSuccess = (message) => {
+            errorMsg.classList.add('hidden');
+            successMsg.textContent = message;
+            successMsg.classList.remove('hidden');
+        };
+
+        const friendlyError = (error) => {
             const code = error?.code || '';
-            if (code === 'auth/unauthorized-domain') return 'Este domínio não está autorizado no Firebase. Adicione em Authentication > Settings > Authorized domains.';
-            if (code === 'auth/operation-not-allowed') return 'Login com Google não habilitado no Firebase. Ative em Authentication > Sign-in method.';
-            if (code === 'auth/popup-closed-by-user') return 'Você fechou a janela do Google antes de concluir o login.';
-            return error?.message || 'Não foi possível entrar com Google agora.';
+            const map = {
+                'auth/unauthorized-domain': 'Este domínio não está autorizado no Firebase.',
+                'auth/operation-not-allowed': 'Método de login não habilitado no Firebase.',
+                'auth/popup-closed-by-user': 'Você fechou a janela do Google antes de concluir.',
+                'auth/email-already-in-use': 'Este e-mail já está cadastrado. Tente entrar.',
+                'auth/weak-password': 'A senha precisa ter pelo menos 6 caracteres.',
+                'auth/invalid-email': 'O e-mail digitado não é válido.',
+                'auth/user-not-found': 'Nenhuma conta encontrada com esse e-mail.',
+                'auth/wrong-password': 'Senha incorreta. Tente novamente.',
+                'auth/invalid-credential': 'E-mail ou senha incorretos.',
+                'auth/too-many-requests': 'Muitas tentativas. Aguarde um momento e tente de novo.',
+            };
+            return map[code] || error?.message || 'Algo deu errado. Tente novamente.';
         };
 
         googleBtn.addEventListener('click', async () => {
             errorMsg.classList.add('hidden');
+            successMsg.classList.add('hidden');
             setLoading({ google: true });
             try {
                 const firebaseAuth = await waitForFirebaseAuth();
                 await firebaseAuth.loginWithGoogle();
             } catch (error) {
                 console.error(error);
-                showError('Erro ao entrar com Google: ' + friendlyGoogleError(error));
+                showError(friendlyError(error));
                 setLoading();
             }
         });
@@ -215,23 +286,50 @@
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             errorMsg.classList.add('hidden');
-            setLoading({ email: true });
-            const email = emailInput.value;
+            successMsg.classList.add('hidden');
+            const email = emailInput.value.trim();
             const password = passwordInput.value;
-            try {
-                const firebaseAuth = await waitForFirebaseAuth();
-                const remember = rememberCheckbox.checked;
-                await firebaseAuth.login(email, password, remember);
-                // Login com sucesso! Salvar credenciais se checkbox marcado
-                if (rememberCheckbox.checked) {
-                    saveCredentials(email, password);
-                } else {
-                    clearSavedCredentials();
+            const remember = rememberCheckbox.checked;
+
+            if (!email || !password) {
+                return showError('Preencha e-mail e senha.');
+            }
+
+            if (isSignupMode) {
+                // --- CRIAR CONTA ---
+                if (password.length < 6) {
+                    return showError('A senha precisa ter pelo menos 6 caracteres.');
                 }
-            } catch (error) {
-                console.error(error);
-                showError('Erro ao entrar: ' + (error.message || 'Verifique seus dados e tente novamente.'));
-                setLoading();
+                if (password !== confirmPasswordInput.value) {
+                    return showError('As senhas não coincidem.');
+                }
+                setLoading({ email: true });
+                try {
+                    const firebaseAuth = await waitForFirebaseAuth();
+                    await firebaseAuth.signup(email, password, remember);
+                    if (remember) saveCredentials(email, password);
+                    showSuccess('Conta criada com sucesso! Entrando...');
+                } catch (error) {
+                    console.error(error);
+                    showError(friendlyError(error));
+                    setLoading();
+                }
+            } else {
+                // --- LOGIN ---
+                setLoading({ email: true });
+                try {
+                    const firebaseAuth = await waitForFirebaseAuth();
+                    await firebaseAuth.login(email, password, remember);
+                    if (remember) {
+                        saveCredentials(email, password);
+                    } else {
+                        clearSavedCredentials();
+                    }
+                } catch (error) {
+                    console.error(error);
+                    showError(friendlyError(error));
+                    setLoading();
+                }
             }
         });
     </script>

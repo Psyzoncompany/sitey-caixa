@@ -72,7 +72,7 @@
   // Cria a bolhinha (FAB) azul claro que flutua no canto inferior direito
   const fab = document.createElement('button');
   fab.id = 'gemini-chat-fab';
-  fab.className = 'gemini-chat-fab hidden';
+  fab.className = 'gemini-chat-fab';
   fab.type = 'button';
   fab.setAttribute('aria-label', 'Abrir assistente IA');
   fab.title = 'Assistente IA Psyzon';
