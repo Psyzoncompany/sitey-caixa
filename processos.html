@@ -152,6 +152,9 @@
           <button id="tab-cortes" data-tab="cortes"
             class="tab-btn process-tab-btn whitespace-nowrap py-3 px-3 border-b-2 font-medium text-sm"
             aria-selected="false">Controle de Cortes</button>
+          <button id="tab-finalizacao" data-tab="finalizacao"
+            class="tab-btn process-tab-btn whitespace-nowrap py-3 px-3 border-b-2 font-medium text-sm"
+            aria-selected="false">Controle de Finalização</button>
           <button id="tab-dtf" data-tab="dtf"
             class="tab-btn process-tab-btn whitespace-nowrap py-3 px-3 border-b-2 font-medium text-sm"
             aria-selected="false">Controle de DTF</button>
@@ -216,6 +219,9 @@
       </div>
       <div id="view-cortes" data-panel="cortes" class="view-container process-panel hidden">
         <div id="cutting-tasks-container" class="space-y-6"></div>
+      </div>
+      <div id="view-finalizacao" data-panel="finalizacao" class="view-container process-panel hidden">
+        <div id="finishing-tasks-container" class="space-y-6 pb-[calc(var(--bottom-nav-height,78px)+env(safe-area-inset-bottom)+22px)]"></div>
       </div>
       <!-- grid responsivo: 1 col em mobile, 2 em md, 3 em lg -->
       <div id="view-dtf" data-panel="dtf" class="view-container process-panel hidden">
@@ -457,8 +463,8 @@
         <div id="cutting-snackbar" class="cutting-snackbar" role="status" aria-live="polite"></div>
         <div class="cutting-sheet-header flex justify-between items-start gap-3">
           <div>
-            <h2 id="cutting-modal-title" class="text-xl md:text-2xl font-bold">Checklist de Corte</h2>
-            <p id="cutting-modal-subtitle" class="text-xs md:text-sm text-gray-300 mt-1"></p>
+            <h2 id="cutting-modal-title" class="text-lg md:text-2xl font-bold leading-tight">Checklist de Corte</h2>
+            <p id="cutting-modal-subtitle" class="text-[11px] md:text-sm text-gray-300 mt-1 leading-snug"></p>
           </div>
           <div class="flex items-center gap-2">
             <button type="button" id="close-cutting-modal-btn" class="cutting-icon-btn"
@@ -510,7 +516,7 @@
     <!-- Barra de Navegação Inferior (Mobile) -->
 
     <footer class="version-footer">
-      <a href="versoes.html" class="version-footer-link">Versão 6.0.10</a>
+      <a href="versoes.html" class="version-footer-link">Versão 6.0.20</a>
     </footer>
 
     <nav class="bottom-nav">
