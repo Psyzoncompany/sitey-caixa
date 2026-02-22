@@ -32,18 +32,29 @@ module.exports = async (req, res) => {
             })
         });
 
-        const data = await r.json();
+        const responseText = await r.text(); // lê como texto primeiro
+        let data;
+        try {
+            data = JSON.parse(responseText);
+        } catch (err) {
+            data = { raw: responseText };
+        }
+
         res.setHeader("Content-Type", "application/json");
 
         if (!r.ok) {
             res.statusCode = r.status;
-            return res.end(JSON.stringify({ error: "Erro Groq", details: data }));
+            return res.end(JSON.stringify({
+                error: `Erro Groq (Status: ${r.status})`,
+                details: data
+            }));
         }
 
         res.statusCode = 200;
         return res.end(JSON.stringify({ content: data?.choices?.[0]?.message?.content || "" }));
     } catch (e) {
+        console.error("Vercel Function Error:", e);
         res.statusCode = 500;
-        return res.end(JSON.stringify({ error: "Falha no servidor", details: String(e) }));
+        return res.end(JSON.stringify({ error: "Falha no servidor", details: e.message }));
     }
 };
