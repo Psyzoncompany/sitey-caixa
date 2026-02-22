@@ -4,6 +4,7 @@
  */
 
 (() => {
+    let currentMode = 'normal';
     // ── Estilos ──────────────────────────────────────────────────────────────
     const injectStyles = () => {
         if (document.getElementById('psyzon-ai-styles')) return;
@@ -270,8 +271,26 @@
                 .chatbot-header { padding: 15px 20px; }
                 .chatbot-messages { padding: 20px 15px; }
                 .chatbot-input-area { padding: 15px; }
-                .chatbot-header-info h3 { font-size: 16px; }
+            .chatbot-header-info h3 { font-size: 16px; }
             }
+
+            /* Mode Buttons */
+            .mode-btn {
+                flex: 1;
+                padding: 5px 0;
+                font-size: 11px;
+                font-weight: 600;
+                border-radius: 8px;
+                border: 1px solid rgba(148,163,184,0.2);
+                background: rgba(30,41,59,0.6);
+                color: #64748b;
+                cursor: pointer;
+                transition: all 0.15s ease;
+            }
+            .mode-btn.active[data-mode="normal"]  { background: rgba(6,182,212,0.15);  border-color: #06b6d4; color: #22d3ee; }
+            .mode-btn.active[data-mode="rapido"]  { background: rgba(234,179,8,0.15);  border-color: #eab308; color: #fde047; }
+            .mode-btn.active[data-mode="profundo"]{ background: rgba(139,92,246,0.15); border-color: #8b5cf6; color: #a78bfa; }
+            .mode-btn:hover:not(.active) { border-color: rgba(148,163,184,0.4); color: #94a3b8; }
         `;
         document.head.appendChild(style);
     };
@@ -419,16 +438,32 @@
                     <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
                 </div>
             </div>
-            <div class="chatbot-input-area">
-                <input type="text" id="chatbot-input" class="chatbot-input" placeholder="Pergunte qualquer coisa...">
-                <button id="chatbot-send" class="chatbot-send">
-                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                </button>
+            <div class="chatbot-input-area" style="flex-direction: column; gap:0; padding: 0 0 30px 0;">
+                <div id="mode-selector" style="display:flex; gap:6px; padding: 12px 20% 12px; flex-shrink:0;">
+                    <button class="mode-btn active" data-mode="normal">💬 Normal</button>
+                    <button class="mode-btn" data-mode="rapido">⚡ Rápido</button>
+                    <button class="mode-btn" data-mode="profundo">🔍 Profundo</button>
+                </div>
+                <div style="display:flex; gap:15px; padding: 0 20%;">
+                    <input type="text" id="chatbot-input" class="chatbot-input" placeholder="Pergunte qualquer coisa...">
+                    <button id="chatbot-send" class="chatbot-send">
+                        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                    </button>
+                </div>
             </div>
         `;
 
         document.body.appendChild(fab);
         document.body.appendChild(windowChat);
+
+        // Listener dos botões de modo
+        document.getElementById('mode-selector').addEventListener('click', (e) => {
+            const btn = e.target.closest('.mode-btn');
+            if (!btn) return;
+            currentMode = btn.dataset.mode;
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        });
 
         const msgArea = document.getElementById('chatbot-messages');
         const input = document.getElementById('chatbot-input');
@@ -481,7 +516,7 @@
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: context + text })
+                    body: JSON.stringify({ message: context + text, mode: currentMode })
                 });
                 const data = await response.json();
                 typing.style.display = 'none';

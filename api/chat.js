@@ -4,7 +4,7 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Método não permitido' });
     }
 
-    const { message } = req.body;
+    const { message, mode = 'normal' } = req.body;
 
     if (!message || typeof message !== 'string') {
         return res.status(400).json({ error: 'Campo "message" é obrigatório' });
@@ -14,6 +14,12 @@ export default async function handler(req, res) {
     if (!apiKey) {
         return res.status(500).json({ error: 'Chave da API Groq não configurada no servidor' });
     }
+
+    const modeInstructions = {
+        normal: 'MODO NORMAL: resposta direta com contexto suficiente, 3 a 5 linhas, até 4 tópicos curtos.',
+        rapido: 'MODO RÁPIDO: responda em no máximo 2 linhas. Só o essencial, sem introdução, sem lista.',
+        profundo: 'MODO PROFUNDO: análise completa, mínimo 5 pontos com dados, causas, consequências e sugestões.'
+    };
 
     try {
         const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -27,32 +33,12 @@ export default async function handler(req, res) {
                 messages: [
                     {
                         role: 'system',
-                        content: `Você é o PSYZON AI, assistente da Psyzon — empresa de vestuário.
-  
-  REGRA PRINCIPAL: Seja DIRETO e OBJETIVO. Se a pergunta tem resposta simples, responda em 1-3 linhas. Só expanda quando for pedido ou quando a análise realmente exigir.
-  
-  ESCOPO: Você é um assistente geral que também tem especialidade em negócios. Você pode responder QUALQUER pergunta do usuário, não apenas sobre finanças ou negócios. Se perguntarem sobre livros, tecnologia, receitas, esportes, ou qualquer outro assunto, responda normalmente.
-  
-  QUANDO O USUÁRIO PERGUNTAR ALGO ESPECÍFICO DOS DADOS:
-  - Se o contexto financeiro não contiver o dado exato pedido (ex: quantidade de pedidos atrasados), diga claramente: 'Não tenho esse dado no contexto atual. Verifique na aba Processos.'
-  - NUNCA invente ou estime dados que não foram fornecidos
-  - NUNCA dê análise genérica quando o usuário quer um número
-  
-  EXEMPLOS DE COMO RESPONDER:
-  ❌ Errado: 'Com base no risco crítico, é provável que existam pedidos atrasados...'
-  ✅ Certo: 'Esse dado não está no meu contexto atual. Acesse Processos → Afazeres para ver os pedidos atrasados.'
-  
-  ❌ Errado: Escrever 5 parágrafos para uma pergunta simples
-  ✅ Certo: Responder em 2-3 linhas com o essencial
-  
-  USO DE EMOJIS: Use apenas 1 emoji por resposta, no início. Não use emojis em cada tópico.
-  
-  FORMATO:
-  - Pergunta simples → resposta curta e direta
-  - Pergunta de análise → tópicos curtos, sem introdução longa
-  - Nunca comece com 'Com base no contexto...' ou 'Considerando os dados...'
-  
-  Responda sempre em português brasileiro.`
+                        content: `Você é o PSYZON AI, assistente da Psyzon. Responda em português brasileiro.
+Você pode responder QUALQUER pergunta, não apenas sobre negócios.
+Nunca invente dados. Se não tiver o dado, diga onde encontrar.
+Nunca comece com "Com base no contexto..." ou "Considerando os dados...".
+1 emoji no início da resposta, sem exagerar.
+${modeInstructions[mode] || modeInstructions.normal}`
                     },
                     {
                         role: 'user',
