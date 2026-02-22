@@ -7,13 +7,13 @@ import { getStorage } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-s
 // CHAVES DE ACESSO DO BANCO DE DADOS (Como se fossem o login e senha do seu baú)
 // =========================================================================
 const firebaseConfig = {
-  apiKey: "AIzaSyCJVYTzakEJdJ2lODZRjVx4V7r220-iWIQ",
-  authDomain: "sitey-caixa.firebaseapp.com",
-  projectId: "sitey-caixa",
-  storageBucket: "sitey-caixa.firebasestorage.app",
-  messagingSenderId: "995209588095",
-  appId: "1:995209588095:web:d7fdc0e218f7a69f08fe4a",
-  measurementId: "G-F0CJN6MTFE"
+  apiKey: "AIzaSyANqzrj3lzHUqMbClwcVHAVQjswjp1nUiY",
+  authDomain: "sitey-caixa-16e06.firebaseapp.com",
+  projectId: "sitey-caixa-16e06",
+  storageBucket: "sitey-caixa-16e06.firebasestorage.app",
+  messagingSenderId: "1077514189419",
+  appId: "1:1077514189419:web:034755d7bf1ab27729cf2e",
+  measurementId: "G-MT69LT56JH"
 };
 
 // =========================================================================
