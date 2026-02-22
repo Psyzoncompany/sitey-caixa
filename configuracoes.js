@@ -15,6 +15,8 @@ const init = () => {
     const saveLimitsBtn = document.getElementById('save-limits-btn');
     const keysStatus = document.getElementById('keys-status');
     const refreshKeysStatusBtn = document.getElementById('refresh-keys-status-btn');
+    const exportDataBtn = document.getElementById('export-data-btn');
+    const importDataFile = document.getElementById('import-data-file');
 
     let incomeCategories = JSON.parse(localStorage.getItem('incomeCategories')) || ['Venda de Produto', 'Adiantamento', 'Serviços', 'Outros'];
     let expenseCategories = JSON.parse(localStorage.getItem('expenseCategories')) || ['Matéria-Prima (Custo Direto)', 'Aluguel', 'Contas (Água, Luz, Internet)', 'Marketing e Vendas', 'Salários e Pró-labore', 'Impostos', 'Software e Ferramentas', 'Manutenção', 'Despesas Pessoais', 'Outros'];
@@ -128,7 +130,7 @@ const init = () => {
         saveCategories();
         renderCategories();
     };
-    
+
     addIncomeCategoryBtn.addEventListener('click', () => addCategory('income'));
     addExpenseCategoryBtn.addEventListener('click', () => addCategory('expense'));
 
@@ -149,6 +151,84 @@ const init = () => {
             }
         }
     });
+
+    if (exportDataBtn) {
+        exportDataBtn.addEventListener('click', () => {
+            const confirmExport = confirm('Deseja baixar um arquivo de backup com todos os seus dados?');
+            if (!confirmExport) return;
+
+            try {
+                const dataToExport = {};
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && !key.startsWith('firebase:') && !key.startsWith('__firebase') && !key.startsWith('firebaseLocalStorage')) {
+                        const value = localStorage.getItem(key);
+                        try {
+                            dataToExport[key] = JSON.parse(value);
+                        } catch (e) {
+                            dataToExport[key] = value;
+                        }
+                    }
+                }
+
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataToExport, null, 2));
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
+                const dateStr = new Date().toISOString().split('T')[0];
+                downloadAnchorNode.setAttribute("download", `psyzon_caixa_backup_${dateStr}.json`);
+                document.body.appendChild(downloadAnchorNode);
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+            } catch (error) {
+                console.error(error);
+                alert('Erro ao exportar backup');
+            }
+        });
+    }
+
+    if (importDataFile) {
+        importDataFile.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const confirmImport = confirm('ATENÇÃO: Importar backup irá substituir e APAGAR todos os dados atuais que não estão salvos. Deseja continuar?');
+            if (!confirmImport) {
+                importDataFile.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+
+                    // Remove current keys (except Firebase ones) to avoid ghosts
+                    const keysToRemove = [];
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key && !key.startsWith('firebase:') && !key.startsWith('__firebase') && !key.startsWith('firebaseLocalStorage')) {
+                            keysToRemove.push(key);
+                        }
+                    }
+                    keysToRemove.forEach(k => localStorage.removeItem(k));
+
+                    // Add new keys
+                    for (const key in importedData) {
+                        const val = importedData[key];
+                        localStorage.setItem(key, typeof val === 'object' ? JSON.stringify(val) : val);
+                    }
+
+                    alert('Backup importado com sucesso! A página será atualizada.');
+                    window.location.reload();
+                } catch (error) {
+                    console.error(error);
+                    alert('Erro ao ler o arquivo. Certifique-se de que é um arquivo JSON válido exportado do sistema.');
+                }
+                importDataFile.value = '';
+            };
+            reader.readAsText(file);
+        });
+    }
 
     if (refreshKeysStatusBtn) refreshKeysStatusBtn.addEventListener('click', loadKeysStatus);
 

@@ -1,7 +1,7 @@
 // c:\Users\AAAA\Desktop\sitey-caixa\firebase-config.js
 
 // Importa as funções do Firebase (versão compat para facilitar o uso com scripts existentes)
-import { onAuthStateChanged, setPersistence, browserLocalPersistence, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { onAuthStateChanged, setPersistence, browserLocalPersistence, browserSessionPersistence, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, onSnapshot, setDoc, updateDoc, serverTimestamp, deleteField } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 import { app, auth, db } from "./js/firebase-init.js";
@@ -14,15 +14,16 @@ googleProvider.setCustomParameters({
 googleProvider.addScope('email');
 googleProvider.addScope('profile');
 
-const ensureAuthPersistence = async () => {
+// Persistência padrão: sessão (morre ao fechar o navegador)
+// Só usa persistência local se o usuário marcar "Lembrar dispositivo"
+const setAuthPersistence = async (remember = false) => {
     try {
-        await setPersistence(auth, browserLocalPersistence);
+        const mode = remember ? browserLocalPersistence : browserSessionPersistence;
+        await setPersistence(auth, mode);
     } catch (error) {
-        console.warn('Não foi possível definir persistência local de auth:', error);
+        console.warn('Não foi possível definir persistência de auth:', error);
     }
 };
-
-ensureAuthPersistence();
 
 // Som de sucesso sutil (Web Audio API)
 let audioCtx = null;
@@ -1292,149 +1293,182 @@ const isFirebaseStorageKey = (key) => typeof key === 'string' && (
     key.includes('firebase')
 );
 
-Object.defineProperty(window, 'localStorage', {
-    value: {
-        getItem: (key) => {
-            if (isFirebaseStorageKey(key)) return nativeLocalStorage.getItem(key);
-            const val = memoryStore[key];
-            if (val === undefined) return null;
-            // Se for objeto, retorna string JSON (comportamento padrão do localStorage)
-            return typeof val === 'object' ? JSON.stringify(val) : val;
-        },
-        setItem: (key, value) => {
-            if (isFirebaseStorageKey(key)) {
-                nativeLocalStorage.setItem(key, value);
-                return;
-            }
+window.isLocalMode = nativeLocalStorage.getItem('forceLocalMode') === 'true';
+window.__nativeLS = nativeLocalStorage;
 
-            const stringValue = String(value);
-            // Verifica se o valor realmente mudou para evitar "falsos positivos" de alterações não salvas
-            const currentValue = memoryStore[key];
-            const currentString = typeof currentValue === 'object' ? JSON.stringify(currentValue) : (currentValue === undefined ? null : String(currentValue));
+if (!window.isLocalMode) {
+    Object.defineProperty(window, 'localStorage', {
+        value: {
+            getItem: (key) => {
+                if (isFirebaseStorageKey(key)) return nativeLocalStorage.getItem(key);
+                const val = memoryStore[key];
+                if (val === undefined) return null;
+                // Se for objeto, retorna string JSON (comportamento padrão do localStorage)
+                return typeof val === 'object' ? JSON.stringify(val) : val;
+            },
+            setItem: (key, value) => {
+                if (isFirebaseStorageKey(key)) {
+                    nativeLocalStorage.setItem(key, value);
+                    return;
+                }
 
-            // Se o valor for idêntico, não faz nada (não marca como não salvo)
-            // Nota: localStorage sempre armazena strings. Se currentString for null (undefined), é mudança.
-            if (currentString === stringValue) return;
+                const stringValue = String(value);
+                // Verifica se o valor realmente mudou para evitar "falsos positivos" de alterações não salvas
+                const currentValue = memoryStore[key];
+                const currentString = typeof currentValue === 'object' ? JSON.stringify(currentValue) : (currentValue === undefined ? null : String(currentValue));
 
-            try {
-                // Tenta salvar como objeto JSON puro para o Firestore
-                memoryStore[key] = JSON.parse(stringValue);
-            } catch (e) {
-                // Se não for JSON, salva como string
-                memoryStore[key] = stringValue;
-            }
-            checkDirtyState();
-        },
-        removeItem: (key) => {
-            if (isFirebaseStorageKey(key)) {
-                nativeLocalStorage.removeItem(key);
-                return;
-            }
+                // Se o valor for idêntico, não faz nada (não marca como não salvo)
+                // Nota: localStorage sempre armazena strings. Se currentString for null (undefined), é mudança.
+                if (currentString === stringValue) return;
 
-            if (!(key in memoryStore)) return; // Se a chave não existe, não faz nada (evita ficar vermelho à toa)
-            delete memoryStore[key];
-            if (auth.currentUser) {
-                // Remove o campo específico no Firestore
-                updateDoc(doc(db, "users", auth.currentUser.uid), {
-                    [key]: deleteField()
-                }).catch(err => console.error("Erro ao deletar campo:", err));
+                try {
+                    // Tenta salvar como objeto JSON puro para o Firestore
+                    memoryStore[key] = JSON.parse(stringValue);
+                } catch (e) {
+                    // Se não for JSON, salva como string
+                    memoryStore[key] = stringValue;
+                }
+                checkDirtyState();
+            },
+            removeItem: (key) => {
+                if (isFirebaseStorageKey(key)) {
+                    nativeLocalStorage.removeItem(key);
+                    return;
+                }
+
+                if (!(key in memoryStore)) return; // Se a chave não existe, não faz nada (evita ficar vermelho à toa)
+                delete memoryStore[key];
+                if (auth.currentUser) {
+                    // Remove o campo específico no Firestore
+                    updateDoc(doc(db, "users", auth.currentUser.uid), {
+                        [key]: deleteField()
+                    }).catch(err => console.error("Erro ao deletar campo:", err));
+                }
+                checkDirtyState();
+            },
+            clear: () => {
+                memoryStore = {};
+                checkDirtyState();
+                // Não limpa o storage nativo para preservar sessão Firebase
+            },
+            key: (index) => {
+                const keys = Object.keys(memoryStore);
+                return keys[index] || null;
+            },
+            get length() {
+                return Object.keys(memoryStore).length;
             }
-            checkDirtyState();
         },
-        clear: () => {
-            memoryStore = {};
-            checkDirtyState();
-            // Não limpa o storage nativo para preservar sessão Firebase
-        },
-        key: (index) => {
-            const keys = Object.keys(memoryStore);
-            return keys[index] || null;
-        },
-        get length() {
-            return Object.keys(memoryStore).length;
-        }
-    },
-    writable: true
-});
+        writable: true
+    });
+}
 
 // --- AUTENTICAÇÃO E CARREGAMENTO INICIAL ---
 
-onAuthStateChanged(auth, async (user) => {
-    if (user) {
-        ensureFloatingSaveButton();
-        // Se estivermos na página de login, redireciona para index
-        if (window.location.pathname.endsWith('login.html')) {
-            window.location.href = 'index.html';
-            return;
-        }
+if (window.isLocalMode) {
+    console.log("🔥 RODANDO EM MODO LOCAL (SEM NUVEM) 🔥");
+    window.BackendInitialized = true;
+    bootstrapBackendUI();
 
-        // O loader agora já existe no HTML (id="initial-loader") para aparecer instantaneamente.
-        // Não precisamos criá-lo aqui, apenas garantir que ele não seja removido antes da hora.
+    window.firebaseAuth = {
+        login: async () => { },
+        loginWithGoogle: async () => { },
+        logout: () => {
+            nativeLocalStorage.removeItem('forceLocalMode');
+            window.location.href = 'login.html';
+        },
+        currentUser: () => ({ uid: 'local_user' }),
+    };
 
-        const cachedData = loadUserCache(user.uid);
-        if (cachedData) {
-            applyCloudState(user.uid, cachedData, { source: 'cache' });
-        }
-
-        try {
-            const docRef = doc(db, "users", user.uid);
-            stopCloudSync();
-
-            unsubscribeCloudSync = onSnapshot(docRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    applyCloudState(user.uid, docSnap.data(), { source: docSnap.metadata.fromCache ? 'cache' : 'cloud' });
-                    if (!docSnap.metadata.fromCache) {
-                        console.log("✅ Dados sincronizados em tempo real.");
-                    }
-                } else {
-                    applyCloudState(user.uid, {}, { source: 'cloud' });
-                    console.log("ℹ️ Novo usuário ou sem dados.");
-                }
-            }, (error) => {
-                console.error('Erro no listener de sincronização em tempo real:', error);
-            });
-
-            // Fallback inicial para quando o listener demora em redes instáveis.
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-                applyCloudState(user.uid, docSnap.data(), { source: 'cloud-fallback' });
+    if (window.location.pathname.endsWith('login.html')) {
+        window.location.href = 'index.html';
+    }
+} else {
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            ensureFloatingSaveButton();
+            // Se estivermos na página de login, redireciona para index
+            if (window.location.pathname.endsWith('login.html')) {
+                window.location.href = 'index.html';
+                return;
             }
 
-        } catch (error) {
-            console.error("Erro crítico ao carregar dados:", error);
-            alert("Erro de conexão. Tente recarregar a página.");
+            // O loader agora já existe no HTML (id="initial-loader") para aparecer instantaneamente.
+            // Não precisamos criá-lo aqui, apenas garantir que ele não seja removido antes da hora.
+
+            const cachedData = loadUserCache(user.uid);
+            if (cachedData) {
+                applyCloudState(user.uid, cachedData, { source: 'cache' });
+            }
+
+            try {
+                const docRef = doc(db, "users", user.uid);
+                stopCloudSync();
+
+                unsubscribeCloudSync = onSnapshot(docRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        applyCloudState(user.uid, docSnap.data(), { source: docSnap.metadata.fromCache ? 'cache' : 'cloud' });
+                        if (!docSnap.metadata.fromCache) {
+                            console.log("✅ Dados sincronizados em tempo real.");
+                        }
+                    } else {
+                        applyCloudState(user.uid, {}, { source: 'cloud' });
+                        console.log("ℹ️ Novo usuário ou sem dados.");
+                    }
+                }, (error) => {
+                    console.error('Erro no listener de sincronização em tempo real:', error);
+                });
+
+                // Fallback inicial para quando o listener demora em redes instáveis.
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    applyCloudState(user.uid, docSnap.data(), { source: 'cloud-fallback' });
+                }
+
+            } catch (error) {
+                console.error("Erro crítico ao carregar dados:", error);
+                alert("Erro de conexão. Tente recarregar a página.");
+            }
+        } else {
+            // Não logado
+            stopCloudSync();
+            window.BackendInitialized = false;
+            memoryStore = {};
+            clearTimeout(autosaveTimer);
+            if (!window.location.pathname.endsWith('login.html')) {
+                window.location.href = 'login.html';
+            }
         }
-    } else {
-        // Não logado
-        stopCloudSync();
-        window.BackendInitialized = false;
-        memoryStore = {};
-        clearTimeout(autosaveTimer);
-        if (!window.location.pathname.endsWith('login.html')) {
-            window.location.href = 'login.html';
-        }
-    }
-});
+    });
+}
 
 // Expõe funções de auth globalmente para uso nos botões
-window.firebaseAuth = {
-    login: (email, password) => signInWithEmailAndPassword(auth, email, password),
-    loginWithGoogle: async () => {
-        try {
-            return await signInWithPopup(auth, googleProvider);
-        } catch (error) {
-            const fallbackCodes = new Set([
-                'auth/popup-blocked',
-                'auth/cancelled-popup-request',
-                'auth/popup-closed-by-user'
-            ]);
-            if (fallbackCodes.has(error?.code)) {
-                return signInWithRedirect(auth, googleProvider);
+// (Apenas se NÃO estiver no modo local, pois o modo local já definiu o seu proprio firebaseAuth acima)
+if (!window.isLocalMode) {
+    window.firebaseAuth = {
+        login: async (email, password, remember = false) => {
+            await setAuthPersistence(remember);
+            return signInWithEmailAndPassword(auth, email, password);
+        },
+        loginWithGoogle: async () => {
+            try {
+                return await signInWithPopup(auth, googleProvider);
+            } catch (error) {
+                const fallbackCodes = new Set([
+                    'auth/popup-blocked',
+                    'auth/cancelled-popup-request',
+                    'auth/popup-closed-by-user'
+                ]);
+                if (fallbackCodes.has(error?.code)) {
+                    return signInWithRedirect(auth, googleProvider);
+                }
+                throw error;
             }
-            throw error;
-        }
-    },
-    logout: () => signOut(auth),
-    currentUser: () => auth.currentUser,
-
-};
+        },
+        logout: () => {
+            nativeLocalStorage.removeItem('psyzon_remember_device');
+            return signOut(auth);
+        },
+        currentUser: () => auth.currentUser,
+    };
+}
