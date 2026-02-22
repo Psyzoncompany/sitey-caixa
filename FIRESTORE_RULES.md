@@ -1,4 +1,4 @@
-# Firestore Rules (modo sem login no admin e no cliente)
+# Firestore Rules (modo sem backend próprio, com módulo Arte Online)
 
 Cole as regras abaixo no **Firebase Console → Firestore Database → Rules**.
 
@@ -8,9 +8,8 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // =========================
-    // ADMIN (painel sem login Firebase)
+    // ADMIN (painel interno)
     // =========================
-    // Como não há auth no painel, precisa permitir escrita.
     match /orders/{oid} {
       allow read, write: if true;
     }
@@ -24,7 +23,14 @@ service cloud.firestore {
     }
 
     // =========================
-    // CLIENTE (link com token)
+    // ARTE ONLINE (cliente + admin)
+    // =========================
+    match /pedidos_arte/{pedidoId} {
+      allow read, write: if true;
+    }
+
+    // =========================
+    // CLIENTE (feedback legado)
     // =========================
     match /order_feedback/{token} {
       allow read: if true;
@@ -40,6 +46,6 @@ service cloud.firestore {
 ```
 
 ## Observações
-- Este conjunto resolve imediatamente os erros `Missing or insufficient permissions` ao criar/atualizar `order_clients` e `orders_public` no painel.
-- Como está sem autenticação, as coleções de admin ficam abertas para leitura/escrita.
-- Próximo passo recomendado (hardening): migrar escrita de admin para usuário autenticado ou Cloud Functions.
+- Inclui a coleção `pedidos_arte` para suportar geração de links, pedidos, envio de versões e revisões em tempo real.
+- Como a arquitetura atual é 100% client-side, as coleções ficam abertas para leitura/escrita.
+- Recomenda-se hardening posterior com Firebase Auth obrigatório por perfil e regras condicionais por claim.

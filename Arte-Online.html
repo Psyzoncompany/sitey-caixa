@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arte Online • Sitey-Caixa</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: Inter, sans-serif; }
+    .glass { background: rgba(16, 22, 40, .75); border: 1px solid rgba(148, 163, 184, .24); backdrop-filter: blur(10px); }
+    .dropzone.dragover { border-color: #22d3ee; background: rgba(34,211,238,.12); }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-100">
+  <main class="max-w-5xl mx-auto p-4 md:p-8 pb-24">
+    <section id="access-step" class="glass rounded-2xl p-6 max-w-md mx-auto mt-12">
+      <h1 class="text-2xl font-black">Arte Online</h1>
+      <p class="text-sm text-slate-300 mt-2">Digite o código de 4 dígitos para acessar seu pedido.</p>
+      <form id="access-form" class="mt-5 space-y-4">
+        <input id="access-code" maxlength="4" pattern="\d{4}" inputmode="numeric" class="w-full text-center tracking-[.55em] text-3xl font-black rounded-xl bg-slate-900 border border-slate-700 p-3" placeholder="0000" required>
+        <button class="w-full rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold py-3">Entrar</button>
+      </form>
+      <p id="access-error" class="text-rose-300 text-sm mt-3 hidden"></p>
+    </section>
+
+    <section id="client-panel" class="hidden space-y-6 mt-4">
+      <header class="glass rounded-2xl p-5">
+        <h2 class="text-2xl font-bold">Painel do Cliente</h2>
+        <p class="text-sm text-slate-300 mt-1">Você tem direito a 2 revisões gratuitas. A partir da 3ª revisão, cada alteração tem custo de R$10,00.</p>
+      </header>
+
+      <section class="glass rounded-2xl p-5 space-y-4">
+        <h3 class="text-lg font-bold">🎨 Solicitar Arte</h3>
+        <div class="flex gap-2">
+          <button type="button" data-cmd="bold" class="fmt-btn px-3 py-1 rounded-lg bg-white/10">Negrito</button>
+          <button type="button" data-cmd="italic" class="fmt-btn px-3 py-1 rounded-lg bg-white/10">Itálico</button>
+        </div>
+        <div id="desc-editor" contenteditable="true" class="min-h-[120px] rounded-xl p-3 bg-slate-900 border border-slate-700 text-sm" data-placeholder="Descreva estilo, cores, referências e objetivo da arte."></div>
+
+        <div id="dropzone" class="dropzone rounded-xl border-2 border-dashed border-slate-600 p-4 text-sm text-slate-300">
+          Arraste até 5 imagens de referência ou
+          <input id="ref-input" type="file" accept="image/*" multiple class="block mt-2">
+        </div>
+        <div id="ref-preview" class="grid grid-cols-2 sm:grid-cols-5 gap-2"></div>
+        <button id="send-order-btn" class="rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold py-3 px-5">Enviar Pedido</button>
+      </section>
+
+      <section class="glass rounded-2xl p-5 space-y-4">
+        <h3 class="text-lg font-bold">📋 Histórico de Versões</h3>
+        <p id="revision-counter" class="text-sm text-slate-300"></p>
+        <div id="versions-list" class="space-y-3"></div>
+      </section>
+
+      <section class="glass rounded-2xl p-5 space-y-3">
+        <h3 class="text-lg font-bold">💬 Solicitar Revisão</h3>
+        <button id="open-revision-modal" class="rounded-xl bg-violet-500 hover:bg-violet-400 text-white font-semibold py-2 px-4">Solicitar Revisão</button>
+      </section>
+    </section>
+  </main>
+
+  <dialog id="revision-modal" class="rounded-2xl bg-slate-900 text-slate-100 w-[95%] max-w-lg p-0">
+    <form id="revision-form" class="p-5 space-y-3">
+      <h3 class="text-xl font-bold">Nova Revisão</h3>
+      <p id="revision-price" class="text-sm text-amber-300"></p>
+      <textarea id="revision-text" class="w-full rounded-xl bg-slate-950 border border-slate-700 p-3 min-h-28" required placeholder="Descreva as alterações desejadas"></textarea>
+      <input id="revision-files" type="file" accept="image/*" multiple>
+      <div class="flex justify-end gap-2">
+        <button type="button" id="close-revision-modal" class="px-3 py-2 rounded-lg bg-white/10">Cancelar</button>
+        <button class="px-4 py-2 rounded-lg bg-violet-500 font-semibold">Confirmar Revisão</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="arte-online.js"></script>
+</body>
+</html>
