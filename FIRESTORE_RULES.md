@@ -30,7 +30,7 @@ service cloud.firestore {
     }
 
     match /users/{uid}/pedidos_arte/{pedidoId} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read, write: if request.auth != null && request.auth.uid == "QGxXshwTBbPH0VcodwyVJtDPbTI3" && uid == "QGxXshwTBbPH0VcodwyVJtDPbTI3";
     }
 
     // =========================
@@ -52,4 +52,5 @@ service cloud.firestore {
 ## Observações
 - Inclui a coleção `pedidos_arte` para suportar geração de links, pedidos, envio de versões e revisões em tempo real.
 - Como a arquitetura atual é 100% client-side, as coleções ficam abertas para leitura/escrita.
+- Este projeto foi ajustado para que o módulo Arte Online opere com o UID autorizado `QGxXshwTBbPH0VcodwyVJtDPbTI3`.
 - Recomenda-se hardening posterior com Firebase Auth obrigatório por perfil e regras condicionais por claim.

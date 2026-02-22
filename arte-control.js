@@ -22,6 +22,8 @@ const STATUS_META = {
   concluido: { label: 'Concluído', cls: 'bg-emerald-500/20 text-emerald-200 border-emerald-400/40' }
 };
 
+const ARTE_LINK_OWNER_UID = 'QGxXshwTBbPH0VcodwyVJtDPbTI3';
+
 const state = {
   pedidos: [],
   selectedId: null,
@@ -31,16 +33,19 @@ const state = {
   initialized: false
 };
 
-const getPedidosArteCollection = () => {
-  const uid = auth?.currentUser?.uid;
-  if (!uid) return collection(db, 'pedidos_arte');
-  return collection(db, 'users', uid, 'pedidos_arte');
-};
+const getPedidosArteCollection = () => collection(db, 'users', ARTE_LINK_OWNER_UID, 'pedidos_arte');
 
-const getPedidosArteQuery = () => {
-  const uid = auth?.currentUser?.uid;
-  if (!uid) return query(collection(db, 'pedidos_arte'), orderBy('atualizado_em', 'desc'));
-  return query(collection(db, 'users', uid, 'pedidos_arte'), orderBy('atualizado_em', 'desc'));
+const getPedidosArteQuery = () => query(collection(db, 'users', ARTE_LINK_OWNER_UID, 'pedidos_arte'), orderBy('atualizado_em', 'desc'));
+
+const ensurePermittedUid = () => {
+  const sessionUid = auth?.currentUser?.uid;
+  if (!sessionUid) {
+    throw new Error('Faça login para gerar o link de arte.');
+  }
+  if (sessionUid !== ARTE_LINK_OWNER_UID) {
+    throw new Error('Este usuário não possui permissão para gerar link de arte.');
+  }
+  return sessionUid;
 };
 
 const fmtDate = (v) => {
@@ -175,8 +180,8 @@ function bindEvents(selected) {
     try {
       btn.disabled = true;
       btn.textContent = 'Gerando...';
+      const uid = ensurePermittedUid();
       const [codigo, token] = await Promise.all([generateUniqueCode(), generateUniqueToken()]);
-      const uid = auth?.currentUser?.uid || '';
       const pedidoRef = await addDoc(getPedidosArteCollection(), {
         token,
         codigo,
@@ -193,18 +198,16 @@ function bindEvents(selected) {
         atualizado_em: serverTimestamp(),
         last_event: 'link_gerado'
       });
-      const link = `${window.location.origin}/Arte-Online.html?token=${token}${uid ? `&owner=${uid}` : ''}`;
+      const link = `${window.location.origin}/Arte-Online.html?token=${token}&owner=${ARTE_LINK_OWNER_UID}`;
 
-      if (uid) {
-        await updateDoc(doc(db, 'users', uid), {
-          [`arte_link_index.${token}`]: {
-            pedidoId: pedidoRef.id,
-            ownerUid: uid,
-            codigo,
-            atualizado_em: new Date().toISOString()
-          }
-        });
-      }
+      await updateDoc(doc(db, 'users', ARTE_LINK_OWNER_UID), {
+        [`arte_link_index.${token}`]: {
+          pedidoId: pedidoRef.id,
+          ownerUid: ARTE_LINK_OWNER_UID,
+          codigo,
+          atualizado_em: new Date().toISOString()
+        }
+      });
       card.classList.remove('hidden');
       card.innerHTML = `<p class="text-xs uppercase tracking-[0.14em] text-cyan-200">Acesso do cliente</p>
         <p class="text-5xl font-black tracking-[0.25em] mt-2 text-white">${codigo}</p>
@@ -240,8 +243,8 @@ function bindEvents(selected) {
 
   document.getElementById('admin-art-status')?.addEventListener('change', async (e) => {
     if (!selected) return;
-    const uid = auth?.currentUser?.uid;
-    const targetDoc = uid ? doc(db, 'users', uid, 'pedidos_arte', selected.id) : doc(db, 'pedidos_arte', selected.id);
+    ensurePermittedUid();
+    const targetDoc = doc(db, 'users', ARTE_LINK_OWNER_UID, 'pedidos_arte', selected.id);
     await updateDoc(targetDoc, { status: e.target.value, atualizado_em: serverTimestamp() });
     toast('Status atualizado.');
   });
@@ -257,8 +260,8 @@ function bindEvents(selected) {
     await uploadBytes(fileRef, file);
     const url = await getDownloadURL(fileRef);
     versoes.push({ numero: versoes.length + 1, imagem: url, mensagem: msg, status: 'arte_enviada', criado_em: new Date().toISOString() });
-    const uid = auth?.currentUser?.uid;
-    const targetDoc = uid ? doc(db, 'users', uid, 'pedidos_arte', selected.id) : doc(db, 'pedidos_arte', selected.id);
+    ensurePermittedUid();
+    const targetDoc = doc(db, 'users', ARTE_LINK_OWNER_UID, 'pedidos_arte', selected.id);
     await updateDoc(targetDoc, {
       versoes,
       status: 'arte_enviada',
