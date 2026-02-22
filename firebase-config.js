@@ -1495,3 +1495,21 @@ if (!window.isLocalMode) {
         currentUser: () => auth.currentUser,
     };
 }
+
+// Injeção global do Chatbot Financeiro Offline
+const loadChatbotScripts = () => {
+    if (window.location.pathname.endsWith('login.html')) return;
+    if (document.getElementById('advisor-script-global')) return;
+
+    // As injeções ocorrem já de forma assíncrona, portanto o Advisor deve avaliar os dados quando chamado
+    const advScript = document.createElement('script');
+    advScript.id = 'advisor-script-global';
+    advScript.src = 'advisor.js';
+    document.body.appendChild(advScript);
+};
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadChatbotScripts);
+} else {
+    loadChatbotScripts();
+}
