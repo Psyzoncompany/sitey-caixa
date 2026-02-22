@@ -1205,6 +1205,20 @@ const bootstrapBackendUI = () => {
 
 const applyCloudState = (uid, data, { source = 'cloud' } = {}) => {
     const nextStore = (data && typeof data === 'object') ? data : {};
+
+    // --- VERIFICAÇÃO DE FORCE LOGOUT REMOTO ---
+    const remoteForceLogout = nextStore['__forceLogoutAt'];
+    if (remoteForceLogout) {
+        const myForceLogout = nativeLocalStorage.getItem('__myForceLogoutAt');
+        // Se este dispositivo NÃO foi o que disparou o comando, força logout
+        if (String(remoteForceLogout) !== String(myForceLogout)) {
+            console.warn('🔒 Force logout remoto detectado! Desconectando este dispositivo...');
+            nativeLocalStorage.removeItem('psyzon_remember_device');
+            signOut(auth);
+            return false;
+        }
+    }
+
     const nextSnapshot = getSnapshot(nextStore);
     const hasRemoteChange = nextSnapshot !== initialSnapshot;
 

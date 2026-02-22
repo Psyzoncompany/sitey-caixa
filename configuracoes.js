@@ -232,6 +232,20 @@ const init = () => {
 
     if (refreshKeysStatusBtn) refreshKeysStatusBtn.addEventListener('click', loadKeysStatus);
 
+    const forceLogoutAllBtn = document.getElementById('force-logout-all-btn');
+    if (forceLogoutAllBtn) {
+        forceLogoutAllBtn.addEventListener('click', () => {
+            if (!confirm('Tem certeza? Todos os dispositivos (celulares e computadores) serão desconectados, exceto ESTE que você está usando agora.')) return;
+            const timestamp = Date.now();
+            // Salva no localStorage (que vai pro Firestore via sync)
+            localStorage.setItem('__forceLogoutAt', String(timestamp));
+            // Marca este dispositivo como o que disparou (para não se desconectar)
+            const nativeLS = window.__nativeLS || window.localStorage;
+            nativeLS.setItem('__myForceLogoutAt', String(timestamp));
+            alert('Comando enviado! Todos os outros dispositivos serão desconectados em instantes.');
+        });
+    }
+
     loadLimits();
     renderCategories();
     loadKeysStatus();
