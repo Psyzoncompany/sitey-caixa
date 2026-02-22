@@ -1,6 +1,6 @@
 {
-  "name": "sitey-caixa-gemini-chat",
-  "version": "2.0.0",
+  "name": "sitey-caixa",
+  "version": "2.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -9,10 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.78.0",
-    "@google/genai": "^1.42.0",
-    "@google/generative-ai": "^0.24.0",
-    "ai": "^4.0.34",
     "autoprefixer": "^10.4.24",
     "next": "14.2.30",
     "postcss": "^8.5.6",
