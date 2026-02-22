@@ -10,7 +10,11 @@
   },
   "dependencies": {
     "autoprefixer": "^10.4.24",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
     "next": "14.2.30",
+    "node-fetch": "^3.3.2",
     "postcss": "^8.5.6",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -24,5 +28,19 @@
     "eslint": "^8.57.1",
     "eslint-config-next": "14.2.30",
     "typescript": "^5.7.3"
-  }
+  },
+  "description": "Se usar login Google popup/redirect:",
+  "main": "advisor.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Psyzoncompany/sitey-caixa.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Psyzoncompany/sitey-caixa/issues"
+  },
+  "homepage": "https://github.com/Psyzoncompany/sitey-caixa#readme"
 }
