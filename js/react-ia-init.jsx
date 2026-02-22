@@ -1,37 +1,37 @@
-import React from 'react';
-import { createRoot } from 'react-dom/client';
-import IAChat from './IAChat.jsx';
+const { createRoot } = window.ReactDOM;
 
-// Wait for DOM to be ready
-document.addEventListener('DOMContentLoaded', () => {
-    // Esconder o botão do Gemini chat antigo (gemini-chat.js)
-    const oldFab = document.getElementById('gemini-chat-fab');
-    if (oldFab) {
-        oldFab.style.display = 'none';
-        oldFab.classList.add('hidden');
-    }
-    const oldModal = document.getElementById('gemini-chat-modal');
-    if (oldModal) {
-        oldModal.style.display = 'none';
-        oldModal.classList.add('hidden');
-    }
+const IAChat = window.IAChat;
 
-    // Create container for the new React app
-    const container = document.createElement('div');
+// Esconder o botão do Gemini chat antigo (gemini-chat.js) se houver
+const oldFab = document.getElementById('gemini-chat-fab');
+if (oldFab) {
+    oldFab.style.display = 'none';
+    oldFab.classList.add('hidden');
+}
+const oldModal = document.getElementById('gemini-chat-modal');
+if (oldModal) {
+    oldModal.style.display = 'none';
+    oldModal.classList.add('hidden');
+}
+
+// Create container for the new React app
+let container = document.getElementById('react-ia-chat-root');
+if (!container) {
+    container = document.createElement('div');
     container.id = 'react-ia-chat-root';
     document.body.appendChild(container);
+}
 
-    const root = createRoot(container);
-    root.render(
-        <React.StrictMode>
-            <AppContainer />
-        </React.StrictMode>
-    );
-});
+const root = createRoot(container);
+root.render(
+    <window.React.StrictMode>
+        <AppContainer />
+    </window.React.StrictMode>
+);
 
 // Componente que gerencia o FAB (botão flutuante) e o Chat
 function AppContainer() {
-    const [isOpen, setIsOpen] = React.useState(false);
+    const [isOpen, setIsOpen] = window.React.useState(false);
 
     return (
         <>

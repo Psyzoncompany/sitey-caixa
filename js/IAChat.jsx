@@ -1,5 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
-
+const { useState, useRef, useEffect } = window.React;
 const SYSTEM_PROMPT = `Você é uma IA poderosa e inteligente integrada diretamente neste site. Você pode:
 - Responder perguntas sobre qualquer assunto
 - Analisar textos, documentos e dados fornecidos
@@ -79,7 +78,7 @@ const MessageBubble = ({ msg }) => {
     );
 };
 
-export default function IAChat() {
+window.IAChat = function IAChat() {
     const [messages, setMessages] = useState([
         {
             role: "assistant",
