@@ -285,7 +285,75 @@
       holder.appendChild(askBtn);
     };
 
-    const detectPriorityAlert = () => {
+    const inferPieceType = (order = {}, subtask = {}) => {
+      const combined = `${order?.description || ''} ${subtask?.variation || ''} ${subtask?.notes || ''}`.toLowerCase();
+      if (combined.includes('camisa') || combined.includes('camiseta')) return 'camisa';
+      if (combined.includes('calça') || combined.includes('calca')) return 'calça';
+      if (combined.includes('bermuda')) return 'bermuda';
+      if (combined.includes('short')) return 'short';
+      if (combined.includes('blusa')) return 'blusa';
+      if (combined.includes('moletom')) return 'moletom';
+      return 'peça não especificada';
+    };
+
+    const extractReference = (order = {}, subtask = {}) => {
+      const candidates = [subtask?.variation, subtask?.notes, order?.description]
+        .map((v) => normalizeText(v || ''))
+        .filter(Boolean);
+      const refPattern = /\b\d+[A-Z]\b|\b[A-Z]\d+[A-Z]?\b|\bREF[:\-\s]*([A-Z0-9-]+)\b/i;
+      for (const candidate of candidates) {
+        const match = candidate.match(refPattern);
+        if (match) return (match[1] || match[0]).toUpperCase();
+      }
+      return normalizeText(subtask?.variation || '') || 'SEM-REF';
+    };
+
+        const pedidosDeCorte = activeOrders.flatMap((order) => {
+          const clientName = clientMap.get(String(order?.clientId)) || 'Sem cliente';
+          const orderStatus = normalizeText(order?.status || 'sem status');
+          const prazoEntrega = toPtDate(order?.deadline);
+          const subtasks = order?.checklist?.cutting?.subtasks || [];
+
+          if (!subtasks.length) {
+            return [{
+              pedidoId: order?.id ?? null,
+              cliente: clientName,
+              peca: inferPieceType(order),
+              referencia: extractReference(order),
+              quantidadeTotalPedida: 0,
+              quantidadeJaCortada: 0,
+              quantidadePendente: 0,
+              statusPedido: orderStatus,
+              prazoEntrega,
+              pedidoDescricao: normalizeText(order?.description || 'Pedido sem descrição')
+            }];
+          }
+
+          return subtasks.map((subtask) => {
+            const total = parseInt(subtask?.total || 0, 10) || 0;
+            const cortado = parseInt(subtask?.cut || 0, 10) || 0;
+            const pendente = Math.max(0, total - cortado);
+            return {
+              pedidoId: order?.id ?? null,
+              cliente: clientName,
+              peca: inferPieceType(order, subtask),
+              referencia: extractReference(order, subtask),
+              quantidadeTotalPedida: total,
+              quantidadeJaCortada: cortado,
+              quantidadePendente: pendente,
+              statusPedido: orderStatus,
+              prazoEntrega,
+              pedidoDescricao: normalizeText(order?.description || 'Pedido sem descrição'),
+              variacao: normalizeText(subtask?.variation || ''),
+              tamanho: normalizeText(subtask?.size || ''),
+              cor: normalizeText(subtask?.color || '')
+            };
+          });
+        });
+
+            pedidosDeCorte: pedidosDeCorte.length,
+          pedidosDeCorte,
+        return payload.length > 25000 ? `${payload.slice(0, 25000)}\n... [contexto truncado]` : payload;
       try {
         const orders = JSON.parse(localStorage.getItem('production_orders') || '[]');
         const transactions = JSON.parse(localStorage.getItem('transactions') || '[]');
