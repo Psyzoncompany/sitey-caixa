@@ -364,6 +364,52 @@
                 pointer-events: none;
             }
 
+
+            .chatbot-ai-frame-modal {
+                position: fixed;
+                inset: 0;
+                z-index: 10020;
+                background: rgba(2, 6, 23, 0.7);
+                backdrop-filter: blur(4px);
+                display: flex;
+                align-items: flex-end;
+                justify-content: center;
+                padding: 16px;
+                padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+            }
+            .chatbot-ai-frame-modal.hidden { display: none; }
+            .chatbot-ai-frame-shell {
+                width: min(1100px, 100%);
+                height: min(90vh, 920px);
+                border-radius: 18px;
+                overflow: hidden;
+                background: #fff;
+                border: 1px solid rgba(148,163,184,0.35);
+                box-shadow: 0 20px 60px rgba(15,23,42,.45);
+                position: relative;
+            }
+            .chatbot-ai-frame {
+                width: 100%;
+                height: 100%;
+                border: 0;
+                display: block;
+                background: #fdfcf8;
+            }
+            .chatbot-ai-frame-close {
+                position: absolute;
+                top: 12px;
+                right: 12px;
+                z-index: 3;
+                width: 36px;
+                height: 36px;
+                border-radius: 999px;
+                border: 1px solid rgba(0,0,0,.1);
+                background: rgba(255,255,255,.92);
+                color: #475569;
+                cursor: pointer;
+            }
+            .chatbot-ai-frame-close:hover { color: #0f172a; background: #fff; }
+
             /* Mobile */
             @media (max-width: 992px) {
                 .chatbot-messages, .chatbot-input-area { padding-left: 10%; padding-right: 10%; }
@@ -526,6 +572,17 @@
             <button class="chatbot-fab-action" id="chatbot-open-full">Abrir IA em página completa</button>
         `;
 
+
+        const floatingModal = document.createElement('div');
+        floatingModal.id = 'chatbot-ai-modal';
+        floatingModal.className = 'chatbot-ai-frame-modal hidden';
+        floatingModal.innerHTML = `
+            <div class="chatbot-ai-frame-shell" role="dialog" aria-modal="true" aria-label="IA flutuante">
+                <button class="chatbot-ai-frame-close" id="chatbot-ai-close" title="Fechar IA"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                <iframe class="chatbot-ai-frame" src="ai.html" title="PSYZON AI"></iframe>
+            </div>
+        `;
+
         const windowChat = document.createElement('div');
         windowChat.id = 'chatbot-window';
         windowChat.className = 'chatbot-window hidden';
@@ -573,6 +630,7 @@
         document.body.appendChild(fab);
         document.body.appendChild(fabMenu);
         document.body.appendChild(windowChat);
+        document.body.appendChild(floatingModal);
 
         // Listener dos botões de modo
         document.getElementById('mode-selector').addEventListener('click', (e) => {
@@ -617,13 +675,22 @@
         });
 
         document.getElementById('chatbot-open-overlay').addEventListener('click', () => {
-            windowChat.classList.remove('hidden');
+            floatingModal.classList.remove('hidden');
+            fab.style.display = 'none';
             closeFabMenu();
-            input.focus();
         });
         document.getElementById('chatbot-open-full').addEventListener('click', () => {
             closeFabMenu();
             window.open('ai.html', '_blank', 'noopener');
+        });
+
+        const closeFloatingModal = () => {
+            floatingModal.classList.add('hidden');
+            fab.style.display = 'flex';
+        };
+        document.getElementById('chatbot-ai-close').addEventListener('click', closeFloatingModal);
+        floatingModal.addEventListener('click', (event) => {
+            if (event.target === floatingModal) closeFloatingModal();
         });
 
         document.getElementById('chatbot-close').addEventListener('click', () => windowChat.classList.add('hidden'));
@@ -897,7 +964,15 @@
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: text, mode: currentMode, history: conversationHistory, context, image: pendingImage })
+                    body: JSON.stringify({
+                        message: text,
+                        mode: currentMode,
+                        history: conversationHistory,
+                        context,
+                        image: pendingImage,
+                        includeSiteContext: true,
+                        thinkingTimeMs: currentMode === 'profundo' ? 10000 : currentMode === 'normal' ? 5000 : 0
+                    })
                 });
                 const data = await response.json();
                 typing.style.display = 'none';
