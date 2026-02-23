@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-br" class="scroll-smooth">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
@@ -18,7 +19,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link href="style.css" rel="stylesheet">
+  <link href="chatbot.css" rel="stylesheet">
 </head>
+
 <body class="bg-gray-900 text-gray-200 neo-dashboard min-h-screen">
   <main class="max-w-5xl mx-auto px-4 py-6 md:py-10">
     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-6">
@@ -26,7 +29,9 @@
         <h1 class="text-2xl md:text-3xl font-bold">Notas de Atualização</h1>
         <p class="text-sm text-gray-400">Histórico de melhorias e correções do site.</p>
       </div>
-      <a href="processos.html" class="inline-flex items-center justify-center px-4 py-2 rounded-lg border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/10">← Voltar</a>
+      <a href="processos.html"
+        class="inline-flex items-center justify-center px-4 py-2 rounded-lg border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/10">←
+        Voltar</a>
     </div>
 
     <section class="space-y-4">
@@ -37,10 +42,13 @@
           <span class="text-xs text-gray-400">Atual</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Nova aba <strong>Controle de Finalização</strong> adicionada logo após Controle de Cortes para validar se os pedidos estão realmente prontos para entrega.</li>
-          <li>A nova aba mostra cartões com status de prontidão por pedido (checklist, cortes e DTF), separando pendentes e prontos para entregar.</li>
+          <li>Nova aba <strong>Controle de Finalização</strong> adicionada logo após Controle de Cortes para validar se
+            os pedidos estão realmente prontos para entrega.</li>
+          <li>A nova aba mostra cartões com status de prontidão por pedido (checklist, cortes e DTF), separando
+            pendentes e prontos para entregar.</li>
           <li>Layout com margem de segurança no mobile para evitar sobreposição com a navegação inferior.</li>
-          <li>Melhoria mobile no Controle de Cortes: cabeçalho do checklist otimizado (menor e mais legível) e ajustes no rodapé para o botão <strong>Salvar</strong> ficar visível.</li>
+          <li>Melhoria mobile no Controle de Cortes: cabeçalho do checklist otimizado (menor e mais legível) e ajustes
+            no rodapé para o botão <strong>Salvar</strong> ficar visível.</li>
         </ul>
       </article>
 
@@ -50,8 +58,10 @@
           <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Removido o sistema completo de IA do site (Gemini e chat com ícone de cérebro), incluindo injeções de interface e scripts relacionados.</li>
-          <li>Removidas rotas de API de chat e integrações de IA no projeto Next.js para limpar dependências e preparar uma nova IA do zero.</li>
+          <li>Removido o sistema completo de IA do site (Gemini e chat com ícone de cérebro), incluindo injeções de
+            interface e scripts relacionados.</li>
+          <li>Removidas rotas de API de chat e integrações de IA no projeto Next.js para limpar dependências e preparar
+            uma nova IA do zero.</li>
           <li>Base de versão atualizada para continuidade do site sem funcionalidades de IA ativas.</li>
         </ul>
       </article>
@@ -62,9 +72,12 @@
           <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Novo botão flutuante de <strong>Adicionar lançamento</strong> fixado na posição principal do canto inferior direito para abrir o modal com um toque.</li>
-          <li>Calculadora flutuante foi elevada para a posição acima do novo botão, mantendo espaçamento seguro da navegação inferior.</li>
-          <li>Empilhamento de camadas dos botões ajustado para evitar sobreposição indevida com outros FABs e preservar clique em todos os atalhos.</li>
+          <li>Novo botão flutuante de <strong>Adicionar lançamento</strong> fixado na posição principal do canto
+            inferior direito para abrir o modal com um toque.</li>
+          <li>Calculadora flutuante foi elevada para a posição acima do novo botão, mantendo espaçamento seguro da
+            navegação inferior.</li>
+          <li>Empilhamento de camadas dos botões ajustado para evitar sobreposição indevida com outros FABs e preservar
+            clique em todos os atalhos.</li>
         </ul>
       </article>
 
@@ -74,8 +87,10 @@
           <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Corrigida a seleção de cliente no modal de <strong>Lançamento</strong>: agora o cliente escolhido permanece selecionado ao salvar e ao reabrir para edição.</li>
-          <li>Compatibilidade reforçada para IDs de cliente numéricos e em texto, evitando perda de vínculo em ambientes com dados antigos.</li>
+          <li>Corrigida a seleção de cliente no modal de <strong>Lançamento</strong>: agora o cliente escolhido
+            permanece selecionado ao salvar e ao reabrir para edição.</li>
+          <li>Compatibilidade reforçada para IDs de cliente numéricos e em texto, evitando perda de vínculo em ambientes
+            com dados antigos.</li>
         </ul>
       </article>
 
@@ -85,10 +100,14 @@
           <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Botão flutuante de salvar agora existe somente na <strong>Index</strong>, removendo o comportamento em outras páginas.</li>
-          <li>No mobile, o botão de salvar foi centralizado e posicionado acima da navegação inferior para ficar mais fácil de alcançar.</li>
-          <li>No desktop, o botão foi posicionado no canto inferior direito para manter acesso rápido sem atrapalhar o conteúdo.</li>
-          <li>Estado visual do botão ajustado: azul quando está salvo e vermelho quando existem alterações pendentes de envio ao Firestore.</li>
+          <li>Botão flutuante de salvar agora existe somente na <strong>Index</strong>, removendo o comportamento em
+            outras páginas.</li>
+          <li>No mobile, o botão de salvar foi centralizado e posicionado acima da navegação inferior para ficar mais
+            fácil de alcançar.</li>
+          <li>No desktop, o botão foi posicionado no canto inferior direito para manter acesso rápido sem atrapalhar o
+            conteúdo.</li>
+          <li>Estado visual do botão ajustado: azul quando está salvo e vermelho quando existem alterações pendentes de
+            envio ao Firestore.</li>
         </ul>
       </article>
 
@@ -98,10 +117,14 @@
           <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Sincronização do bloco de notas evoluída para tempo real com listener do Firestore, refletindo mudanças entre dispositivos sem precisar recarregar.</li>
-          <li>Atualizações remotas agora disparam evento interno para recarregar a UI de notas quando o usuário não está editando, evitando sobreposição de rascunho.</li>
-          <li>Link de Afazeres no dashboard corrigido para abrir a aba de processos, eliminando o erro 404 de página inexistente.</li>
-          <li>Referência do manifesto PWA ajustada para caminho relativo, reduzindo falhas de carregamento em alguns ambientes de deploy.</li>
+          <li>Sincronização do bloco de notas evoluída para tempo real com listener do Firestore, refletindo mudanças
+            entre dispositivos sem precisar recarregar.</li>
+          <li>Atualizações remotas agora disparam evento interno para recarregar a UI de notas quando o usuário não está
+            editando, evitando sobreposição de rascunho.</li>
+          <li>Link de Afazeres no dashboard corrigido para abrir a aba de processos, eliminando o erro 404 de página
+            inexistente.</li>
+          <li>Referência do manifesto PWA ajustada para caminho relativo, reduzindo falhas de carregamento em alguns
+            ambientes de deploy.</li>
         </ul>
       </article>
 
@@ -111,9 +134,12 @@
           <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Correção do bloco de notas na nuvem: alterações agora atualizam também o cache local do usuário antes do autosave.</li>
-          <li>Ao recarregar a página com internet instável, as notas recentes continuam disponíveis e voltam para a sincronização automática sem perder conteúdo.</li>
-          <li>Fluxo de persistência ajustado para reduzir risco de sumiço de dados entre refresh e envio ao Firestore.</li>
+          <li>Correção do bloco de notas na nuvem: alterações agora atualizam também o cache local do usuário antes do
+            autosave.</li>
+          <li>Ao recarregar a página com internet instável, as notas recentes continuam disponíveis e voltam para a
+            sincronização automática sem perder conteúdo.</li>
+          <li>Fluxo de persistência ajustado para reduzir risco de sumiço de dados entre refresh e envio ao Firestore.
+          </li>
         </ul>
       </article>
 
@@ -123,9 +149,12 @@
           <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Bloco de Anotações agora abre em modo tela cheia em qualquer dispositivo, mantendo margens de segurança no mobile (safe-area).</li>
-          <li>Adicionadas abas no bloco de notas para criar múltiplas notas, alternar entre elas, renomear e excluir.</li>
-          <li>Rodapé do bloco ganhou ações rápidas (limpar, renomear, excluir) e indicador de último horário de atualização.</li>
+          <li>Bloco de Anotações agora abre em modo tela cheia em qualquer dispositivo, mantendo margens de segurança no
+            mobile (safe-area).</li>
+          <li>Adicionadas abas no bloco de notas para criar múltiplas notas, alternar entre elas, renomear e excluir.
+          </li>
+          <li>Rodapé do bloco ganhou ações rápidas (limpar, renomear, excluir) e indicador de último horário de
+            atualização.</li>
         </ul>
       </article>
 
@@ -135,10 +164,13 @@
           <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Novo botão flutuante de <strong>Anotações</strong>, com janela estilo bloco de notas e salvamento automático para lembrar tarefas.</li>
-          <li>Empilhamento dos botões flutuantes ajustado: <strong>Afazeres</strong> acima de <strong>Anotações</strong>, e <strong>Anotações</strong> acima da <strong>Calculadora</strong>.</li>
+          <li>Novo botão flutuante de <strong>Anotações</strong>, com janela estilo bloco de notas e salvamento
+            automático para lembrar tarefas.</li>
+          <li>Empilhamento dos botões flutuantes ajustado: <strong>Afazeres</strong> acima de
+            <strong>Anotações</strong>, e <strong>Anotações</strong> acima da <strong>Calculadora</strong>.</li>
           <li>Sistema antigo de página de bloco de notas removido para eliminar o fluxo bugado.</li>
-          <li>Quadro de Processos ganhou filtro por prazo e agora sempre ordena os pedidos pelo vencimento mais próximo.</li>
+          <li>Quadro de Processos ganhou filtro por prazo e agora sempre ordena os pedidos pelo vencimento mais próximo.
+          </li>
         </ul>
       </article>
 
@@ -160,8 +192,10 @@
           <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Correção no desktop: clique da calculadora agora abre o modal na mesma página, sem acionar navegação para outra tela.</li>
-          <li>Camadas (z-index) da calculadora elevadas para ficar acima dos elementos de navegação e evitar cliques indevidos no menu.</li>
+          <li>Correção no desktop: clique da calculadora agora abre o modal na mesma página, sem acionar navegação para
+            outra tela.</li>
+          <li>Camadas (z-index) da calculadora elevadas para ficar acima dos elementos de navegação e evitar cliques
+            indevidos no menu.</li>
           <li>Comportamento no celular preservado, mantendo o fluxo já funcional.</li>
         </ul>
       </article>
@@ -173,7 +207,8 @@
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
           <li>Removido o efeito de transição entre páginas para voltar ao comportamento original do site.</li>
-          <li>Correção da navegação inferior mobile: sem transformações globais no body para manter barra fixa estável.</li>
+          <li>Correção da navegação inferior mobile: sem transformações globais no body para manter barra fixa estável.
+          </li>
           <li>Pré-carregamento de HTML em cache mantido, sem alterar a experiência visual na troca de tela.</li>
         </ul>
       </article>
@@ -184,9 +219,12 @@
           <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Sistema de salvar manual removido: toda alteração agora dispara sincronização automática com debounce na nuvem.</li>
-          <li>Transição suave adicionada ao trocar de páginas para evitar sensação de tela seca/carregamento brusco.</li>
-          <li>Pré-carregamento de páginas HTML habilitado em cache do navegador para reduzir espera na navegação interna.</li>
+          <li>Sistema de salvar manual removido: toda alteração agora dispara sincronização automática com debounce na
+            nuvem.</li>
+          <li>Transição suave adicionada ao trocar de páginas para evitar sensação de tela seca/carregamento brusco.
+          </li>
+          <li>Pré-carregamento de páginas HTML habilitado em cache do navegador para reduzir espera na navegação
+            interna.</li>
         </ul>
       </article>
 
@@ -196,9 +234,12 @@
           <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Cache local por usuário adicionado para manter os dados já carregados entre páginas sem reconectar do zero.</li>
-          <li>Ao entrar no site, a interface inicializa primeiro com cache local e sincroniza com o Firestore em segundo plano.</li>
-          <li>Salvamentos na nuvem agora também atualizam o cache local para preservar continuidade ao trocar de aba.</li>
+          <li>Cache local por usuário adicionado para manter os dados já carregados entre páginas sem reconectar do
+            zero.</li>
+          <li>Ao entrar no site, a interface inicializa primeiro com cache local e sincroniza com o Firestore em segundo
+            plano.</li>
+          <li>Salvamentos na nuvem agora também atualizam o cache local para preservar continuidade ao trocar de aba.
+          </li>
         </ul>
       </article>
 
@@ -210,9 +251,11 @@
           <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Botão de tarefas urgentes reposicionado para ficar visualmente acima da calculadora em mobile e desktop.</li>
+          <li>Botão de tarefas urgentes reposicionado para ficar visualmente acima da calculadora em mobile e desktop.
+          </li>
           <li>Substituição dos emojis por ícones vetoriais (SVG) no botão Afazeres 2d e nos lembretes automáticos.</li>
-          <li>Ajuste visual dos toasts de lembrete para layout com ícone + texto, mantendo legibilidade e consistência.</li>
+          <li>Ajuste visual dos toasts de lembrete para layout com ícone + texto, mantendo legibilidade e consistência.
+          </li>
         </ul>
       </article>
 
@@ -222,10 +265,13 @@
           <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Calculadora global adicionada para todas as páginas autenticadas (exceto login), mantendo o mesmo histórico local.</li>
-          <li>Novo botão flutuante de Afazeres 2d com contador de tarefas que vencem em até 2 dias e atalho direto para a aba correta.</li>
+          <li>Calculadora global adicionada para todas as páginas autenticadas (exceto login), mantendo o mesmo
+            histórico local.</li>
+          <li>Novo botão flutuante de Afazeres 2d com contador de tarefas que vencem em até 2 dias e atalho direto para
+            a aba correta.</li>
           <li>Sistema de lembrete automático para tarefas com prazo em 1 dia, com aviso visual no topo da tela.</li>
-          <li>Filtro de afazeres por vencimento em até 2 dias via parâmetro de URL para facilitar o foco em urgências.</li>
+          <li>Filtro de afazeres por vencimento em até 2 dias via parâmetro de URL para facilitar o foco em urgências.
+          </li>
         </ul>
       </article>
 
@@ -235,9 +281,12 @@
           <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Calculadora flutuante alinhada na mesma altura do botão salvar mobile (offset padrão acima da navegação inferior).</li>
-          <li>Modal da calculadora agora ocupa toda a tela no celular com margens de segurança (safe area) para não colar nas bordas.</li>
-          <li>Área interna da calculadora ajustada para usar altura total, preservando histórico rolável e melhor aproveitamento de espaço.</li>
+          <li>Calculadora flutuante alinhada na mesma altura do botão salvar mobile (offset padrão acima da navegação
+            inferior).</li>
+          <li>Modal da calculadora agora ocupa toda a tela no celular com margens de segurança (safe area) para não
+            colar nas bordas.</li>
+          <li>Área interna da calculadora ajustada para usar altura total, preservando histórico rolável e melhor
+            aproveitamento de espaço.</li>
         </ul>
       </article>
 
@@ -248,7 +297,8 @@
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
           <li>Card <strong>A Receber</strong> no dashboard com valor reduzido no mobile para caber melhor na tela.</li>
-          <li>Nova calculadora completa como botão flutuante no índice, com operações principais, resultado em tempo real e modal dedicado.</li>
+          <li>Nova calculadora completa como botão flutuante no índice, com operações principais, resultado em tempo
+            real e modal dedicado.</li>
           <li>Histórico atual da calculadora com persistência local e botão para limpar os cálculos salvos.</li>
           <li>Botão flutuante posicionado mais acima para não sobrepor a navegação inferior.</li>
         </ul>
@@ -260,9 +310,12 @@
           <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Refatorada a aba de checklist de corte com layout mobile-first mais limpo, cards com hierarquia visual e header compacto.</li>
-          <li>Novo rodapé flutuante persistente com total de peças, botão principal de salvar e atalho de salvamento rápido.</li>
-          <li>Adicionado debounce de 200ms no contador, confirmação modal para exclusão e snackbar de feedback de sucesso/erro.</li>
+          <li>Refatorada a aba de checklist de corte com layout mobile-first mais limpo, cards com hierarquia visual e
+            header compacto.</li>
+          <li>Novo rodapé flutuante persistente com total de peças, botão principal de salvar e atalho de salvamento
+            rápido.</li>
+          <li>Adicionado debounce de 200ms no contador, confirmação modal para exclusão e snackbar de feedback de
+            sucesso/erro.</li>
           <li>Melhorias de acessibilidade: foco visível, aria-labels em ações e áreas touch mínimas de 44px.</li>
         </ul>
       </article>
@@ -288,7 +341,8 @@
           <li>Reestruturação completa do sistema com foco em estabilidade.</li>
           <li>Removida integração de IA online e chamadas externas associadas.</li>
           <li>Removidos fluxos externos de cliente e links públicos de aprovação.</li>
-          <li>Controle de artes atualizado para operação 100% interna com histórico, observações e status de produção.</li>
+          <li>Controle de artes atualizado para operação 100% interna com histórico, observações e status de produção.
+          </li>
         </ul>
       </article>
     </section>
@@ -298,31 +352,51 @@
 
   <nav class="bottom-nav">
     <a href="index.html" class="bottom-nav-item">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+      </svg>
       <span>Início</span>
     </a>
     <a href="central.html" class="bottom-nav-item">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
       <span>Central</span>
     </a>
     <a href="processos.html" class="bottom-nav-item">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+      </svg>
       <span>Processos</span>
     </a>
     <a href="contas.html" class="bottom-nav-item">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H4a3 3 0 00-3 3v8a3 3 0 003 3z" /></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H4a3 3 0 00-3 3v8a3 3 0 003 3z" />
+      </svg>
       <span>Contas</span>
     </a>
     <a href="clientes.html" class="bottom-nav-item">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+      </svg>
       <span>Clientes</span>
     </a>
     <button id="mobile-menu-button" class="bottom-nav-item active" type="button">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+      </svg>
       <span>Menu</span>
     </button>
   </nav>
 
   <script src="theme-toggle.js"></script>
+  <script src="advisor.js"></script>
+  <script src="chatbot.js"></script>
 </body>
+
 </html>

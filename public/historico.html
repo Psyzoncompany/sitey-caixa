@@ -20,6 +20,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link href="style.css" rel="stylesheet">
+  <link href="chatbot.css" rel="stylesheet">
   <!-- Firebase Config -->
   <script type="module" src="firebase-config.js"></script>
   <style>
@@ -66,7 +67,7 @@
     <!-- ========================================================================= -->
     <!-- 2. MENU SUPERIOR (APENAS COMPUTAODRES) -->
     <!-- ========================================================================= -->
-        <header class="hidden md:block desktop-topbar z-50">
+    <header class="hidden md:block desktop-topbar z-50">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="desktop-topbar-inner flex items-center justify-between">
           <div class="flex items-center">
@@ -204,16 +205,14 @@
           <h2 class="text-2xl font-bold mb-6">Novo Lançamento</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div><label for="name" class="block mb-2 text-sm font-medium">Nome (Cliente/Fornecedor)</label><input
-                type="text" id="name" class="w-full p-3 rounded-md glass-input"
-                placeholder="Ex: Cliente Vini"></div>
+                type="text" id="name" class="w-full p-3 rounded-md glass-input" placeholder="Ex: Cliente Vini"></div>
             <div><label for="description" class="block mb-2 text-sm font-medium">Descrição</label><input type="text"
-                id="description" class="w-full p-3 rounded-md glass-input"
-                placeholder="Ex: 10 camisetas personalizadas" required></div>
+                id="description" class="w-full p-3 rounded-md glass-input" placeholder="Ex: 10 camisetas personalizadas"
+                required></div>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div><label for="amount" class="block mb-2 text-sm font-medium">Valor</label><input type="number"
-                id="amount" step="0.01" class="w-full p-3 rounded-md glass-input"
-                placeholder="2250.00" required></div>
+                id="amount" step="0.01" class="w-full p-3 rounded-md glass-input" placeholder="2250.00" required></div>
             <div><label for="date" class="block mb-2 text-sm font-medium">Data</label><input type="date" id="date"
                 class="w-full p-3 rounded-md glass-input" required></div>
           </div>
@@ -241,18 +240,16 @@
             <h3 class="text-sm font-semibold text-cyan-300">Detalhes da Matéria-Prima</h3>
             <div class="grid grid-cols-2 gap-4">
               <div><label for="fabric-color" class="block mb-2 text-xs font-medium">Cor</label><input type="text"
-                  id="fabric-color" class="w-full p-2 rounded-md glass-input text-sm"
-                  placeholder="Ex: Preto"></div>
+                  id="fabric-color" class="w-full p-2 rounded-md glass-input text-sm" placeholder="Ex: Preto"></div>
               <div><label for="fabric-weight" class="block mb-2 text-xs font-medium">Peso (Kg)</label><input
-                  type="number" step="0.01" id="fabric-weight"
-                  class="w-full p-2 rounded-md glass-input text-sm" placeholder="Ex: 15.5">
+                  type="number" step="0.01" id="fabric-weight" class="w-full p-2 rounded-md glass-input text-sm"
+                  placeholder="Ex: 15.5">
               </div>
             </div>
           </div>
           <div id="quantity-field-container" class="hidden mb-4"><label for="transaction-quantity"
               class="block mb-2 text-sm font-medium">Quantidade de Peças</label><input type="number"
-              id="transaction-quantity" class="w-full p-3 rounded-md glass-input"
-              placeholder="Ex: 10"></div>
+              id="transaction-quantity" class="w-full p-3 rounded-md glass-input" placeholder="Ex: 10"></div>
           <div class="border-t border-white/10 pt-4 mt-4">
             <label class="flex items-center gap-2 text-sm font-medium cursor-pointer"><input type="checkbox"
                 id="link-client-checkbox" class="w-4 h-4 rounded text-cyan-500 glass-input">Vincular
@@ -338,6 +335,8 @@
     }, 100);
   </script>
   <script src="theme-toggle.js"></script>
+  <script src="advisor.js"></script>
+  <script src="chatbot.js"></script>
 </body>
 
 </html>

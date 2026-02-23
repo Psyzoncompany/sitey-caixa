@@ -4,11 +4,11 @@ window.Advisor = {
         const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
         const currentMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
-        
+
         // 1. Transactions
         const transactions = JSON.parse(localStorage.getItem('transactions')) || [];
         const totalBalance = transactions.reduce((acc, t) => acc + t.amount, 0);
-        
+
         const monthlyTransactions = transactions.filter(t => {
             const date = new Date(t.date + 'T03:00:00');
             return date.getMonth() === currentMonth && date.getFullYear() === currentYear;
@@ -16,21 +16,21 @@ window.Advisor = {
         const incomeMonth = monthlyTransactions.filter(t => t.type === 'income').reduce((acc, t) => acc + t.amount, 0);
         const businessExpenseMonth = monthlyTransactions.filter(t => t.type === 'expense' && t.scope !== 'personal').reduce((acc, t) => acc + Math.abs(t.amount), 0);
         const businessProfitMonth = incomeMonth - businessExpenseMonth;
-        
+
         // 2. Bills (contas_mes)
         const billsDataRaw = localStorage.getItem('psyzon_accounts_db_v1');
         let billsDb = billsDataRaw ? JSON.parse(billsDataRaw) : { accounts: [], monthly_records: {} };
         const monthlyRecords = billsDb.monthly_records?.[currentMonthStr] || {};
         let monthlyBillsTotal = 0;
-        
+
         billsDb.accounts.forEach(acc => {
-             const record = monthlyRecords[acc.id] || { status: 'pending' };
-             const isActive = acc.type === 'fixed' || (acc.type === 'unique' && acc.unique_date === currentMonthStr) || (acc.type === 'installment' && acc.current_installment <= acc.total_installments);
-             if (isActive) {
-                 monthlyBillsTotal += acc.amount || 0;
-             }
+            const record = monthlyRecords[acc.id] || { status: 'pending' };
+            const isActive = acc.type === 'fixed' || (acc.type === 'unique' && acc.unique_date === currentMonthStr) || (acc.type === 'installment' && acc.current_installment <= acc.total_installments);
+            if (isActive) {
+                monthlyBillsTotal += acc.amount || 0;
+            }
         });
-        
+
         const proLaborePlanejado = parseFloat(localStorage.getItem('advisor_prolabore')) || 0;
         monthlyBillsTotal += proLaborePlanejado;
 
@@ -62,6 +62,29 @@ window.Advisor = {
         const reservaAtual = reservaGoal ? reservaGoal.currentValue : 0;
         const metaReserva = reservaGoal ? reservaGoal.targetValue : 3000;
 
+        // 5. Tasks (Afazeres)
+        const tasksSummary = {
+            totalPending: 0,
+            overdue: 0,
+            byCategory: {}
+        };
+
+        productionOrdersList.forEach(order => {
+            if (order.status !== 'done' && order.checklist) {
+                for (const key in order.checklist) {
+                    const task = order.checklist[key];
+                    if (task && !task.completed && task.deadline) {
+                        tasksSummary.totalPending++;
+                        const d = new Date(task.deadline + 'T03:00:00');
+                        if (d < todayDate) tasksSummary.overdue++;
+
+                        const cat = key;
+                        tasksSummary.byCategory[cat] = (tasksSummary.byCategory[cat] || 0) + 1;
+                    }
+                }
+            }
+        });
+
         // B) Risco
         let riskLevel = "OK";
         if (totalBalance < monthlyBillsTotal) {
@@ -84,7 +107,7 @@ window.Advisor = {
 
         // D) Ajuste por risco de recebimento
         if (receivablesTotal > 0 && overdueReceivablesTotal > (receivablesTotal * 0.5)) {
-             recommendedAmount *= 0.8;
+            recommendedAmount *= 0.8;
         }
 
         // Reasons
@@ -108,6 +131,10 @@ window.Advisor = {
             reasons.push(`Alerta: alto valor a receber pendente (${formatBRL(overdueReceivablesTotal)}). Recomendação foi reduzida por segurança.`);
         }
 
+        if (tasksSummary.overdue > 0) {
+            reasons.push(`Atenção: existem ${tasksSummary.overdue} tarefas atrasadas nos processos.`);
+        }
+
         // Guards
         const guards = [];
         if (riskLevel === "CRITICO") {
@@ -119,7 +146,15 @@ window.Advisor = {
             riskLevel,
             reasons,
             guards,
-            stats: { totalBalance, monthlyBillsTotal, businessProfitMonth, reservaAtual, metaReserva, receivablesTotal }
+            stats: {
+                totalBalance,
+                monthlyBillsTotal,
+                businessProfitMonth,
+                reservaAtual,
+                metaReserva,
+                receivablesTotal,
+                tasks: tasksSummary
+            }
         };
     }
 };

@@ -35,10 +35,11 @@ export default async function handler(req, res) {
                         role: 'system',
                         content: `Você é o PSYZON AI, assistente da Psyzon. Responda em português brasileiro.
 Você pode responder QUALQUER pergunta, não apenas sobre negócios.
-Nunca invente dados. Se não tiver o dado, diga onde encontrar.
-Nunca comece com "Com base no contexto..." ou "Considerando os dados...".
-1 emoji no início da resposta, sem exagerar.
-${modeInstructions[mode] || modeInstructions.normal}`
+  Nunca invente dados. Se não tiver o dado em contexto, peça para o usuário verificar a aba correspondente.
+  Use o [CONTEÚDO DA PÁGINA] fornecido para responder perguntas específicas sobre o que o usuário está vendo.
+  Nunca comece com "Com base no contexto..." ou "Considerando os dados...".
+  1 emoji no início da resposta, sem exagerar.
+  ${modeInstructions[mode] || modeInstructions.normal}`
                     },
                     {
                         role: 'user',

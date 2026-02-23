@@ -19,6 +19,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link href="style.css" rel="stylesheet">
+  <link href="chatbot.css" rel="stylesheet">
   <!-- Firebase Config -->
   <script type="module" src="firebase-config.js"></script>
   <style>
@@ -59,7 +60,7 @@
 
   <div class="flex flex-col min-h-screen">
 
-        <header class="hidden md:block desktop-topbar z-50">
+    <header class="hidden md:block desktop-topbar z-50">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="desktop-topbar-inner flex items-center justify-between">
           <div class="flex items-center">
@@ -110,11 +111,9 @@
       <div class="glass-card p-6 mb-8">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
           <div class="lg:col-span-1"><label for="start-date" class="block mb-2 text-sm font-medium text-gray-400">Data
-              Início</label><input type="date" id="start-date"
-              class="w-full p-2.5 rounded-md glass-input"></div>
+              Início</label><input type="date" id="start-date" class="w-full p-2.5 rounded-md glass-input"></div>
           <div class="lg:col-span-1"><label for="end-date" class="block mb-2 text-sm font-medium text-gray-400">Data
-              Fim</label><input type="date" id="end-date"
-              class="w-full p-2.5 rounded-md glass-input"></div>
+              Fim</label><input type="date" id="end-date" class="w-full p-2.5 rounded-md glass-input"></div>
           <div class="lg:col-span-1"><label for="type-filter"
               class="block mb-2 text-sm font-medium text-gray-400">Tipo</label><select id="type-filter"
               class="w-full p-3 rounded-md glass-input">
@@ -181,8 +180,7 @@
         <h3 class="text-xl font-bold mb-4 border-b border-white/10 pb-3">🔥 Análise de Custo por Peça</h3>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
           <div><label for="analysis-month" class="block mb-2 text-sm font-medium text-gray-400">Selecione o
-              Mês</label><input type="month" id="analysis-month"
-              class="w-full p-2.5 rounded-md glass-input"></div>
+              Mês</label><input type="month" id="analysis-month" class="w-full p-2.5 rounded-md glass-input"></div>
           <div class="md:col-span-2"><button id="calculate-cost-btn"
               class="btn-shine w-full py-3 font-bold rounded-lg">Calcular Custo Real por Peça</button></div>
         </div>
@@ -300,6 +298,8 @@
     }, 100);
   </script>
   <script src="theme-toggle.js"></script>
+  <script src="advisor.js"></script>
+  <script src="chatbot.js"></script>
 </body>
 
 </html>

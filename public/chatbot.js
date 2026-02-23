@@ -511,12 +511,21 @@
                 let context = '';
                 if (window.Advisor) {
                     const stats = window.Advisor.analyze();
-                    context = `[CONTEXTO: Saldo R$${stats.stats.totalBalance?.toFixed(2)}, Lucro R$${stats.stats.businessProfitMonth?.toFixed(2)}, Risco: ${stats.riskLevel}] `;
+                    const taskSummary = stats.stats.tasks
+                        ? `Tarefas: ${stats.stats.tasks.totalPending} pendentes, ${stats.stats.tasks.overdue} atrasadas.`
+                        : '';
+                    context = `[FINANCEIRO: Saldo R$${stats.stats.totalBalance?.toFixed(2)}, Lucro R$${stats.stats.businessProfitMonth?.toFixed(2)}, Risco: ${stats.riskLevel}. ${taskSummary}] `;
                 }
+
+                // Ler conteúdo da página atual
+                const pageTitle = document.title;
+                const pageContent = document.body.innerText.slice(0, 1500).replace(/\n\s*\n/g, '\n');
+                const pageContext = `[PÁGINA ATUAL: ${pageTitle}]\n[CONTEÚDO DA PÁGINA: ${pageContent}]\n`;
+
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: context + text, mode: currentMode })
+                    body: JSON.stringify({ message: pageContext + context + text, mode: currentMode })
                 });
                 const data = await response.json();
                 typing.style.display = 'none';
