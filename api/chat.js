@@ -39,8 +39,87 @@ function buildSiteContext() {
     return cachedSiteContext;
 }
 
-function sleep(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+async function callAnthropic({ apiKey, systemPrompt, safeHistory, messageWithContext, image }) {
+    const hasImage = image && image.base64 && image.mimeType;
+    const userContent = hasImage
+        ? [
+            {
+                type: 'image',
+                source: {
+                    type: 'base64',
+                    media_type: image.mimeType,
+                    data: image.base64
+                }
+            },
+            { type: 'text', text: messageWithContext }
+        ]
+        : messageWithContext;
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+            model: 'claude-3-5-sonnet-20241022',
+            max_tokens: 2048,
+            system: systemPrompt,
+            messages: [...safeHistory, { role: 'user', content: userContent }]
+        })
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+        const err = new Error(data?.error?.message || 'Erro ao chamar a API Anthropic');
+        err.status = response.status;
+        throw err;
+    }
+
+    const content = Array.isArray(data?.content)
+        ? data.content.filter((item) => item?.type === 'text').map((item) => item.text).join('\n').trim()
+        : '';
+
+    return content || 'Não obtive resposta.';
+}
+
+async function callGemini({ apiKey, systemPrompt, safeHistory, messageWithContext, image }) {
+    const historyParts = safeHistory.map((entry) => ({
+        role: entry.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: typeof entry.content === 'string' ? entry.content : JSON.stringify(entry.content) }]
+    }));
+
+    const userParts = [];
+    if (image && image.base64 && image.mimeType) {
+        userParts.push({ inline_data: { mime_type: image.mimeType, data: image.base64 } });
+    }
+    userParts.push({ text: messageWithContext });
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            systemInstruction: { parts: [{ text: systemPrompt }] },
+            contents: [...historyParts, { role: 'user', parts: userParts }],
+            generationConfig: { temperature: 0.65, maxOutputTokens: 2048 }
+        })
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+        const err = new Error(data?.error?.message || 'Erro ao chamar a API Gemini');
+        err.status = response.status;
+        throw err;
+    }
+
+    const parts = data?.candidates?.[0]?.content?.parts || [];
+    const content = parts.map((part) => part?.text || '').join('\n').trim();
+    return content || 'Não obtive resposta.';
+}
+
+function shouldFallback(error) {
+    return [402, 429].includes(Number(error?.status));
 }
 
 export default async function handler(req, res) {
@@ -55,17 +134,15 @@ export default async function handler(req, res) {
         context = '',
         image = null,
         includeSiteContext = false,
-        thinkingTimeMs = 0
+        selectedModel = 'croq'
     } = req.body;
 
     if ((typeof message !== 'string' || !message.trim()) && !(image && image.base64 && image.mimeType)) {
         return res.status(400).json({ error: 'Campo "message" é obrigatório' });
     }
 
-    const apiKey = process.env.GROQ_API_KEY;
-    if (!apiKey) {
-        return res.status(500).json({ error: 'Chave da API Groq não configurada no servidor' });
-    }
+    const anthropicKey = process.env.ANTHROPIC_API_KEY;
+    const geminiKey = process.env.GEMINI_API_KEY;
 
     const modeInstructions = {
         normal: 'MODO NORMAL: resposta direta com contexto suficiente, 3 a 5 linhas, até 4 tópicos curtos.',
@@ -73,14 +150,7 @@ export default async function handler(req, res) {
         profundo: 'MODO PROFUNDO: análise completa, mínimo 5 pontos com dados, causas, consequências e sugestões.'
     };
 
-    const boundedThinkingMs = Math.max(0, Math.min(Number(thinkingTimeMs) || 0, 10000));
-    const reflectionInstruction = boundedThinkingMs
-        ? `REFLEXÃO GUIADA: use até ${Math.round(boundedThinkingMs / 1000)} segundos para refletir internamente antes de responder, mas entregue somente a resposta final.`
-        : '';
-
     try {
-        if (boundedThinkingMs > 0) await sleep(boundedThinkingMs);
-
         const siteContext = includeSiteContext ? buildSiteContext() : '';
 
         const systemPrompt = `Você é uma assistente de negócios extremamente inteligente chamada Croq IA, integrada ao sistema da empresa.
@@ -118,8 +188,7 @@ COMUNICAÇÃO:
 Dados do contexto que podem chegar na mensagem:
 - [CONTEÚDO DA PÁGINA]
 - [MAPA COMPLETO DO SITE]
-${modeInstructions[mode] || modeInstructions.normal}
-${reflectionInstruction}`;
+${modeInstructions[mode] || modeInstructions.normal}`;
 
         const baseMessage = typeof message === 'string' ? message : '';
         const compositeContext = [
@@ -129,45 +198,41 @@ ${reflectionInstruction}`;
 
         const messageWithContext = `${compositeContext ? `${compositeContext}\n\n` : ''}${baseMessage || '[Imagem enviada para análise]'}`;
         const safeHistory = Array.isArray(history) ? history.slice(-20) : [];
-        const hasImage = image && image.base64 && image.mimeType;
-        const userMessage = hasImage
-            ? {
-                role: 'user',
-                content: [
-                    { type: 'image_url', image_url: { url: `data:${image.mimeType};base64,${image.base64}` } },
-                    { type: 'text', text: messageWithContext }
-                ]
+
+        const preferred = String(selectedModel).toLowerCase() === 'gemini' ? 'gemini' : 'croq';
+        const fallback = preferred === 'croq' ? 'gemini' : 'croq';
+
+        const callProvider = async (provider) => {
+            if (provider === 'croq') {
+                if (!anthropicKey) {
+                    const err = new Error('Chave da API Anthropic não configurada no servidor');
+                    err.status = 500;
+                    throw err;
+                }
+                return callAnthropic({ apiKey: anthropicKey, systemPrompt, safeHistory, messageWithContext, image });
             }
-            : { role: 'user', content: messageWithContext };
+            if (!geminiKey) {
+                const err = new Error('Chave da API Gemini não configurada no servidor');
+                err.status = 500;
+                throw err;
+            }
+            return callGemini({ apiKey: geminiKey, systemPrompt, safeHistory, messageWithContext, image });
+        };
 
-        const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${apiKey}`
-            },
-            body: JSON.stringify({
-                model: hasImage ? 'meta-llama/llama-4-scout-17b-16e-instruct' : 'llama-3.3-70b-versatile',
-                messages: [{ role: 'system', content: systemPrompt }, ...safeHistory, userMessage],
-                max_tokens: 2048,
-                temperature: 0.65
-            })
-        });
+        try {
+            const content = await callProvider(preferred);
+            return res.status(200).json({ content, modelUsed: preferred });
+        } catch (primaryError) {
+            if (!shouldFallback(primaryError)) {
+                return res.status(primaryError?.status || 500).json({ error: primaryError.message || 'Erro interno do servidor' });
+            }
 
-        if (!groqResponse.ok) {
-            const errorData = await groqResponse.json();
-            console.error('Erro da API Groq:', errorData);
-            return res.status(groqResponse.status).json({
-                error: errorData?.error?.message || 'Erro ao chamar a API Groq'
-            });
+            const content = await callProvider(fallback);
+            const fallbackNotice = `Modelo ${preferred === 'croq' ? 'Croq' : 'Gemini'} indisponível por limite/crédito. Continuei automaticamente com ${fallback === 'croq' ? 'Croq' : 'Gemini'}.`;
+            return res.status(200).json({ content, modelUsed: fallback, fallbackNotice });
         }
-
-        const data = await groqResponse.json();
-        const content = data?.choices?.[0]?.message?.content || 'Não obtive resposta.';
-
-        return res.status(200).json({ content });
     } catch (error) {
         console.error('Erro interno:', error);
-        return res.status(500).json({ error: 'Erro interno do servidor' });
+        return res.status(error?.status || 500).json({ error: error?.message || 'Erro interno do servidor' });
     }
 }

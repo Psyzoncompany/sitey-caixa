@@ -68,9 +68,15 @@
         <button id="toggle-sidebar" class="md:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-md">
           <i class="fa-solid fa-bars"></i>
         </button>
-        <button class="flex items-center gap-2 font-medium text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-lg transition-colors text-sm">
-          Meu Modelo 3.5 Pro <i class="fa-solid fa-chevron-down text-xs text-gray-400"></i>
-        </button>
+        <div class="relative">
+          <button id="model-selector-btn" class="flex items-center gap-2 font-medium text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-lg transition-colors text-sm">
+            <span id="model-selector-label">Croq</span> <i class="fa-solid fa-chevron-down text-xs text-gray-400"></i>
+          </button>
+          <div id="model-selector-menu" class="hidden absolute left-0 mt-1 w-36 bg-white border border-claude-border rounded-lg shadow-lg overflow-hidden z-30">
+            <button type="button" data-model="croq" class="model-option w-full text-left px-3 py-2 text-sm hover:bg-black/5">Croq</button>
+            <button type="button" data-model="gemini" class="model-option w-full text-left px-3 py-2 text-sm hover:bg-black/5">Gemini</button>
+          </div>
+        </div>
       </div>
       <div class="flex items-center gap-2">
         <button id="export-chat" class="p-2 text-gray-500 hover:bg-gray-100 rounded-lg" title="Exportar conversa">
@@ -104,22 +110,11 @@
       <div class="max-w-3xl mx-auto relative">
         <div class="border border-claude-border bg-white rounded-2xl shadow-sm focus-within:ring-1 focus-within:ring-claude-accent/50 focus-within:border-claude-accent/50 transition-all flex flex-col">
           <textarea id="user-input" rows="1" placeholder="Mensagem para a IA..." class="w-full max-h-48 resize-none bg-transparent outline-none p-4 text-gray-800 placeholder-gray-400 no-scrollbar"></textarea>
-          <div class="px-3 pt-1 pb-2 text-xs text-gray-500 flex flex-wrap items-center gap-2 border-t border-claude-border/70">
-            <span class="font-medium">Tempo de reflexão:</span>
-            <select id="thinking-time" class="text-xs border border-claude-border rounded-lg px-2 py-1 bg-white text-gray-700 outline-none focus:ring-1 focus:ring-claude-accent/50">
-              <option value="0">Sem espera extra</option>
-              <option value="3000">3 segundos</option>
-              <option value="5000" selected>5 segundos</option>
-              <option value="8000">8 segundos</option>
-              <option value="10000">10 segundos</option>
-            </select>
-            <span class="ml-auto text-[11px] text-gray-400">A IA usa esse tempo para caprichar na resposta.</span>
-          </div>
-          <div class="px-3 pb-2 text-xs text-gray-500 flex flex-wrap items-center gap-2">
+          <div class="px-3 pb-2 text-xs text-gray-500 flex flex-wrap items-center gap-1.5 border-t border-claude-border/70">
             <span class="font-medium">Modo:</span>
-            <button type="button" data-mode="normal" class="mode-btn px-2 py-1 rounded-lg border border-claude-border bg-black/5 text-gray-700">💬 Normal</button>
-            <button type="button" data-mode="rapido" class="mode-btn px-2 py-1 rounded-lg border border-claude-border text-gray-600 hover:bg-black/5">⚡ Rápido</button>
-            <button type="button" data-mode="profundo" class="mode-btn px-2 py-1 rounded-lg border border-claude-border text-gray-600 hover:bg-black/5">🔍 Profundo</button>
+            <button type="button" data-mode="normal" class="mode-btn px-1.5 py-1 rounded-md border border-claude-border bg-black/5 text-gray-700" title="Normal">💬</button>
+            <button type="button" data-mode="rapido" class="mode-btn px-1.5 py-1 rounded-md border border-claude-border text-gray-600 hover:bg-black/5" title="Rápido">⚡</button>
+            <button type="button" data-mode="profundo" class="mode-btn px-1.5 py-1 rounded-md border border-claude-border text-gray-600 hover:bg-black/5" title="Profundo">🔍</button>
           </div>
           <div class="flex items-center justify-between px-3 py-2 text-gray-500">
             <div class="flex items-center gap-1">
@@ -152,15 +147,22 @@
     const list = document.getElementById('conversation-list');
     const preview = document.getElementById('preview');
     const fileInput = document.getElementById('file-input');
-    const thinkingSelect = document.getElementById('thinking-time');
+    const modelSelectorBtn = document.getElementById('model-selector-btn');
+    const modelSelectorMenu = document.getElementById('model-selector-menu');
+    const modelSelectorLabel = document.getElementById('model-selector-label');
+    const modelOptions = Array.from(document.querySelectorAll('.model-option'));
     const modeButtons = Array.from(document.querySelectorAll('.mode-btn'));
+    const MODEL_STORAGE_KEY = 'psyzon_ai_model';
+    const VALID_MODELS = ['croq', 'gemini'];
 
     let mode = 'normal';
+    let selectedModel = VALID_MODELS.includes(localStorage.getItem(MODEL_STORAGE_KEY)) ? localStorage.getItem(MODEL_STORAGE_KEY) : 'croq';
     let pendingImage = null;
     let conversations = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
     let currentId = conversations[0]?.id || null;
 
     const save = () => localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
+    const saveModel = () => localStorage.setItem(MODEL_STORAGE_KEY, selectedModel);
     const nowIso = () => new Date().toISOString();
     const findCurrent = () => conversations.find((c) => c.id === currentId);
 
@@ -184,6 +186,15 @@
     const toggleSidebar = () => {
       sidebar.classList.toggle('-translate-x-full');
       overlay.classList.toggle('hidden');
+    };
+
+    const renderSelectedModel = () => {
+      modelSelectorLabel.textContent = selectedModel === 'gemini' ? 'Gemini' : 'Croq';
+      modelOptions.forEach((option) => {
+        const isActive = option.dataset.model === selectedModel;
+        option.classList.toggle('bg-black/5', isActive);
+        option.classList.toggle('font-medium', isActive);
+      });
     };
 
     const getGroup = (d) => {
@@ -308,6 +319,27 @@
       return normalizeText(subtask?.variation || '') || 'SEM-REF';
     };
 
+
+    const buildBusinessContext = () => {
+      try {
+        const orders = JSON.parse(localStorage.getItem('production_orders') || '[]');
+        const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+        const transactions = JSON.parse(localStorage.getItem('transactions') || '[]');
+        const investments = JSON.parse(localStorage.getItem('investments') || '[]');
+
+        const normalizeText = (value) => String(value || '').replace(/\s+/g, ' ').trim();
+        const toPtDate = (value) => {
+          if (!value) return 'Sem prazo';
+          const dt = new Date(value);
+          return Number.isNaN(dt.getTime()) ? normalizeText(value) : dt.toLocaleDateString('pt-BR');
+        };
+
+        const clientMap = new Map(clients.map((client) => [String(client.id), normalizeText(client.name || client.nome || 'Sem cliente')]));
+        const activeOrders = orders.filter((order) => {
+          const st = String(order?.status || '').toLowerCase();
+          return st !== 'done' && st !== 'concluido' && st !== 'concluído';
+        });
+
         const pedidosDeCorte = activeOrders.flatMap((order) => {
           const clientName = clientMap.get(String(order?.clientId)) || 'Sem cliente';
           const orderStatus = normalizeText(order?.status || 'sem status');
@@ -351,9 +383,26 @@
           });
         });
 
-            pedidosDeCorte: pedidosDeCorte.length,
-          pedidosDeCorte,
-        return payload.length > 25000 ? `${payload.slice(0, 25000)}\n... [contexto truncado]` : payload;
+        const payload = JSON.stringify({
+          resumo: {
+            pedidosAtivos: activeOrders.length,
+            clientes: clients.length,
+            transacoes: transactions.length,
+            saldoAtual: transactions.reduce((acc, t) => acc + Number(t.amount || 0), 0),
+            investimentos: investments.length,
+            pedidosDeCorte: pedidosDeCorte.length
+          },
+          pedidosDeCorte
+        });
+
+        return payload.length > 25000 ? `${payload.slice(0, 25000)}
+... [contexto truncado]` : payload;
+      } catch (_) {
+        return '';
+      }
+    };
+
+    const detectPriorityAlert = () => {
       try {
         const orders = JSON.parse(localStorage.getItem('production_orders') || '[]');
         const transactions = JSON.parse(localStorage.getItem('transactions') || '[]');
@@ -364,7 +413,6 @@
       } catch (_) {}
       return '';
     };
-
     const renderMessages = () => {
       const c = findCurrent();
       chatContainer.innerHTML = '';
@@ -415,12 +463,16 @@
             message,
             mode,
             history,
+            context: buildBusinessContext(),
             image: pendingImage,
             includeSiteContext: true,
-            thinkingTimeMs: Number(thinkingSelect?.value || 0)
+            selectedModel
           })
         });
         const data = await response.json();
+        if (data.fallbackNotice) {
+          c.messages.push({ role: 'assistant', content: `ℹ️ ${data.fallbackNotice}` });
+        }
         const answer = data.content || data.error || 'Sem resposta.';
         c.messages.push({ role: 'assistant', content: answer });
         c.updatedAt = nowIso();
@@ -517,9 +569,28 @@
     modeButtons.forEach((btn) => {
       btn.addEventListener('click', () => {
         mode = btn.dataset.mode || 'normal';
-        modeButtons.forEach((b) => b.className = 'mode-btn px-2 py-1 rounded-lg border border-claude-border text-gray-600 hover:bg-black/5');
-        btn.className = 'mode-btn px-2 py-1 rounded-lg border border-orange-200 bg-orange-50 text-orange-700';
+        modeButtons.forEach((b) => b.className = 'mode-btn px-1.5 py-1 rounded-md border border-claude-border text-gray-600 hover:bg-black/5');
+        btn.className = 'mode-btn px-1.5 py-1 rounded-md border border-orange-200 bg-orange-50 text-orange-700';
       });
+    });
+
+    modelSelectorBtn.addEventListener('click', () => {
+      modelSelectorMenu.classList.toggle('hidden');
+    });
+
+    modelOptions.forEach((option) => {
+      option.addEventListener('click', () => {
+        selectedModel = option.dataset.model === 'gemini' ? 'gemini' : 'croq';
+        saveModel();
+        renderSelectedModel();
+        modelSelectorMenu.classList.add('hidden');
+      });
+    });
+
+    document.addEventListener('click', (event) => {
+      if (!modelSelectorBtn.contains(event.target) && !modelSelectorMenu.contains(event.target)) {
+        modelSelectorMenu.classList.add('hidden');
+      }
     });
 
     sendBtn.addEventListener('click', sendMessage);
@@ -541,6 +612,7 @@
     });
 
     renderAll();
+    renderSelectedModel();
   </script>
 </body>
 </html>
