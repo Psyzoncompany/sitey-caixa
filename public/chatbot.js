@@ -39,6 +39,40 @@
                 transform: scale(1.1);
                 box-shadow: 0 6px 32px rgba(6,182,212,0.6);
             }
+            .chatbot-fab-menu {
+                position: fixed;
+                right: 24px;
+                bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                z-index: 9999;
+                opacity: 0;
+                transform: translateY(8px);
+                pointer-events: none;
+                transition: opacity 0.18s ease, transform 0.18s ease;
+            }
+            .chatbot-fab-menu.open {
+                opacity: 1;
+                transform: translateY(0);
+                pointer-events: auto;
+            }
+            .chatbot-fab-action {
+                border: 1px solid rgba(148,163,184,.25);
+                background: rgba(15,23,42,.95);
+                color: #e2e8f0;
+                border-radius: 12px;
+                padding: 10px 12px;
+                font-size: 13px;
+                cursor: pointer;
+                box-shadow: 0 8px 24px rgba(2,6,23,.4);
+                text-align: left;
+                white-space: nowrap;
+            }
+            .chatbot-fab-action:hover {
+                border-color: rgba(34,211,238,.4);
+                color: #67e8f9;
+            }
 
             /* Janela Full Screen Desktop */
             .chatbot-window {
@@ -336,6 +370,7 @@
             }
             @media (max-width: 768px) {
                 .chatbot-fab { bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
+                .chatbot-fab-menu { bottom: calc(162px + env(safe-area-inset-bottom, 0px)); right: 16px; }
                 .chatbot-header { padding: 15px 20px; }
                 .chatbot-messages { padding: 20px 15px; }
                 .chatbot-input-area { padding: 15px; }
@@ -483,6 +518,14 @@
             </svg>
         `;
 
+        const fabMenu = document.createElement('div');
+        fabMenu.id = 'chatbot-fab-menu';
+        fabMenu.className = 'chatbot-fab-menu';
+        fabMenu.innerHTML = `
+            <button class="chatbot-fab-action" id="chatbot-open-overlay">Abrir IA flutuante</button>
+            <button class="chatbot-fab-action" id="chatbot-open-full">Abrir IA em página completa</button>
+        `;
+
         const windowChat = document.createElement('div');
         windowChat.id = 'chatbot-window';
         windowChat.className = 'chatbot-window hidden';
@@ -528,6 +571,7 @@
         `;
 
         document.body.appendChild(fab);
+        document.body.appendChild(fabMenu);
         document.body.appendChild(windowChat);
 
         // Listener dos botões de modo
@@ -563,8 +607,23 @@
             addMessage('🤖 Olá! Sou o **PSYZON AI**. Estou pronto para ajudar com sua estratégia e finanças em tela cheia! Como posso ser útil hoje?', 'ai');
         }
 
-        fab.addEventListener('click', () => {
-            window.location.href = 'ai.html';
+        const closeFabMenu = () => fabMenu.classList.remove('open');
+        fab.addEventListener('click', (event) => {
+            event.stopPropagation();
+            fabMenu.classList.toggle('open');
+        });
+        document.addEventListener('click', (event) => {
+            if (!fabMenu.contains(event.target) && !fab.contains(event.target)) closeFabMenu();
+        });
+
+        document.getElementById('chatbot-open-overlay').addEventListener('click', () => {
+            windowChat.classList.remove('hidden');
+            closeFabMenu();
+            input.focus();
+        });
+        document.getElementById('chatbot-open-full').addEventListener('click', () => {
+            closeFabMenu();
+            window.open('ai.html', '_blank', 'noopener');
         });
 
         document.getElementById('chatbot-close').addEventListener('click', () => windowChat.classList.add('hidden'));
