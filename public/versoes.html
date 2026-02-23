@@ -38,8 +38,21 @@
 
       <article class="glass-card p-5 border border-cyan-500/20">
         <div class="flex items-center justify-between gap-3 mb-2">
-          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.21</h2>
+          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.22</h2>
           <span class="text-xs text-gray-400">Atual</span>
+        </div>
+        <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
+          <li>Corrigido travamento no carregamento inicial: quando a conexão oscila, o painel não fica preso em <strong>"Conectando ao servidor"</strong> e inicia sem exigir vários F5.</li>
+          <li>Adicionado fluxo de <strong>reconexão automática</strong> em background para buscar novamente os dados da nuvem após falha temporária.</li>
+          <li>Dashboard agora reage ao evento de sincronização remota e <strong>recarrega os valores automaticamente</strong>, evitando ficar zerado até novo refresh.</li>
+          <li>Carregamento da tela principal otimizado com evento <strong>backend-ready</strong>, removendo polling constante e reduzindo espera para abrir o app.</li>
+        </ul>
+      </article>
+
+      <article class="glass-card p-5 border border-cyan-500/20">
+        <div class="flex items-center justify-between gap-3 mb-2">
+          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.21</h2>
+          <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
           <li><strong>IA.html</strong> recebeu margem de segurança extra no rodapé, input fixo com safe-area e ajustes para as últimas mensagens não ficarem escondidas.</li>

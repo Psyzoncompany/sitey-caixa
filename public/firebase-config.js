@@ -1201,6 +1201,7 @@ const bootstrapBackendUI = () => {
     createDueSoonTasksFab();
     setupAutomaticTaskReminders();
     hideInitialLoader();
+    window.dispatchEvent(new CustomEvent('backend-ready'));
 };
 
 const applyCloudState = (uid, data, { source = 'cloud' } = {}) => {
@@ -1446,7 +1447,23 @@ if (window.isLocalMode) {
 
             } catch (error) {
                 console.error("Erro crítico ao carregar dados:", error);
-                alert("Erro de conexão. Tente recarregar a página.");
+                // Evita tela presa no loader quando a rede oscila.
+                if (!window.BackendInitialized) {
+                    bootstrapBackendUI();
+                }
+
+                // Mantém UX sem travar: tenta novamente em background sem exigir F5.
+                setTimeout(async () => {
+                    try {
+                        const retryRef = doc(db, "users", user.uid);
+                        const retrySnap = await getDoc(retryRef);
+                        if (retrySnap.exists()) {
+                            applyCloudState(user.uid, retrySnap.data(), { source: 'cloud-retry' });
+                        }
+                    } catch (retryError) {
+                        console.error('Falha na tentativa de reconexão automática:', retryError);
+                    }
+                }, 2500);
             }
         } else {
             // Não logado
