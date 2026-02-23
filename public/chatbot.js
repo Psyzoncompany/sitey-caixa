@@ -5,7 +5,10 @@
 
 (() => {
     let currentMode = 'normal';
-    const conversationHistory = [];
+    const HISTORY_KEY = 'psyzon_chat_history';
+    const MAX_HISTORY = 20;
+    const conversationHistory = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]').slice(-MAX_HISTORY);
+    let pendingImage = null;
     // ── Estilos ──────────────────────────────────────────────────────────────
     const injectStyles = () => {
         if (document.getElementById('psyzon-ai-styles')) return;
@@ -283,6 +286,49 @@
                 transition: all 0.3s ease;
             }
             .chatbot-send:hover { transform: scale(1.05); filter: brightness(1.1); }
+            .image-btn {
+                background: rgba(30,41,59,0.8);
+                border: 1px solid rgba(148,163,184,0.2);
+                border-radius: 12px;
+                color: #64748b;
+                cursor: pointer;
+                padding: 9px 10px;
+                display: flex;
+                align-items: center;
+                transition: all 0.15s ease;
+            }
+            .image-btn:hover { color: #22d3ee; border-color: rgba(6,182,212,0.4); }
+            .chatbot-image-preview {
+                width: 80px;
+                height: 80px;
+                object-fit: cover;
+                border-radius: 12px;
+                border: 1px solid rgba(148,163,184,0.25);
+                margin: 8px 0;
+            }
+            .session-separator {
+                text-align: center;
+                color: #94a3b8;
+                font-size: 12px;
+                margin: 6px 0;
+            }
+            .chatbot-fab-badge {
+                position: absolute;
+                top: -4px;
+                right: -4px;
+                width: 16px;
+                height: 16px;
+                border-radius: 50%;
+                background: #ef4444;
+                border: 2px solid #0d1b2a;
+                font-size: 9px;
+                color: white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 700;
+                pointer-events: none;
+            }
 
             /* Mobile */
             @media (max-width: 992px) {
@@ -471,6 +517,8 @@
                     <button class="mode-btn" data-mode="profundo">🔍 Profundo</button>
                 </div>
                 <div style="display:flex; gap:15px; padding: 0 20%;">
+                    <button id="chatbot-image" class="image-btn" title="Enviar imagem">📎</button>
+                    <input type="file" id="chatbot-image-input" accept="image/*" style="display:none;">
                     <input type="text" id="chatbot-input" class="chatbot-input" placeholder="Pergunte qualquer coisa...">
                     <button id="chatbot-send" class="chatbot-send">
                         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
@@ -493,20 +541,56 @@
 
         const msgArea = document.getElementById('chatbot-messages');
         const input = document.getElementById('chatbot-input');
+        const imageBtn = document.getElementById('chatbot-image');
+        const imageInput = document.getElementById('chatbot-image-input');
         const typing = document.getElementById('chatbot-typing');
 
-        addMessage('🤖 Olá! Sou o **PSYZON AI**. Estou pronto para ajudar com sua estratégia e finanças em tela cheia! Como posso ser útil hoje?', 'ai');
+        const saveHistory = () => localStorage.setItem(HISTORY_KEY, JSON.stringify(conversationHistory.slice(-MAX_HISTORY)));
+        const addSessionSeparator = () => {
+            const sep = document.createElement('div');
+            sep.className = 'session-separator';
+            sep.textContent = '— sessão anterior —';
+            msgArea.appendChild(sep);
+        };
+
+        if (conversationHistory.length) {
+            addSessionSeparator();
+            conversationHistory.forEach((msg) => {
+                if (msg.role === 'assistant') addMessage(msg.content, 'ai');
+                if (msg.role === 'user') addMessage(msg.content, 'user');
+            });
+        } else {
+            addMessage('🤖 Olá! Sou o **PSYZON AI**. Estou pronto para ajudar com sua estratégia e finanças em tela cheia! Como posso ser útil hoje?', 'ai');
+        }
 
         fab.addEventListener('click', () => {
-            windowChat.classList.toggle('hidden');
-            if (!windowChat.classList.contains('hidden')) input.focus();
+            window.location.href = 'ai.html';
         });
 
         document.getElementById('chatbot-close').addEventListener('click', () => windowChat.classList.add('hidden'));
         document.getElementById('chatbot-clear').addEventListener('click', () => {
             msgArea.innerHTML = '';
             conversationHistory.length = 0;
+            saveHistory();
             addMessage('🗑️ Conversa limpa.', 'ai');
+        });
+
+        imageBtn.addEventListener('click', () => imageInput.click());
+        imageInput.addEventListener('change', () => {
+            const file = imageInput.files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => {
+                const result = String(reader.result || '');
+                const base64 = result.includes(',') ? result.split(',')[1] : '';
+                pendingImage = { base64, mimeType: file.type || 'image/png' };
+                const preview = document.createElement('img');
+                preview.src = result;
+                preview.className = 'chatbot-image-preview';
+                const wrapper = addMessage('🖼️ Imagem pronta para análise.', 'user');
+                wrapper.querySelector('.chat-bubble')?.appendChild(preview);
+            };
+            reader.readAsDataURL(file);
         });
 
         document.getElementById('chatbot-export').addEventListener('click', () => {
@@ -596,7 +680,8 @@
             }).slice(0, 20).join('\n');
             sections.push(`[PEDIDOS DE PRODUÇÃO:\n${ordersInfo || 'Nenhum pedido'}]`);
 
-            const accounts = JSON.parse(localStorage.getItem('psyzon_accounts_db_v1') || '[]');
+            const billsRaw = JSON.parse(localStorage.getItem('psyzon_accounts_db_v1') || '{}');
+            const accounts = Array.isArray(billsRaw) ? billsRaw : (billsRaw.accounts || []);
             const accountsText = accounts.map(a => {
                 const paid = a.status === 'paid' || a.status === 'pago' || a.paid === true;
                 return `- ${a.name || a.description || 'Conta'} | valor: R$${Number(a.amount || a.value || 0).toFixed(2)} | vencimento: ${a.dueDate || a.due || 'N/A'} | status: ${paid ? 'pago' : 'pendente'}`;
@@ -661,8 +746,33 @@
             tomorrow.setDate(tomorrow.getDate() + 1);
 
             const orders = JSON.parse(localStorage.getItem('production_orders') || '[]');
-            const accounts = JSON.parse(localStorage.getItem('psyzon_accounts_db_v1') || '[]');
+            const billsRaw = JSON.parse(localStorage.getItem('psyzon_accounts_db_v1') || '{}');
+            const accounts = Array.isArray(billsRaw) ? billsRaw : (billsRaw.accounts || []);
             let alert = '';
+
+            const delayedOrdersCount = orders.filter(o => {
+                if (!o.deadline || o.status === 'done') return false;
+                const deadline = new Date(`${o.deadline}T03:00:00`);
+                return deadline < today;
+            }).length;
+            const dueAccountsCount = accounts.filter(a => {
+                const paid = a.status === 'paid' || a.status === 'pago' || a.paid === true;
+                if (paid || !a.dueDate) return false;
+                const dueDate = new Date(`${a.dueDate}T03:00:00`);
+                dueDate.setHours(0, 0, 0, 0);
+                return dueDate.getTime() === today.getTime() || dueDate.getTime() === tomorrow.getTime();
+            }).length;
+
+            const totalAlertas = delayedOrdersCount + dueAccountsCount;
+            const existingBadge = fab.querySelector('.chatbot-fab-badge');
+            if (existingBadge) existingBadge.remove();
+            if (totalAlertas > 0) {
+                const badge = document.createElement('span');
+                badge.className = 'chatbot-fab-badge';
+                badge.textContent = String(totalAlertas);
+                fab.style.position = 'relative';
+                fab.appendChild(badge);
+            }
 
             const urgentOrder = orders.find(o => {
                 if (!o.deadline || o.status === 'done') return false;
@@ -707,15 +817,17 @@
             const wrapper = addMessage(`🚨 Atenção: ${alert}. Deseja que eu analise?`, 'ai');
             addActionButtons(wrapper, alert);
             conversationHistory.push({ role: 'assistant', content: `🚨 Atenção: ${alert}. Deseja que eu analise?` });
-            while (conversationHistory.length > 10) conversationHistory.shift();
+            while (conversationHistory.length > MAX_HISTORY) conversationHistory.shift();
+            saveHistory();
         }
 
         const handleSend = async () => {
             const text = input.value.trim();
-            if (!text) return;
-            addMessage(text, 'user');
-            conversationHistory.push({ role: 'user', content: text });
-            while (conversationHistory.length > 10) conversationHistory.shift();
+            if (!text && !pendingImage) return;
+            addMessage(text || '🖼️ Enviando imagem para análise.', 'user');
+            conversationHistory.push({ role: 'user', content: text || '[Imagem enviada]' });
+            while (conversationHistory.length > MAX_HISTORY) conversationHistory.shift();
+            saveHistory();
             input.value = '';
             typing.style.display = 'block';
             msgArea.scrollTo({ top: msgArea.scrollHeight, behavior: 'smooth' });
@@ -726,7 +838,7 @@
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: text, mode: currentMode, history: conversationHistory, context })
+                    body: JSON.stringify({ message: text, mode: currentMode, history: conversationHistory, context, image: pendingImage })
                 });
                 const data = await response.json();
                 typing.style.display = 'none';
@@ -734,24 +846,24 @@
                 const wrapper = addMessage(aiContent, 'ai');
                 addActionButtons(wrapper, aiContent);
                 conversationHistory.push({ role: 'assistant', content: aiContent });
-                while (conversationHistory.length > 10) conversationHistory.shift();
+                while (conversationHistory.length > MAX_HISTORY) conversationHistory.shift();
+                saveHistory();
+                pendingImage = null;
+                imageInput.value = '';
             } catch (e) {
                 typing.style.display = 'none';
                 const aiContent = '⚠️ Erro de conexão.';
                 addMessage(aiContent, 'ai');
                 conversationHistory.push({ role: 'assistant', content: aiContent });
-                while (conversationHistory.length > 10) conversationHistory.shift();
+                while (conversationHistory.length > MAX_HISTORY) conversationHistory.shift();
+                saveHistory();
             }
         };
 
         document.getElementById('chatbot-send').addEventListener('click', handleSend);
         input.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSend(); });
 
-        fab.addEventListener('click', () => {
-            if (!windowChat.classList.contains('hidden')) {
-                setTimeout(checkProactiveAlerts, 3000);
-            }
-        });
+        checkProactiveAlerts();
     };
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', injectChatUI);
