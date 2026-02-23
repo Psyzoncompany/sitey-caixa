@@ -38,8 +38,34 @@
 
       <article class="glass-card p-5 border border-cyan-500/20">
         <div class="flex items-center justify-between gap-3 mb-2">
-          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.22</h2>
+          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.24</h2>
           <span class="text-xs text-gray-400">Atual</span>
+        </div>
+        <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
+          <li>IA da página <strong>ai.html</strong> ficou mais completa com parte da inteligência reaproveitada do antigo <strong>chatbot.js</strong>, sem voltar com janela flutuante no painel.</li>
+          <li>Adicionado seletor de modo de resposta (<strong>Normal, Rápido e Profundo</strong>) para controlar o tipo de análise enviada à API.</li>
+          <li>Mensagens da IA agora possuem formatação melhor e <strong>ações rápidas</strong> contextuais para abrir páginas úteis (clientes, contas, processos e investimentos).</li>
+          <li>Implementado alerta proativo inicial com leitura dos dados locais (pedidos/saldo), deixando a IA mais inteligente para sugerir prioridade logo ao abrir.</li>
+        </ul>
+      </article>
+
+      <article class="glass-card p-5 border border-cyan-500/20">
+        <div class="flex items-center justify-between gap-3 mb-2">
+          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.23</h2>
+          <span class="text-xs text-gray-400">Anterior</span>
+        </div>
+        <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
+          <li>Botão flutuante da IA foi simplificado para um atalho estático com vetor personalizado, sem abrir janela dentro das telas do painel.</li>
+          <li>Ao clicar no botão da IA, o usuário agora é direcionado direto para <strong>ai.html</strong>, removendo a janela flutuante e reduzindo carga de interface.</li>
+          <li>Adicionada animação profissional de entrada dos cards conforme a rolagem da página, com carregamento progressivo para melhorar percepção de performance.</li>
+          <li>Aplicado ajuste de otimização com <strong>content-visibility</strong> nos cards animados para reduzir custo de renderização fora da viewport.</li>
+        </ul>
+      </article>
+
+      <article class="glass-card p-5 border border-cyan-500/20">
+        <div class="flex items-center justify-between gap-3 mb-2">
+          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.22</h2>
+          <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
           <li>Corrigido travamento no carregamento inicial: quando a conexão oscila, o painel não fica preso em <strong>"Conectando ao servidor"</strong> e inicia sem exigir vários F5.</li>

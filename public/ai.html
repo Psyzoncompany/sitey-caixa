@@ -115,6 +115,12 @@
             </select>
             <span class="ml-auto text-[11px] text-gray-400">A IA usa esse tempo para caprichar na resposta.</span>
           </div>
+          <div class="px-3 pb-2 text-xs text-gray-500 flex flex-wrap items-center gap-2">
+            <span class="font-medium">Modo:</span>
+            <button type="button" data-mode="normal" class="mode-btn px-2 py-1 rounded-lg border border-claude-border bg-black/5 text-gray-700">💬 Normal</button>
+            <button type="button" data-mode="rapido" class="mode-btn px-2 py-1 rounded-lg border border-claude-border text-gray-600 hover:bg-black/5">⚡ Rápido</button>
+            <button type="button" data-mode="profundo" class="mode-btn px-2 py-1 rounded-lg border border-claude-border text-gray-600 hover:bg-black/5">🔍 Profundo</button>
+          </div>
           <div class="flex items-center justify-between px-3 py-2 text-gray-500">
             <div class="flex items-center gap-1">
               <button id="image-btn" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 hover:text-gray-800 transition" title="Anexar arquivo"><i class="fa-solid fa-paperclip"></i></button>
@@ -147,6 +153,7 @@
     const preview = document.getElementById('preview');
     const fileInput = document.getElementById('file-input');
     const thinkingSelect = document.getElementById('thinking-time');
+    const modeButtons = Array.from(document.querySelectorAll('.mode-btn'));
 
     let mode = 'normal';
     let pendingImage = null;
@@ -219,19 +226,75 @@
       chatContainer.scrollTop = chatContainer.scrollHeight;
     };
 
-    const appendMessage = (text, sender) => {
+    const formatAIText = (raw = '') => {
+      const safe = escapeHTML(String(raw));
+      return safe
+        .replace(/^###\s*(.+)$/gm, '<h3 class="font-semibold text-gray-900 mt-3 mb-1">$1</h3>')
+        .replace(/^[-•]\s+(.+)$/gm, '<div class="flex gap-2"><span class="text-claude-accent">•</span><span>$1</span></div>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n/g, '<br>');
+    };
+
+    const appendMessage = (text, sender, options = {}) => {
       const msgDiv = document.createElement('div');
       msgDiv.className = `flex gap-4 max-w-3xl mx-auto w-full group ${sender === 'user' ? 'justify-end' : ''}`;
       if (sender === 'user') {
         msgDiv.innerHTML = `<div class="bg-claude-userMsg px-5 py-3.5 rounded-2xl rounded-tr-sm text-gray-800 whitespace-pre-wrap max-w-[85%]">${escapeHTML(text)}</div>`;
       } else {
+        const content = options.rawHtml ? text : formatAIText(text);
         msgDiv.innerHTML = `
           <div class="w-8 h-8 shrink-0 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-claude-accent mt-1 shadow-sm"><i class="fa-solid fa-sparkles text-sm"></i></div>
-          <div class="flex-1 text-gray-800 pt-1.5 leading-relaxed relative"><div class="ai-content whitespace-pre-wrap">${text}</div></div>`;
+          <div class="flex-1 text-gray-800 pt-1.5 leading-relaxed relative"><div class="ai-content whitespace-pre-wrap">${content}</div><div class="ai-actions mt-2 flex flex-wrap gap-2"></div></div>`;
       }
       chatContainer.appendChild(msgDiv);
       scrollToBottom();
       return msgDiv;
+    };
+
+
+    const addActionButtons = (msgDiv, aiText = '') => {
+      const holder = msgDiv.querySelector('.ai-actions');
+      if (!holder) return;
+      holder.innerHTML = '';
+
+      const quickActions = [];
+      const lower = String(aiText || '').toLowerCase();
+      if (lower.includes('cliente')) quickActions.push({ label: 'Abrir Clientes', href: 'clientes.html' });
+      if (lower.includes('conta') || lower.includes('pagar')) quickActions.push({ label: 'Abrir Contas', href: 'contas.html' });
+      if (lower.includes('pedido') || lower.includes('processo')) quickActions.push({ label: 'Abrir Processos', href: 'processos.html' });
+      if (lower.includes('invest')) quickActions.push({ label: 'Abrir Investimentos', href: 'investimentos.html' });
+
+      quickActions.slice(0, 3).forEach((action) => {
+        const a = document.createElement('a');
+        a.href = action.href;
+        a.className = 'text-xs px-2 py-1 rounded-lg border border-claude-border hover:bg-black/5 text-gray-700';
+        a.textContent = action.label;
+        holder.appendChild(a);
+      });
+
+      const askBtn = document.createElement('button');
+      askBtn.type = 'button';
+      askBtn.className = 'text-xs px-2 py-1 rounded-lg border border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100';
+      askBtn.textContent = 'Gerar plano de ação';
+      askBtn.addEventListener('click', () => {
+        inputEl.value = 'Com base no meu contexto do sistema, gere um plano de ação prático com prioridades para hoje.';
+        sendBtn.disabled = false;
+        inputEl.focus();
+        autoResize();
+      });
+      holder.appendChild(askBtn);
+    };
+
+    const detectPriorityAlert = () => {
+      try {
+        const orders = JSON.parse(localStorage.getItem('production_orders') || '[]');
+        const transactions = JSON.parse(localStorage.getItem('transactions') || '[]');
+        const pendingOrder = orders.find((o) => String(o.status || '').toLowerCase() !== 'done' && String(o.status || '').toLowerCase() !== 'concluido');
+        const balance = transactions.reduce((acc, t) => acc + Number(t.amount || 0), 0);
+        if (pendingOrder) return `🚨 Atenção: existe pedido pendente (${pendingOrder.description || 'sem descrição'}). Posso montar um plano para finalizar hoje.`;
+        if (balance < 500) return '🚨 Atenção: seu saldo atual está abaixo de R$ 500,00. Quer que eu monte um plano de ajuste rápido?';
+      } catch (_) {}
+      return '';
     };
 
     const renderMessages = () => {
@@ -243,7 +306,10 @@
         return;
       }
       welcomeScreen.style.display = 'none';
-      c.messages.forEach((m) => appendMessage(m.content || '', m.role === 'assistant' ? 'ai' : 'user'));
+      c.messages.forEach((m) => {
+        const node = appendMessage(m.content || '', m.role === 'assistant' ? 'ai' : 'user');
+        if (m.role === 'assistant') addActionButtons(node, m.content || '');
+      });
     };
 
     const renderAll = () => {
@@ -270,7 +336,7 @@
       save();
       renderAll();
 
-      const aiNode = appendMessage('<span class="typing-cursor"></span>', 'ai');
+      const aiNode = appendMessage('<span class="typing-cursor"></span>', 'ai', { rawHtml: true });
       const contentNode = aiNode.querySelector('.ai-content');
 
       try {
@@ -292,6 +358,7 @@
         c.updatedAt = nowIso();
         save();
         contentNode.textContent = answer;
+        addActionButtons(aiNode, answer);
         renderAll();
       } catch (error) {
         const fail = '⚠️ Erro de conexão com a IA.';
@@ -299,6 +366,7 @@
         c.updatedAt = nowIso();
         save();
         contentNode.textContent = fail;
+        addActionButtons(aiNode, fail);
         renderAll();
       }
 
@@ -378,6 +446,14 @@
       }
     });
 
+    modeButtons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        mode = btn.dataset.mode || 'normal';
+        modeButtons.forEach((b) => b.className = 'mode-btn px-2 py-1 rounded-lg border border-claude-border text-gray-600 hover:bg-black/5');
+        btn.className = 'mode-btn px-2 py-1 rounded-lg border border-orange-200 bg-orange-50 text-orange-700';
+      });
+    });
+
     sendBtn.addEventListener('click', sendMessage);
 
     onAuthStateChanged(auth, (user) => {
@@ -386,6 +462,14 @@
       document.getElementById('welcome-name').textContent = name;
       document.getElementById('user-initial').textContent = name.trim()[0]?.toUpperCase() || 'U';
       renderAll();
+      const c = findCurrent();
+      const alertMsg = detectPriorityAlert();
+      if (alertMsg && c && !c.messages.some((m) => (m.content || '').includes('🚨 Atenção:'))) {
+        c.messages.push({ role: 'assistant', content: alertMsg });
+        c.updatedAt = nowIso();
+        save();
+        renderAll();
+      }
     });
 
     renderAll();
