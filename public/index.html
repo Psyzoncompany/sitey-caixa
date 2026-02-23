@@ -1326,19 +1326,24 @@
         document.body.appendChild(s);
       };
 
+      const loadMainApp = () => {
+        clearTimeout(timeoutId);
+        window.removeEventListener('backend-ready', loadMainApp);
+        loadScript("script.js");
+      };
+
       const timeoutId = setTimeout(() => {
         console.warn("Firebase está demorando, carregando site sem sincronização");
-        loadScript("script.js");
-      }, 5000);
+        loadMainApp();
+      }, 2500);
 
-      // Aguarda o Backend carregar os dados da nuvem
-      const checkSync = setInterval(() => {
-        if (window.BackendInitialized) {
-          clearInterval(checkSync);
-          clearTimeout(timeoutId);
-          loadScript("script.js");
-        }
-      }, 100);
+      if (window.BackendInitialized) {
+        loadMainApp();
+        return;
+      }
+
+      // Preferência por evento para evitar polling constante.
+      window.addEventListener('backend-ready', loadMainApp, { once: true });
     })();
   </script>
 

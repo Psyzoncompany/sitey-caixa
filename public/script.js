@@ -118,6 +118,12 @@ const init = () => {
     let clients = JSON.parse(localStorage.getItem('clients')) || [];
     let productionOrders = JSON.parse(localStorage.getItem('production_orders')) || []; // Pedidos em andamento
 
+    const reloadRuntimeDataFromStorage = () => {
+        transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+        clients = JSON.parse(localStorage.getItem('clients')) || [];
+        productionOrders = JSON.parse(localStorage.getItem('production_orders')) || [];
+    };
+
     // Variáveis de controle de tela (Ajudam a saber o que usuário tá fazendo agora)
     let editingId = null; // Guarda o ID se a pessoa estiver editando um lançamento antigo
     let selectedScope = 'business'; // Por padrão, lança como despesa da empresa
@@ -1037,6 +1043,16 @@ const init = () => {
 
     // Essa é a função principal que CALCULA TUDO: Soma os totais, vê quantos % já gastou do limite, etc.
     // É chamada sempre que algo novo é adicionado ou excluído.
+
+    const handleCloudDataUpdated = () => {
+        reloadRuntimeDataFromStorage();
+        updateCategoryOptions();
+        populateClientSelect();
+        updateUI();
+    };
+
+    window.addEventListener('cloud-data-updated', handleCloudDataUpdated);
+
     const updateUI = () => {
         const now = new Date();
         const currentMonth = now.getMonth();
