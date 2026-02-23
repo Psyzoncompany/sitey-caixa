@@ -5,6 +5,7 @@
 
 (() => {
     let currentMode = 'normal';
+    const conversationHistory = [];
     // ── Estilos ──────────────────────────────────────────────────────────────
     const injectStyles = () => {
         if (document.getElementById('psyzon-ai-styles')) return;
@@ -14,7 +15,7 @@
             /* FAB */
             .chatbot-fab {
                 position: fixed;
-                bottom: 24px;
+                bottom: calc(24px + env(safe-area-inset-bottom, 0px));
                 right: 24px;
                 width: 60px;
                 height: 60px;
@@ -198,6 +199,26 @@
             
             .message-time { font-size: 11px; color: #64748b; padding: 0 5px; }
 
+            .action-buttons {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 6px;
+                margin-top: 8px;
+                margin-left: 32px;
+            }
+            .action-btn {
+                font-size: 11px;
+                padding: 5px 10px;
+                border-radius: 8px;
+                border: 1px solid rgba(6,182,212,0.4);
+                background: rgba(6,182,212,0.08);
+                color: #22d3ee;
+                cursor: pointer;
+                transition: all 0.15s ease;
+                text-decoration: none;
+            }
+            .action-btn:hover { background: rgba(6,182,212,0.18); }
+
             /* Typing */
             .typing-indicator {
                 display: flex;
@@ -268,10 +289,12 @@
                 .chatbot-messages, .chatbot-input-area { padding-left: 10%; padding-right: 10%; }
             }
             @media (max-width: 768px) {
+                .chatbot-fab { bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
                 .chatbot-header { padding: 15px 20px; }
                 .chatbot-messages { padding: 20px 15px; }
                 .chatbot-input-area { padding: 15px; }
-            .chatbot-header-info h3 { font-size: 16px; }
+                .chatbot-header-info h3 { font-size: 16px; }
+                .action-buttons { margin-left: 0; }
             }
 
             /* Mode Buttons */
@@ -424,6 +447,9 @@
                     <h3>PSYZON AI</h3>
                 </div>
                 <div class="header-actions">
+                    <button id="chatbot-export" class="header-btn" title="Exportar conversa">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3m0 12-4-4m4 4 4-4M2 17l.621 2.485A2 2 0 004.561 21h14.878a2 2 0 001.94-1.515L22 17"/></svg>
+                    </button>
                     <button id="chatbot-clear" class="header-btn" title="Limpar conversa">
                         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                     </button>
@@ -479,7 +505,28 @@
         document.getElementById('chatbot-close').addEventListener('click', () => windowChat.classList.add('hidden'));
         document.getElementById('chatbot-clear').addEventListener('click', () => {
             msgArea.innerHTML = '';
+            conversationHistory.length = 0;
             addMessage('🗑️ Conversa limpa.', 'ai');
+        });
+
+        document.getElementById('chatbot-export').addEventListener('click', () => {
+            const lines = [`PSYZON AI — Conversa exportada em ${new Date().toLocaleString('pt-BR')}`, ''];
+            const bubbles = document.querySelectorAll('.message-wrapper');
+            bubbles.forEach(w => {
+                const isAI = w.classList.contains('ai');
+                const text = w.querySelector('.chat-bubble')?.innerText || '';
+                const time = w.querySelector('.message-time')?.innerText || '';
+                lines.push(`[${time}] ${isAI ? 'PSYZON AI' : 'Você'}: ${text}`);
+            });
+            lines.push('', 'Exportado pelo PSYZON AI');
+            const content = lines.join('\n');
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `psyzon-ai-${new Date().toISOString().slice(0,10)}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
         });
 
         function addMessage(text, type) {
@@ -499,64 +546,212 @@
             return wrapper;
         }
 
+        function addActionButtons(wrapper, aiText) {
+            const lower = aiText.toLowerCase();
+            const links = [];
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            const hasClientName = clients.some(c => c?.name && lower.includes(String(c.name).toLowerCase()));
+
+            if (lower.includes('pedido') && hasClientName) links.push({ label: '📦 Ver Pedidos', href: 'processos.html' });
+            if (lower.includes('contas') || lower.includes('pagar')) links.push({ label: '💳 Ver Contas', href: 'contas.html' });
+            if (lower.includes('clientes')) links.push({ label: '👥 Ver Clientes', href: 'clientes.html' });
+            if (lower.includes('histórico') || lower.includes('extrato')) links.push({ label: '📊 Ver Histórico', href: 'historico.html' });
+
+            if (!links.length) return;
+
+            const actions = document.createElement('div');
+            actions.className = 'action-buttons';
+            links.forEach(link => {
+                const a = document.createElement('a');
+                a.className = 'action-btn';
+                a.href = link.href;
+                a.textContent = link.label;
+                actions.appendChild(a);
+            });
+            wrapper.appendChild(actions);
+        }
+
+        function buildRichContext() {
+            const sections = [];
+
+            if (window.Advisor) {
+                const stats = window.Advisor.analyze();
+                const taskSum = stats.stats.tasks
+                    ? `Tarefas: ${stats.stats.tasks.totalPending} pendentes, ${stats.stats.tasks.overdue} atrasadas.`
+                    : '';
+                sections.push(`[FINANCEIRO: Saldo R$${stats.stats.totalBalance?.toFixed(2)}, Lucro R$${stats.stats.businessProfitMonth?.toFixed(2)}, Risco: ${stats.riskLevel}. ${taskSum}]`);
+            }
+
+            const orders = JSON.parse(localStorage.getItem('production_orders') || '[]');
+            const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const ordersInfo = orders.map(o => {
+                const client = clients.find(c => String(c.id) === String(o.clientId));
+                const deadline = o.deadline ? new Date(`${o.deadline}T03:00:00`) : null;
+                const diffDays = deadline ? Math.ceil((deadline - today) / 86400000) : null;
+                const status = o.status === 'done' ? 'concluído' : diffDays === null ? 'sem prazo' : diffDays < 0 ? `ATRASADO ${Math.abs(diffDays)}d` : diffDays === 0 ? 'vence HOJE' : `vence em ${diffDays}d`;
+                return `- ${o.description || 'Pedido'} | cliente: ${client?.name || 'N/A'} | status: ${status} | valor: R$${Number(o.totalValue || 0).toFixed(2)}`;
+            }).slice(0, 20).join('\n');
+            sections.push(`[PEDIDOS DE PRODUÇÃO:\n${ordersInfo || 'Nenhum pedido'}]`);
+
+            const accounts = JSON.parse(localStorage.getItem('psyzon_accounts_db_v1') || '[]');
+            const accountsText = accounts.map(a => {
+                const paid = a.status === 'paid' || a.status === 'pago' || a.paid === true;
+                return `- ${a.name || a.description || 'Conta'} | valor: R$${Number(a.amount || a.value || 0).toFixed(2)} | vencimento: ${a.dueDate || a.due || 'N/A'} | status: ${paid ? 'pago' : 'pendente'}`;
+            }).slice(0, 30).join('\n');
+            sections.push(`[CONTAS A PAGAR DO MÊS:\n${accountsText || 'Nenhuma conta registrada'}]`);
+
+            const debtByClient = new Map();
+            orders.forEach(o => {
+                const client = clients.find(c => String(c.id) === String(o.clientId));
+                const name = client?.name || 'Cliente não identificado';
+                const total = Number(o.totalValue || o.value || 0);
+                const paid = Number(o.paidValue || o.amountPaid || 0);
+                const pending = Math.max(total - paid, 0);
+                if (pending <= 0) return;
+                const current = debtByClient.get(name) || { total: 0, paid: 0, pending: 0 };
+                current.total += total;
+                current.paid += paid;
+                current.pending += pending;
+                debtByClient.set(name, current);
+            });
+            const debtText = [...debtByClient.entries()].map(([name, vals]) => `- ${name} | pedido total: R$${vals.total.toFixed(2)} | pago: R$${vals.paid.toFixed(2)} | saldo: R$${vals.pending.toFixed(2)}`).join('\n');
+            sections.push(`[CLIENTES COM SALDO DEVEDOR:\n${debtText || 'Nenhum cliente com saldo devedor'}]`);
+
+            const transactions = JSON.parse(localStorage.getItem('transactions') || '[]');
+            const fabricText = transactions
+                .filter(t => Number(t.weightKg) > 0)
+                .map(t => `- cor: ${t.color || t.cor || 'N/A'} | peso: ${Number(t.weightKg).toFixed(2)}kg | valor gasto: R$${Number(t.valueSpent || t.amount || t.total || 0).toFixed(2)}`)
+                .slice(0, 30)
+                .join('\n');
+            sections.push(`[ESTOQUE DE MALHA:\n${fabricText || 'Sem entradas de malha com peso'}]`);
+
+            const costBreakdown = window._costBreakdown ? JSON.stringify(window._costBreakdown) : 'Não disponível';
+            sections.push(`[CUSTO POR PEÇA (MÊS ATUAL): ${costBreakdown}]`);
+
+            const businessLimit = localStorage.getItem('businessSpendingLimit') || 'não definido';
+            const personalLimit = localStorage.getItem('personalSpendingLimit') || 'não definido';
+            sections.push(`[METAS DO MÊS: Limite empresarial: ${businessLimit} | Limite pessoal: ${personalLimit}]`);
+
+            const pageTitle = document.title;
+            const pageContent = document.body.innerText.slice(0, 1500).replace(/\n\s*\n/g, '\n');
+            sections.push(`[PÁGINA ATUAL: ${pageTitle}]`);
+            sections.push(`[CONTEÚDO DA PÁGINA: ${pageContent}]`);
+
+            return sections.join('\n');
+        }
+
+        function getBalanceForAlerts() {
+            if (window.Advisor) {
+                const stats = window.Advisor.analyze();
+                return Number(stats?.stats?.totalBalance || 0);
+            }
+            const transactions = JSON.parse(localStorage.getItem('transactions') || '[]');
+            return transactions.reduce((acc, t) => acc + Number(t.amount || t.value || 0), 0);
+        }
+
+        function checkProactiveAlerts() {
+            if (sessionStorage.getItem('psyzon_alert_shown') === '1') return;
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
+            const orders = JSON.parse(localStorage.getItem('production_orders') || '[]');
+            const accounts = JSON.parse(localStorage.getItem('psyzon_accounts_db_v1') || '[]');
+            let alert = '';
+
+            const urgentOrder = orders.find(o => {
+                if (!o.deadline || o.status === 'done') return false;
+                const deadline = new Date(`${o.deadline}T03:00:00`);
+                const diff = Math.ceil((deadline - today) / 86400000);
+                return diff === 0 || diff === 1;
+            });
+            if (urgentOrder) {
+                alert = `🟠 Pedido "${urgentOrder.description || 'sem descrição'}" vence em até 1 dia`;
+            }
+
+            if (!alert) {
+                const delayedOrder = orders.find(o => {
+                    if (!o.deadline || o.status === 'done') return false;
+                    const deadline = new Date(`${o.deadline}T03:00:00`);
+                    return deadline < today;
+                });
+                if (delayedOrder) {
+                    alert = `🔴 Pedido atrasado detectado: "${delayedOrder.description || 'sem descrição'}"`;
+                }
+            }
+
+            if (!alert && getBalanceForAlerts() < 500) {
+                alert = '🟡 Seu saldo está abaixo de R$500,00';
+            }
+
+            if (!alert) {
+                const dueAccount = accounts.find(a => {
+                    const paid = a.status === 'paid' || a.status === 'pago' || a.paid === true;
+                    if (paid || !a.dueDate) return false;
+                    const dueDate = new Date(`${a.dueDate}T03:00:00`);
+                    dueDate.setHours(0, 0, 0, 0);
+                    return dueDate.getTime() === today.getTime() || dueDate.getTime() === tomorrow.getTime();
+                });
+                if (dueAccount) {
+                    alert = `🟠 Conta "${dueAccount.name || dueAccount.description || 'sem descrição'}" vence hoje ou amanhã`;
+                }
+            }
+
+            if (!alert) return;
+            sessionStorage.setItem('psyzon_alert_shown', '1');
+            const wrapper = addMessage(`🚨 Atenção: ${alert}. Deseja que eu analise?`, 'ai');
+            addActionButtons(wrapper, alert);
+            conversationHistory.push({ role: 'assistant', content: `🚨 Atenção: ${alert}. Deseja que eu analise?` });
+            while (conversationHistory.length > 10) conversationHistory.shift();
+        }
+
         const handleSend = async () => {
             const text = input.value.trim();
             if (!text) return;
             addMessage(text, 'user');
+            conversationHistory.push({ role: 'user', content: text });
+            while (conversationHistory.length > 10) conversationHistory.shift();
             input.value = '';
             typing.style.display = 'block';
             msgArea.scrollTo({ top: msgArea.scrollHeight, behavior: 'smooth' });
 
             try {
-                let context = '';
-
-                // Dados financeiros e resumo de tarefas do Advisor
-                if (window.Advisor) {
-                    const stats = window.Advisor.analyze();
-                    const taskSum = stats.stats.tasks
-                        ? `Tarefas: ${stats.stats.tasks.totalPending} pendentes, ${stats.stats.tasks.overdue} atrasadas.`
-                        : '';
-                    context += `[FINANCEIRO: Saldo R$${stats.stats.totalBalance?.toFixed(2)}, Lucro R$${stats.stats.businessProfitMonth?.toFixed(2)}, Risco: ${stats.riskLevel}. ${taskSum}]\n`;
-                }
-
-                // Detalhamento de Pedidos de Produção
-                try {
-                    const orders = JSON.parse(localStorage.getItem('production_orders') || '[]');
-                    const clients = JSON.parse(localStorage.getItem('clients') || '[]');
-                    const today = new Date(); today.setHours(0, 0, 0, 0);
-
-                    const ordersInfo = orders.map(o => {
-                        const client = clients.find(c => String(c.id) === String(o.clientId));
-                        const deadline = o.deadline ? new Date(o.deadline + 'T03:00:00') : null;
-                        const diffDays = deadline ? Math.ceil((deadline - today) / 86400000) : null;
-                        const status = o.status === 'done' ? 'concluído' : diffDays === null ? 'sem prazo' : diffDays < 0 ? `ATRASADO ${Math.abs(diffDays)}d` : diffDays === 0 ? 'vence HOJE' : `vence em ${diffDays}d`;
-                        return `- ${o.description || 'Pedido'} | cliente: ${client?.name || 'N/A'} | status: ${status} | valor: R$${o.totalValue || 0}`;
-                    }).slice(0, 20).join('\n');
-
-                    context += `[PEDIDOS DE PRODUÇÃO:\n${ordersInfo || 'Nenhum pedido'}]\n`;
-                } catch (e) { }
-
-                // Ler conteúdo da página atual
-                const pageTitle = document.title;
-                const pageContent = document.body.innerText.slice(0, 1500).replace(/\n\s*\n/g, '\n');
-                const pageContext = `[PÁGINA ATUAL: ${pageTitle}]\n[CONTEÚDO DA PÁGINA: ${pageContent}]\n`;
+                const context = buildRichContext();
 
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: pageContext + context + text, mode: currentMode })
+                    body: JSON.stringify({ message: text, mode: currentMode, history: conversationHistory, context })
                 });
                 const data = await response.json();
                 typing.style.display = 'none';
-                addMessage(data.error ? `⚠️ Erro: ${data.error}` : (data.content || '...'), 'ai');
+                const aiContent = data.error ? `⚠️ Erro: ${data.error}` : (data.content || '...');
+                const wrapper = addMessage(aiContent, 'ai');
+                addActionButtons(wrapper, aiContent);
+                conversationHistory.push({ role: 'assistant', content: aiContent });
+                while (conversationHistory.length > 10) conversationHistory.shift();
             } catch (e) {
                 typing.style.display = 'none';
-                addMessage('⚠️ Erro de conexão.', 'ai');
+                const aiContent = '⚠️ Erro de conexão.';
+                addMessage(aiContent, 'ai');
+                conversationHistory.push({ role: 'assistant', content: aiContent });
+                while (conversationHistory.length > 10) conversationHistory.shift();
             }
         };
 
         document.getElementById('chatbot-send').addEventListener('click', handleSend);
         input.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleSend(); });
+
+        fab.addEventListener('click', () => {
+            if (!windowChat.classList.contains('hidden')) {
+                setTimeout(checkProactiveAlerts, 3000);
+            }
+        });
     };
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', injectChatUI);

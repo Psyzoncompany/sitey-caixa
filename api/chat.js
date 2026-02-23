@@ -4,7 +4,7 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Método não permitido' });
     }
 
-    const { message, mode = 'normal' } = req.body;
+    const { message, mode = 'normal', history = [], context = '' } = req.body;
 
     if (!message || typeof message !== 'string') {
         return res.status(400).json({ error: 'Campo "message" é obrigatório' });
@@ -36,14 +36,23 @@ export default async function handler(req, res) {
                         content: `Você é o PSYZON AI, assistente da Psyzon. Responda em português brasileiro.
 Você pode responder QUALQUER pergunta, não apenas sobre negócios.
   Nunca invente dados. Se não tiver o dado em contexto, peça para o usuário verificar a aba correspondente.
-  Use o [CONTEÚDO DA PÁGINA] fornecido para responder perguntas específicas sobre o que o usuário está vendo.
+  Use o contexto financeiro e o [CONTEÚDO DA PÁGINA] fornecidos para responder perguntas específicas sobre o que o usuário está vendo.
   Nunca comece com "Com base no contexto..." ou "Considerando os dados...".
   1 emoji no início da resposta, sem exagerar.
+  Quando o usuário pedir sugestão de metas ou planejamento, analise o contexto financeiro recebido e sugira:
+  - Meta de receita mínima para o próximo mês (baseada no lucro atual + custos fixos)
+  - Limite de gastos empresariais recomendado
+  - Quantidade mínima de peças a produzir para cobrir os custos
+  - 1 ação prioritária para reduzir o risco atual
+  Apresente as metas em formato visual com emojis e valores específicos em R$.
   ${modeInstructions[mode] || modeInstructions.normal}`
                     },
+                    ...history,
                     {
                         role: 'user',
-                        content: message
+                        content: `${context ? `${context}
+
+` : ''}${message}`
                     }
                 ],
                 max_tokens: 1024,
