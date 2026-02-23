@@ -36,10 +36,23 @@
 
     <section class="space-y-4">
 
+
+      <article class="glass-card p-5 border border-cyan-500/20">
+        <div class="flex items-center justify-between gap-3 mb-2">
+          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.28</h2>
+          <span class="text-xs text-gray-400">Atual</span>
+        </div>
+        <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
+          <li>Correção do endpoint <strong>/api/chat</strong> do servidor Express para respeitar o modelo selecionado no botão da IA (<strong>Croq</strong> ou <strong>Gemini</strong>) em vez de sempre forçar Croq.</li>
+          <li>Adicionado retorno padronizado com <strong>content</strong> e <strong>modelUsed</strong>, mantendo compatibilidade com a tela <strong>ai.html</strong> e permitindo identificar qual IA respondeu.</li>
+          <li>Implementado fallback automático entre modelos apenas em limite/crédito (402/429), com aviso claro para o usuário quando a troca ocorrer.</li>
+        </ul>
+      </article>
+
       <article class="glass-card p-5 border border-cyan-500/20">
         <div class="flex items-center justify-between gap-3 mb-2">
           <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.27</h2>
-          <span class="text-xs text-gray-400">Atual</span>
+          <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
           <li>JSON enviado para a IA foi reforçado com o array <strong>pedidosDeCorte</strong>, trazendo cliente, peça, referência, total, cortado, pendente, status e prazo para cada pedido de corte.</li>
