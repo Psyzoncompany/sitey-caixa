@@ -509,13 +509,32 @@
 
             try {
                 let context = '';
+
+                // Dados financeiros e resumo de tarefas do Advisor
                 if (window.Advisor) {
                     const stats = window.Advisor.analyze();
-                    const taskSummary = stats.stats.tasks
+                    const taskSum = stats.stats.tasks
                         ? `Tarefas: ${stats.stats.tasks.totalPending} pendentes, ${stats.stats.tasks.overdue} atrasadas.`
                         : '';
-                    context = `[FINANCEIRO: Saldo R$${stats.stats.totalBalance?.toFixed(2)}, Lucro R$${stats.stats.businessProfitMonth?.toFixed(2)}, Risco: ${stats.riskLevel}. ${taskSummary}] `;
+                    context += `[FINANCEIRO: Saldo R$${stats.stats.totalBalance?.toFixed(2)}, Lucro R$${stats.stats.businessProfitMonth?.toFixed(2)}, Risco: ${stats.riskLevel}. ${taskSum}]\n`;
                 }
+
+                // Detalhamento de Pedidos de Produção
+                try {
+                    const orders = JSON.parse(localStorage.getItem('production_orders') || '[]');
+                    const clients = JSON.parse(localStorage.getItem('clients') || '[]');
+                    const today = new Date(); today.setHours(0, 0, 0, 0);
+
+                    const ordersInfo = orders.map(o => {
+                        const client = clients.find(c => String(c.id) === String(o.clientId));
+                        const deadline = o.deadline ? new Date(o.deadline + 'T03:00:00') : null;
+                        const diffDays = deadline ? Math.ceil((deadline - today) / 86400000) : null;
+                        const status = o.status === 'done' ? 'concluído' : diffDays === null ? 'sem prazo' : diffDays < 0 ? `ATRASADO ${Math.abs(diffDays)}d` : diffDays === 0 ? 'vence HOJE' : `vence em ${diffDays}d`;
+                        return `- ${o.description || 'Pedido'} | cliente: ${client?.name || 'N/A'} | status: ${status} | valor: R$${o.totalValue || 0}`;
+                    }).slice(0, 20).join('\n');
+
+                    context += `[PEDIDOS DE PRODUÇÃO:\n${ordersInfo || 'Nenhum pedido'}]\n`;
+                } catch (e) { }
 
                 // Ler conteúdo da página atual
                 const pageTitle = document.title;
