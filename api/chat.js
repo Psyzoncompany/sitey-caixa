@@ -4,9 +4,9 @@ export default async function handler(req, res) {
         return res.status(405).json({ error: 'Método não permitido' });
     }
 
-    const { message, mode = 'normal', history = [], context = '' } = req.body;
+    const { message, mode = 'normal', history = [], context = '', image = null } = req.body;
 
-    if (!message || typeof message !== 'string') {
+    if ((typeof message !== 'string' || !message.trim()) && !(image && image.base64 && image.mimeType)) {
         return res.status(400).json({ error: 'Campo "message" é obrigatório' });
     }
 
@@ -22,18 +22,7 @@ export default async function handler(req, res) {
     };
 
     try {
-        const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${apiKey}`,
-            },
-            body: JSON.stringify({
-                model: 'llama-3.1-8b-instant',
-                messages: [
-                    {
-                        role: 'system',
-                        content: `Você é o PSYZON AI, assistente da Psyzon. Responda em português brasileiro.
+        const systemPrompt = `Você é o PSYZON AI, assistente da Psyzon. Responda em português brasileiro.
 Você pode responder QUALQUER pergunta, não apenas sobre negócios.
   Nunca invente dados. Se não tiver o dado em contexto, peça para o usuário verificar a aba correspondente.
   Use o contexto financeiro e o [CONTEÚDO DA PÁGINA] fornecidos para responder perguntas específicas sobre o que o usuário está vendo.
@@ -45,17 +34,36 @@ Você pode responder QUALQUER pergunta, não apenas sobre negócios.
   - Quantidade mínima de peças a produzir para cobrir os custos
   - 1 ação prioritária para reduzir o risco atual
   Apresente as metas em formato visual com emojis e valores específicos em R$.
-  ${modeInstructions[mode] || modeInstructions.normal}`
-                    },
-                    ...history,
-                    {
-                        role: 'user',
-                        content: `${context ? `${context}
+  ${modeInstructions[mode] || modeInstructions.normal}`;
 
-` : ''}${message}`
-                    }
+        const baseMessage = typeof message === 'string' ? message : '';
+        const messageWithContext = `${context ? `${context}\n\n` : ''}${baseMessage || '[Imagem enviada para análise]'}`;
+        const safeHistory = Array.isArray(history) ? history.slice(-20) : [];
+        const hasImage = image && image.base64 && image.mimeType;
+        const userMessage = hasImage
+            ? {
+                role: 'user',
+                content: [
+                    { type: 'image_url', image_url: { url: `data:${image.mimeType};base64,${image.base64}` } },
+                    { type: 'text', text: messageWithContext }
+                ]
+            }
+            : { role: 'user', content: messageWithContext };
+
+        const groqResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`,
+            },
+            body: JSON.stringify({
+                model: hasImage ? 'meta-llama/llama-4-scout-17b-16e-instruct' : 'llama-3.3-70b-versatile',
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    ...safeHistory,
+                    userMessage
                 ],
-                max_tokens: 1024,
+                max_tokens: 2048,
                 temperature: 0.7,
             }),
         });
