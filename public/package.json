@@ -30,7 +30,7 @@
     "typescript": "^5.7.3"
   },
   "description": "Se usar login Google popup/redirect:",
-  "main": "advisor.js",
+  "main": "server.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Psyzoncompany/sitey-caixa.git"

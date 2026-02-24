@@ -22,7 +22,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link href="style.css" rel="stylesheet">
-  <link href="chatbot.css" rel="stylesheet">
   <!-- Firebase Config (Carrega Auth e Sync) -->
   <script type="module" src="firebase-config.js"></script>
   <!-- Force unregister any service workers from future versions -->
@@ -43,73 +42,10 @@
 </head>
 
 <body class="bg-gray-900 text-gray-200 neo-dashboard">
-  <!-- Video Background em Loop (GIF) sem som -->
-  <div class="fixed inset-0 w-full h-full z-0 overflow-hidden pointer-events-none bg-black">
-    <!-- Zoom (scale) para sumir bordas pretas, escurecido com opacity e bg-black -->
-    <video id="bg-video" autoplay muted playsinline aria-hidden="true"
-      class="absolute inset-0 w-full h-full object-cover opacity-90 block" style="transform: scale(1.3);">
-      <source src="img/Imagem_Animada_em_Vídeo.mp4" type="video/mp4">
-    </video>
-    <!-- Efeito leve de degrade escuro em cima -->
-    <div class="absolute inset-0 bg-gradient-to-b from-gray-900/80 via-gray-900/30 to-gray-900/80 mix-blend-multiply">
-    </div>
-    <!-- Efeito de desfoque leve (motion blur look) -->
-    <div class="absolute inset-0 backdrop-blur-[3px]"></div>
-    <!-- Script para Loop Boomerang (Vai e Volta) -->
-    <script>
-      document.addEventListener("DOMContentLoaded", () => {
-        const bgVid = document.getElementById("bg-video");
-        if (bgVid) {
-          bgVid.addEventListener("ended", () => {
-            bgVid.pause();
-            let rewindInterval = setInterval(() => {
-              if (bgVid.currentTime <= 0.05) {
-                clearInterval(rewindInterval);
-                bgVid.currentTime = 0;
-                bgVid.play();
-              } else {
-                bgVid.currentTime -= 0.05; // Velocidade do retrocesso
-              }
-            }, 30);
-          });
-        }
-      });
-    </script>
-  </div>
+  <div class="fixed inset-0 w-full h-full z-0 overflow-hidden pointer-events-none" style="background:#0b1220;"></div>
 
   <div id="bg" class="neo-bg" aria-hidden="true"></div>
   <div id="lens" class="neo-lens" aria-hidden="true"></div>
-  <!-- ========================================================================= -->
-  <!-- 1. TELA DE CARREGAMENTO (SKELETON) -->
-  <!-- Isso é o que aparece piscando na tela antes do sistema de bancos de dados carregar -->
-  <!-- ========================================================================= -->
-  <div id="initial-loader" class="initial-skeleton" role="status" aria-live="polite" aria-label="Carregando conteúdo">
-    <div class="initial-skeleton-shell" aria-hidden="true">
-      <div class="initial-skeleton-topbar">
-        <div class="initial-skeleton-block initial-skeleton-logo"></div>
-        <div class="initial-skeleton-nav">
-          <div class="initial-skeleton-block initial-skeleton-chip"></div>
-          <div class="initial-skeleton-block initial-skeleton-chip"></div>
-          <div class="initial-skeleton-block initial-skeleton-chip"></div>
-          <div class="initial-skeleton-block initial-skeleton-chip initial-skeleton-chip--short"></div>
-        </div>
-      </div>
-      <div class="initial-skeleton-main">
-        <div class="initial-skeleton-block initial-skeleton-title"></div>
-        <div class="initial-skeleton-block initial-skeleton-subtitle"></div>
-
-        <div class="initial-skeleton-kpi-grid">
-          <div class="initial-skeleton-block initial-skeleton-kpi"></div>
-          <div class="initial-skeleton-block initial-skeleton-kpi"></div>
-          <div class="initial-skeleton-block initial-skeleton-kpi"></div>
-        </div>
-
-        <div class="initial-skeleton-block initial-skeleton-panel"></div>
-        <div class="initial-skeleton-block initial-skeleton-panel initial-skeleton-panel--sm"></div>
-      </div>
-    </div>
-    <span class="initial-skeleton-text">Conectando ao servidor…</span>
-  </div>
 
   <div class="relative z-10 flex flex-col min-h-screen">
 
@@ -132,7 +68,6 @@
               <a href="relatorios.html" class="desktop-nav-link ">RELATÓRIOS</a>
               <a href="investimentos.html"
                 class="desktop-nav-link text-cyan-400 font-bold drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]">INVESTIMENTOS</a>
-              <a href="ai.html" class="desktop-nav-link psyzon-ai-link">✨ PSYZON AI</a>
               <a href="configuracoes.html" class="desktop-nav-link ">CONFIGURAÇÕES</a>
               <button onclick="window.firebaseAuth.logout()" class="desktop-nav-link desktop-nav-logout">Sair</button>
             </nav>
@@ -1484,38 +1419,32 @@
     }
   </style>
 
-  <script src="advisor.js"></script>
-  <script src="chatbot.js"></script>
   <script>
     document.addEventListener("DOMContentLoaded", () => {
-      const updateInvestmentsOverview = () => {
-        if (!window.Advisor) return;
-        const data = window.Advisor.analyze();
-        const formatMoney = (val) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      const formatMoney = (val) => val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+      const goals = JSON.parse(localStorage.getItem('investments_goals')) || [];
+      const totalGuardado = goals.reduce((acc, g) => acc + (g.currentValue || 0), 0);
+      const metaReserva = Number(localStorage.getItem('investment_reserve_goal') || 0);
+      const reservaAtual = totalGuardado;
+      const pct = metaReserva > 0 ? Math.min((reservaAtual / metaReserva) * 100, 100) : 0;
 
-        const goals = JSON.parse(localStorage.getItem('investments_goals')) || [];
-        const totalGuardado = goals.reduce((acc, g) => acc + (g.currentValue || 0), 0);
-        document.getElementById('inv-total-guardado').textContent = formatMoney(totalGuardado);
+      document.getElementById('inv-total-guardado').textContent = formatMoney(totalGuardado);
+      document.getElementById('inv-reserva-valor').innerHTML = formatMoney(reservaAtual) + ' <span class="text-sm font-normal text-gray-500">/ ' + formatMoney(metaReserva) + '</span>';
+      document.getElementById('inv-reserva-pct').textContent = pct.toFixed(0) + '%';
+      document.getElementById('inv-reserva-bar').style.width = pct + '%';
 
-        const { reservaAtual, metaReserva } = data.stats;
-        document.getElementById('inv-reserva-valor').innerHTML = formatMoney(reservaAtual) + ' <span class="text-sm font-normal text-gray-500">/ ' + formatMoney(metaReserva) + '</span>';
-        const pct = metaReserva > 0 ? Math.min((reservaAtual / metaReserva) * 100, 100) : 0;
-        document.getElementById('inv-reserva-pct').textContent = pct.toFixed(0) + '%';
-        document.getElementById('inv-reserva-bar').style.width = pct + '%';
-
-        const statusEl = document.getElementById('inv-status-mes');
-        if (data.riskLevel === "CRITICO") {
-          statusEl.innerHTML = '<span class="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span> <span class="text-red-400">CRÍTICO</span>';
-        } else if (data.riskLevel === "ATENCAO") {
-          statusEl.innerHTML = '<span class="w-3 h-3 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.8)]"></span> <span class="text-yellow-400">ATENÇÃO</span>';
-        } else {
-          statusEl.innerHTML = '<span class="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]"></span> <span class="text-green-400">OK</span>';
-        }
-        const msgEl = document.getElementById('inv-advisor-msg');
-        msgEl.textContent = data.recommendedToSaveThisMonth > 0 ? "Sugestão: Guardar " + formatMoney(data.recommendedToSaveThisMonth) : (data.reasons[0] || "");
-      };
-      setTimeout(updateInvestmentsOverview, 1500);
-      setInterval(updateInvestmentsOverview, 5000);
+      const statusEl = document.getElementById('inv-status-mes');
+      const msgEl = document.getElementById('inv-advisor-msg');
+      if (pct < 35) {
+        statusEl.innerHTML = '<span class="w-3 h-3 rounded-full bg-red-500"></span> <span class="text-red-400">CRÍTICO</span>';
+        msgEl.textContent = 'Priorize reforçar sua reserva este mês.';
+      } else if (pct < 70) {
+        statusEl.innerHTML = '<span class="w-3 h-3 rounded-full bg-yellow-500"></span> <span class="text-yellow-400">ATENÇÃO</span>';
+        msgEl.textContent = 'Você está avançando, mantenha aportes constantes.';
+      } else {
+        statusEl.innerHTML = '<span class="w-3 h-3 rounded-full bg-green-500"></span> <span class="text-green-400">OK</span>';
+        msgEl.textContent = 'Reserva em bom nível para o momento.';
+      }
     });
   </script>
 </body>

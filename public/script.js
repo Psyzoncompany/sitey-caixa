@@ -1549,14 +1549,6 @@ const init = () => {
     // =========================================================================
     updateUI();
 
-    // Dá 2 segundinhos para o site carregar todo, pra então rodar a checagem de prazos
-    setTimeout(() => {
-        try {
-
-        } catch (error) {
-            console.error('Falha ao verificar lembretes de prazo:', error);
-        }
-    }, 2000);
     // Liga os 3 carrosséis de arrastar da tela do celular
     setupCarousel('budget-carousel', 'budget-carousel-dots');
     setupCarousel('bills-carousel', 'bills-carousel-dots');
