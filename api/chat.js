@@ -39,51 +39,6 @@ function buildSiteContext() {
     return cachedSiteContext;
 }
 
-async function callAnthropic({ apiKey, systemPrompt, safeHistory, messageWithContext, image }) {
-    const hasImage = image && image.base64 && image.mimeType;
-    const userContent = hasImage
-        ? [
-            {
-                type: 'image',
-                source: {
-                    type: 'base64',
-                    media_type: image.mimeType,
-                    data: image.base64
-                }
-            },
-            { type: 'text', text: messageWithContext }
-        ]
-        : messageWithContext;
-
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01'
-        },
-        body: JSON.stringify({
-            model: 'claude-3-5-sonnet-20241022',
-            max_tokens: 2048,
-            system: systemPrompt,
-            messages: [...safeHistory, { role: 'user', content: userContent }]
-        })
-    });
-
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-        const err = new Error(data?.error?.message || 'Erro ao chamar a API Anthropic');
-        err.status = response.status;
-        throw err;
-    }
-
-    const content = Array.isArray(data?.content)
-        ? data.content.filter((item) => item?.type === 'text').map((item) => item.text).join('\n').trim()
-        : '';
-
-    return content || 'Não obtive resposta.';
-}
-
 async function callGemini({ apiKey, systemPrompt, safeHistory, messageWithContext, image }) {
     const historyParts = safeHistory.map((entry) => ({
         role: entry.role === 'assistant' ? 'model' : 'user',
@@ -134,14 +89,13 @@ export default async function handler(req, res) {
         context = '',
         image = null,
         includeSiteContext = false,
-        selectedModel = 'croq'
+        selectedModel = 'gemini'
     } = req.body;
 
     if ((typeof message !== 'string' || !message.trim()) && !(image && image.base64 && image.mimeType)) {
         return res.status(400).json({ error: 'Campo "message" é obrigatório' });
     }
 
-    const anthropicKey = process.env.ANTHROPIC_API_KEY;
     const geminiKey = process.env.GEMINI_API_KEY;
 
     const modeInstructions = {
@@ -199,18 +153,10 @@ ${modeInstructions[mode] || modeInstructions.normal}`;
         const messageWithContext = `${compositeContext ? `${compositeContext}\n\n` : ''}${baseMessage || '[Imagem enviada para análise]'}`;
         const safeHistory = Array.isArray(history) ? history.slice(-20) : [];
 
-        const preferred = String(selectedModel).toLowerCase() === 'gemini' ? 'gemini' : 'croq';
-        const fallback = preferred === 'croq' ? 'gemini' : 'croq';
+        const preferred = 'gemini';
+        const fallback = null;
 
         const callProvider = async (provider) => {
-            if (provider === 'croq') {
-                if (!anthropicKey) {
-                    const err = new Error('Chave da API Anthropic não configurada no servidor');
-                    err.status = 500;
-                    throw err;
-                }
-                return callAnthropic({ apiKey: anthropicKey, systemPrompt, safeHistory, messageWithContext, image });
-            }
             if (!geminiKey) {
                 const err = new Error('Chave da API Gemini não configurada no servidor');
                 err.status = 500;
@@ -227,9 +173,13 @@ ${modeInstructions[mode] || modeInstructions.normal}`;
                 return res.status(primaryError?.status || 500).json({ error: primaryError.message || 'Erro interno do servidor' });
             }
 
-            const content = await callProvider(fallback);
-            const fallbackNotice = `Modelo ${preferred === 'croq' ? 'Croq' : 'Gemini'} indisponível por limite/crédito. Continuei automaticamente com ${fallback === 'croq' ? 'Croq' : 'Gemini'}.`;
-            return res.status(200).json({ content, modelUsed: fallback, fallbackNotice });
+            if (fallback) {
+                const content = await callProvider(fallback);
+                const fallbackNotice = `Modelo ${preferred} indisponível por limite/crédito. Continuei automaticamente com ${fallback}.`;
+                return res.status(200).json({ content, modelUsed: fallback, fallbackNotice });
+            }
+
+            return res.status(primaryError?.status || 500).json({ error: primaryError.message || 'Erro interno do servidor' });
         }
     } catch (error) {
         console.error('Erro interno:', error);
