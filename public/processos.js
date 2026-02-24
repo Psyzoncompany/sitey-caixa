@@ -403,6 +403,10 @@ const init = () => {
         const subtasks = order?.checklist?.cutting?.subtasks || [];
         return subtasks.reduce((acc, sub) => acc + (parseInt(sub?.total || 0, 10) || 0), 0);
     };
+    const isLegacyManualPaymentOrder = (order) => {
+        const paid = Number(order?.amountPaid || 0);
+        return paid > 0 && !order?.transactionId && !order?.paymentFlowVersion;
+    };
     const closePaymentFlowModal = () => {
         if (!paymentFlowModal) return;
         paymentFlowModal.classList.add('hidden');
@@ -413,7 +417,7 @@ const init = () => {
         if (!paymentFlowModal || !paymentFlowForm) return;
         const order = productionOrders.find((item) => item.id === Number(orderId));
         if (!order) return;
-        const hasLegacyManualPaid = (Number(order.amountPaid || 0) > 0) && !order.transactionId;
+        const hasLegacyManualPaid = isLegacyManualPaymentOrder(order);
         if (hasLegacyManualPaid) {
             notify('Este pedido já possui pagamento manual antigo. Use a edição completa do pedido para manter consistência.', 'warning');
             return;
@@ -434,7 +438,7 @@ const init = () => {
         if (!order) return false;
         const transactions = JSON.parse(localStorage.getItem('transactions')) || [];
         const paidBefore = Number(order.amountPaid || 0);
-        const isFirstPayment = paidBefore <= 0;
+        const isFirstPayment = !order.transactionId;
 
         order.amountPaid = paidBefore + receivedNow;
         order.isPaid = order.amountPaid >= Number(order.totalValue || 0);
@@ -962,7 +966,7 @@ const init = () => {
                 const orderIndex = productionOrders.findIndex(o => o.id === editingOrderId);
                 productionOrders[orderIndex] = { ...productionOrders[orderIndex], ...orderData };
             } else {
-                const newOrder = { id: Date.now(), status: 'todo', ...orderData };
+                const newOrder = { id: Date.now(), status: 'todo', paymentFlowVersion: 1, ...orderData };
                 productionOrders.push(newOrder);
 
                 // HOOK HIPOCAMPO: Pedido Criado
@@ -1108,7 +1112,7 @@ const init = () => {
             <div class="syt-card-footer">
                 ${(() => {
                     const paidValue = Number(order.amountPaid || 0);
-                    const legacyManualFlow = paidValue > 0 && !order.transactionId;
+                    const legacyManualFlow = isLegacyManualPaymentOrder(order);
                     if (legacyManualFlow) {
                         return '<span class="text-xs text-amber-300">Pagamento antigo detectado: use “Ver detalhes”.</span>';
                     }
@@ -1175,7 +1179,7 @@ const init = () => {
             const order = productionOrders.find((item) => item.id === Number(activePaymentOrderId));
             if (!order) return;
 
-            const hasLegacyManualPaid = (Number(order.amountPaid || 0) > 0) && !order.transactionId;
+            const hasLegacyManualPaid = isLegacyManualPaymentOrder(order);
             if (hasLegacyManualPaid) {
                 notify('Este pedido já possui pagamento manual antigo e não pode usar este fluxo.', 'warning');
                 closePaymentFlowModal();
