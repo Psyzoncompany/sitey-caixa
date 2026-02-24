@@ -6297,6 +6297,64 @@ body.has-manual-save-fab .due-soon-fab {
   }
 }
 
+/* ===== vNext: FABs menores no mobile + padronização no desktop ===== */
+@media (max-width: 768px) {
+
+  .calculator-fab,
+  .add-launch-fab,
+  .notes-fab,
+  .due-soon-fab {
+    width: 50px;
+    height: 50px;
+    right: 0.85rem;
+  }
+
+  .calculator-fab {
+    bottom: calc(var(--bottom-nav-height, 78px) + env(safe-area-inset-bottom) + 12px);
+  }
+
+  .calculator-fab--raised,
+  .notes-fab {
+    bottom: calc(var(--bottom-nav-height, 78px) + env(safe-area-inset-bottom) + 76px);
+  }
+
+  .due-soon-fab {
+    bottom: calc(var(--bottom-nav-height, 78px) + env(safe-area-inset-bottom) + 140px);
+  }
+
+  .due-soon-fab__count {
+    min-width: 20px;
+    height: 20px;
+    font-size: 0.68rem;
+  }
+}
+
+@media (min-width: 769px) {
+
+  .calculator-fab,
+  .add-launch-fab,
+  .notes-fab,
+  .due-soon-fab {
+    width: 58px;
+    height: 58px;
+    right: 1rem;
+  }
+
+  .calculator-fab,
+  .add-launch-fab {
+    bottom: 1.4rem;
+  }
+
+  .calculator-fab--raised,
+  .notes-fab {
+    bottom: calc(1.4rem + 74px);
+  }
+
+  .due-soon-fab {
+    bottom: calc(1.4rem + 148px);
+  }
+}
+
 /* ===== UX patch vNext: nome/cliente + escopo + ações desktop ===== */
 .name-field-label-row {
   display: flex;
