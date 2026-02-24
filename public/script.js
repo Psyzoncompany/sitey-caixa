@@ -140,6 +140,10 @@ const init = () => {
         period: 'this_month', // 'today', 'yesterday', '7days', '30days', 'this_month', 'last_month'
         type: 'all' // 'all', 'income', 'expense'
     };
+    const INITIAL_TRANSACTIONS_BATCH = 120;
+    const TRANSACTIONS_BATCH_STEP = 80;
+    let lastFilteredTransactions = [];
+    let visibleTransactionsLimit = INITIAL_TRANSACTIONS_BATCH;
 
     // =========================================================================
     // 4. FUNÇÕES UTILITÁRIAS (Ajudantes para o restante do código)
@@ -686,6 +690,28 @@ const init = () => {
         return `${text.slice(0, maxLength).trimEnd()}…`;
     };
 
+    const renderTransactionLoadMore = () => {
+        const existing = transactionListEl.querySelector('.launch-load-more-wrap');
+        if (existing) existing.remove();
+
+        if (lastFilteredTransactions.length <= visibleTransactionsLimit) return;
+
+        const wrap = document.createElement('div');
+        wrap.className = 'launch-load-more-wrap text-center py-3';
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn-shine py-2 px-4 rounded-lg text-sm font-semibold';
+        btn.textContent = `Carregar mais lançamentos (${Math.min(TRANSACTIONS_BATCH_STEP, lastFilteredTransactions.length - visibleTransactionsLimit)} de ${lastFilteredTransactions.length - visibleTransactionsLimit})`;
+        btn.addEventListener('click', () => {
+            visibleTransactionsLimit += TRANSACTIONS_BATCH_STEP;
+            renderRecentTransactions();
+        });
+
+        wrap.appendChild(btn);
+        transactionListEl.appendChild(wrap);
+    };
+
     // Pega a lista invisível no computador, cria o HTML e empurra na Área de "Extrato" da tela
     const addTransactionToDOM = (transaction) => {
         const { id, name, description, amount, date, category, type, scope } = transaction;
@@ -707,8 +733,9 @@ const init = () => {
             scopeClass = scope === 'personal' ? 'personal' : 'business';
         }
 
+        const formattedDate = formatDate(date);
         const metaItems = [
-            `<span class="data-chip data-date" title="${formatDate(date)}">${formatDate(date)}</span>`,
+            `<span class="data-chip data-date" title="${formattedDate}">${formattedDate}</span>`,
             `<span class="data-chip data-category" title="${safeCategory}">${compactLabel(safeCategory)}</span>`,
             type === 'expense' ? `<span class="data-chip data-scope" title="${scopeText}">${scopeText}</span>` : ''
         ].filter(Boolean).join('');
@@ -727,7 +754,7 @@ const init = () => {
 
             <div class="cell data-category"><span class="cat-pill" title="${safeCategory}">${safeCategory}</span></div>
 
-            <div class="cell data-date" title="${formatDate(date)}">${formatDate(date)}</div>
+            <div class="cell data-date" title="${formattedDate}">${formattedDate}</div>
 
             <div class="cell data-meta">${metaItems}</div>
 
@@ -1065,13 +1092,19 @@ const init = () => {
         });
 
         filteredTransactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+        lastFilteredTransactions = filteredTransactions;
+        if (visibleTransactionsLimit < INITIAL_TRANSACTIONS_BATCH) {
+            visibleTransactionsLimit = INITIAL_TRANSACTIONS_BATCH;
+        }
 
         transactionListEl.innerHTML = '';
         if (filteredTransactions.length === 0) {
             transactionListEl.innerHTML = '<div class="text-center text-gray-400 p-4">Sem lançamentos neste período</div>';
             return;
         }
-        filteredTransactions.forEach(addTransactionToDOM);
+
+        filteredTransactions.slice(0, visibleTransactionsLimit).forEach(addTransactionToDOM);
+        renderTransactionLoadMore();
     };
 
     // Essa é a função principal que CALCULA TUDO: Soma os totais, vê quantos % já gastou do limite, etc.
@@ -1250,7 +1283,7 @@ const init = () => {
             // Atualiza sub-texto com quantidade de peças
             const costDetailEl = document.getElementById('cost-per-piece-detail');
             if (costDetailEl) {
-                costDetailEl.textContent = `${totalPieces} peça${totalPieces !== 1 ? 's' : ''} no mês`;
+                costDetailEl.textContent = `${totalPieces} peça${totalPieces !== 1 ? 's' : ''} (pedidos: ${piecesFromOrders} + vendas: ${piecesFromSales})`;
             }
 
             // Atualiza a mini-bar (proporção custo/receita)
@@ -1310,7 +1343,7 @@ const init = () => {
                 costModalBody.innerHTML = `
                     <div class="breakdown-formula">
                         <div class="formula-main">Custos Empresariais ÷ Peças Produzidas</div>
-                        <div class="formula-sub">${fmt(d.totalBusinessCosts)} ÷ ${d.totalPieces} peças</div>
+                        <div class="formula-sub">${fmt(d.totalBusinessCosts)} ÷ ${d.totalPieces} peças (pedidos + vendas)</div>
                     </div>
 
                     <div class="result-big">${fmt(d.costPerPiece)} / peça</div>
@@ -1478,12 +1511,14 @@ const init = () => {
                 filtersContainer.querySelectorAll('.syt-filter-btn').forEach(btn => btn.classList.remove('active'));
                 periodBtn.classList.add('active');
                 transactionFilters.period = periodBtn.dataset.filterPeriod;
+                visibleTransactionsLimit = INITIAL_TRANSACTIONS_BATCH;
             }
 
             if (typeBtn) {
                 filtersContainer.querySelectorAll('.syt-type-filter-btn').forEach(btn => btn.classList.remove('active'));
                 typeBtn.classList.add('active');
                 transactionFilters.type = typeBtn.dataset.filterType;
+                visibleTransactionsLimit = INITIAL_TRANSACTIONS_BATCH;
             }
 
             if (periodBtn || typeBtn) renderRecentTransactions();
