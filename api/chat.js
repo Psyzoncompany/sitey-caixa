@@ -85,14 +85,30 @@ async function callAnthropic({ apiKey, systemPrompt, safeHistory, messageWithCon
 }
 
 async function callGemini({ apiKey, systemPrompt, safeHistory, messageWithContext, image }) {
+    const normalizeContentToText = (content) => {
+        if (typeof content === 'string') return content;
+        if (Array.isArray(content)) {
+            return content
+                .map((item) => {
+                    if (typeof item === 'string') return item;
+                    if (item?.type === 'text' && typeof item?.text === 'string') return item.text;
+                    return '';
+                })
+                .filter(Boolean)
+                .join('\n');
+        }
+        if (content && typeof content === 'object') return JSON.stringify(content);
+        return '';
+    };
+
     const historyParts = safeHistory.map((entry) => ({
         role: entry.role === 'assistant' ? 'model' : 'user',
-        parts: [{ text: typeof entry.content === 'string' ? entry.content : JSON.stringify(entry.content) }]
-    }));
+        parts: [{ text: normalizeContentToText(entry.content) || '[mensagem sem conteúdo textual]' }]
+    })).filter((entry) => entry.parts[0].text.trim());
 
     const userParts = [];
     if (image && image.base64 && image.mimeType) {
-        userParts.push({ inline_data: { mime_type: image.mimeType, data: image.base64 } });
+        userParts.push({ inlineData: { mimeType: image.mimeType, data: image.base64 } });
     }
     userParts.push({ text: messageWithContext });
 
@@ -100,7 +116,7 @@ async function callGemini({ apiKey, systemPrompt, safeHistory, messageWithContex
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            systemInstruction: { parts: [{ text: systemPrompt }] },
+            systemInstruction: { role: 'system', parts: [{ text: systemPrompt }] },
             contents: [...historyParts, { role: 'user', parts: userParts }],
             generationConfig: { temperature: 0.65, maxOutputTokens: 2048 }
         })
