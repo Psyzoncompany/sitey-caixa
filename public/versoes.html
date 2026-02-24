@@ -39,8 +39,22 @@
 
       <article class="glass-card p-5 border border-cyan-500/20">
         <div class="flex items-center justify-between gap-3 mb-2">
-          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.28</h2>
+          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.29</h2>
           <span class="text-xs text-gray-400">Atual</span>
+        </div>
+        <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
+          <li>Card de <strong>Custo por Peça</strong> agora mostra no resumo de onde vem a contagem (separando peças de <strong>pedidos</strong> e de <strong>vendas</strong>).</li>
+          <li>Modal de custo por peça reforçado com fórmula indicando explicitamente que o divisor é <strong>pedidos + vendas</strong>.</li>
+          <li>Janelas sobrepostas (modais do dashboard) receberam prioridade maior de camada para manter botões e navegação sempre <strong>por baixo</strong> da janela aberta.</li>
+          <li>Extrato de lançamentos otimizado para alto volume: agora carrega em <strong>lotes</strong> com botão “Carregar mais lançamentos”, evitando travamento e sumiço visual quando há muitos registros.</li>
+        </ul>
+      </article>
+
+
+      <article class="glass-card p-5 border border-cyan-500/20">
+        <div class="flex items-center justify-between gap-3 mb-2">
+          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.28</h2>
+          <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
           <li>Correção do endpoint <strong>/api/chat</strong> do servidor Express para respeitar o modelo selecionado no botão da IA (<strong>Croq</strong> ou <strong>Gemini</strong>) em vez de sempre forçar Croq.</li>
