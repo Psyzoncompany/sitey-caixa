@@ -39,19 +39,19 @@
 
       <article class="glass-card p-5 border border-cyan-500/20">
         <div class="flex items-center justify-between gap-3 mb-2">
-          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.28</h2>
+          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.29</h2>
           <span class="text-xs text-gray-400">Atual</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Correção do endpoint <strong>/api/chat</strong> do servidor Express para respeitar o modelo selecionado no botão da IA (<strong>Croq</strong> ou <strong>Gemini</strong>) em vez de sempre forçar Croq.</li>
-          <li>Adicionado retorno padronizado com <strong>content</strong> e <strong>modelUsed</strong>, mantendo compatibilidade com a tela <strong>ai.html</strong> e permitindo identificar qual IA respondeu.</li>
-          <li>Implementado fallback automático entre modelos apenas em limite/crédito (402/429), com aviso claro para o usuário quando a troca ocorrer.</li>
+          <li>A API de chat foi ajustada para operar somente com <strong>Google Gemini</strong>, removendo dependência de Anthropic/Croq no backend.</li>
+          <li>Mensagem de erro de chave foi alinhada para exibir apenas ausência de <strong>GEMINI_API_KEY</strong>, evitando confusão com provedores que não são usados.</li>
+          <li>Tela <strong>ai.html</strong> atualizada para deixar <strong>Google Gemini</strong> como modelo único e padrão, mantendo a continuidade da experiência sem seleção inválida.</li>
         </ul>
       </article>
 
       <article class="glass-card p-5 border border-cyan-500/20">
         <div class="flex items-center justify-between gap-3 mb-2">
-          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.27</h2>
+          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.28</h2>
           <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">

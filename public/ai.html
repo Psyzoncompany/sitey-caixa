@@ -70,11 +70,10 @@
         </button>
         <div class="relative">
           <button id="model-selector-btn" class="flex items-center gap-2 font-medium text-gray-700 hover:bg-gray-100 px-3 py-1.5 rounded-lg transition-colors text-sm">
-            <span id="model-selector-label">Croq</span> <i class="fa-solid fa-chevron-down text-xs text-gray-400"></i>
+            <span id="model-selector-label">Google Gemini</span> <i class="fa-solid fa-chevron-down text-xs text-gray-400"></i>
           </button>
           <div id="model-selector-menu" class="hidden absolute left-0 mt-1 w-36 bg-white border border-claude-border rounded-lg shadow-lg overflow-hidden z-30">
-            <button type="button" data-model="croq" class="model-option w-full text-left px-3 py-2 text-sm hover:bg-black/5">Croq</button>
-            <button type="button" data-model="gemini" class="model-option w-full text-left px-3 py-2 text-sm hover:bg-black/5">Gemini</button>
+            <button type="button" data-model="gemini" class="model-option w-full text-left px-3 py-2 text-sm hover:bg-black/5">Google Gemini</button>
           </div>
         </div>
       </div>
@@ -153,10 +152,10 @@
     const modelOptions = Array.from(document.querySelectorAll('.model-option'));
     const modeButtons = Array.from(document.querySelectorAll('.mode-btn'));
     const MODEL_STORAGE_KEY = 'psyzon_ai_model';
-    const VALID_MODELS = ['croq', 'gemini'];
+    const VALID_MODELS = ['gemini'];
 
     let mode = 'normal';
-    let selectedModel = VALID_MODELS.includes(localStorage.getItem(MODEL_STORAGE_KEY)) ? localStorage.getItem(MODEL_STORAGE_KEY) : 'croq';
+    let selectedModel = VALID_MODELS.includes(localStorage.getItem(MODEL_STORAGE_KEY)) ? localStorage.getItem(MODEL_STORAGE_KEY) : 'gemini';
     let pendingImage = null;
     let conversations = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
     let currentId = conversations[0]?.id || null;
@@ -189,7 +188,7 @@
     };
 
     const renderSelectedModel = () => {
-      modelSelectorLabel.textContent = selectedModel === 'gemini' ? 'Gemini' : 'Croq';
+      modelSelectorLabel.textContent = 'Google Gemini';
       modelOptions.forEach((option) => {
         const isActive = option.dataset.model === selectedModel;
         option.classList.toggle('bg-black/5', isActive);
@@ -580,7 +579,7 @@
 
     modelOptions.forEach((option) => {
       option.addEventListener('click', () => {
-        selectedModel = option.dataset.model === 'gemini' ? 'gemini' : 'croq';
+        selectedModel = 'gemini';
         saveModel();
         renderSelectedModel();
         modelSelectorMenu.classList.add('hidden');
