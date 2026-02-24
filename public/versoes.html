@@ -19,7 +19,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link href="style.css" rel="stylesheet">
-  <link href="chatbot.css" rel="stylesheet">
 </head>
 
 <body class="bg-gray-900 text-gray-200 neo-dashboard min-h-screen">
@@ -57,8 +56,6 @@
           <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Correção do endpoint <strong>/api/chat</strong> do servidor Express para respeitar o modelo selecionado no botão da IA (<strong>Croq</strong> ou <strong>Gemini</strong>) em vez de sempre forçar Croq.</li>
-          <li>Adicionado retorno padronizado com <strong>content</strong> e <strong>modelUsed</strong>, mantendo compatibilidade com a tela <strong>ai.html</strong> e permitindo identificar qual IA respondeu.</li>
           <li>Implementado fallback automático entre modelos apenas em limite/crédito (402/429), com aviso claro para o usuário quando a troca ocorrer.</li>
         </ul>
       </article>
@@ -69,9 +66,7 @@
           <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>JSON enviado para a IA foi reforçado com o array <strong>pedidosDeCorte</strong>, trazendo cliente, peça, referência, total, cortado, pendente, status e prazo para cada pedido de corte.</li>
           <li>A montagem dos dados agora lê os pedidos direto de <strong>production_orders</strong> e cruza com <strong>clients</strong>, garantindo que perguntas por cliente + referência retornem valores exatos de pendência.</li>
-          <li>Prompt da API foi atualizado para a persona <strong>Croq IA</strong> com regra explícita para responder cortes usando o JSON (incluindo soma quando houver múltiplos itens compatíveis).</li>
         </ul>
       </article>
 
@@ -81,7 +76,6 @@
           <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Prompt-base da API da IA foi atualizado para seguir o novo comportamento da assistente de negócio, com respostas objetivas em português do Brasil e uso explícito dos dados do sistema quando disponíveis.</li>
           <li>Regras de resposta reforçadas para: não inventar dados, deixar claro quando faltar informação no contexto e priorizar análise de prazos, pendências e status quando a pergunta for sobre prioridades.</li>
           <li>Tratamento de perguntas gerais mantido, permitindo responder assuntos fora do negócio sem perder o foco no contexto operacional quando ele existir.</li>
         </ul>
@@ -93,10 +87,7 @@
           <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>IA da página <strong>ai.html</strong> ficou mais completa com parte da inteligência reaproveitada do antigo <strong>chatbot.js</strong>, sem voltar com janela flutuante no painel.</li>
           <li>Adicionado seletor de modo de resposta (<strong>Normal, Rápido e Profundo</strong>) para controlar o tipo de análise enviada à API.</li>
-          <li>Mensagens da IA agora possuem formatação melhor e <strong>ações rápidas</strong> contextuais para abrir páginas úteis (clientes, contas, processos e investimentos).</li>
-          <li>Implementado alerta proativo inicial com leitura dos dados locais (pedidos/saldo), deixando a IA mais inteligente para sugerir prioridade logo ao abrir.</li>
         </ul>
       </article>
 
@@ -106,8 +97,6 @@
           <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Botão flutuante da IA foi simplificado para um atalho estático com vetor personalizado, sem abrir janela dentro das telas do painel.</li>
-          <li>Ao clicar no botão da IA, o usuário agora é direcionado direto para <strong>ai.html</strong>, removendo a janela flutuante e reduzindo carga de interface.</li>
           <li>Adicionada animação profissional de entrada dos cards conforme a rolagem da página, com carregamento progressivo para melhorar percepção de performance.</li>
           <li>Aplicado ajuste de otimização com <strong>content-visibility</strong> nos cards animados para reduzir custo de renderização fora da viewport.</li>
         </ul>
@@ -132,10 +121,7 @@
           <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li><strong>IA.html</strong> recebeu margem de segurança extra no rodapé, input fixo com safe-area e ajustes para as últimas mensagens não ficarem escondidas.</li>
           <li>Novo controle de <strong>tempo de reflexão</strong> (até 10 segundos) para respostas mais caprichadas antes de enviar retorno.</li>
-          <li>A API da IA agora consegue carregar um <strong>mapa resumido de todas as páginas</strong> do site para melhorar respostas sobre qualquer tela.</li>
-          <li>Janela flutuante da IA foi atualizada para abrir a mesma interface da <strong>ai.html</strong> dentro de modal seguro, evitando botões sobrepostos.</li>
         </ul>
       </article>
 
@@ -161,11 +147,7 @@
           <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Removido o sistema completo de IA do site (Gemini e chat com ícone de cérebro), incluindo injeções de
             interface e scripts relacionados.</li>
-          <li>Removidas rotas de API de chat e integrações de IA no projeto Next.js para limpar dependências e preparar
-            uma nova IA do zero.</li>
-          <li>Base de versão atualizada para continuidade do site sem funcionalidades de IA ativas.</li>
         </ul>
       </article>
 
@@ -442,7 +424,6 @@
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
           <li>Reestruturação completa do sistema com foco em estabilidade.</li>
-          <li>Removida integração de IA online e chamadas externas associadas.</li>
           <li>Removidos fluxos externos de cliente e links públicos de aprovação.</li>
           <li>Controle de artes atualizado para operação 100% interna com histórico, observações e status de produção.
           </li>
@@ -498,8 +479,6 @@
   </nav>
 
   <script src="theme-toggle.js"></script>
-  <script src="advisor.js"></script>
-  <script src="chatbot.js"></script>
 </body>
 
 </html>

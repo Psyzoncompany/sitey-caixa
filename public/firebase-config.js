@@ -1189,9 +1189,7 @@ const loadUserCache = (uid) => {
 
 const hideInitialLoader = () => {
     const loader = document.getElementById('initial-loader');
-    if (!loader) return;
-    loader.style.opacity = '0';
-    setTimeout(() => loader.remove(), 500);
+    if (loader) loader.remove();
 };
 
 const bootstrapBackendUI = () => {
@@ -1513,20 +1511,4 @@ if (!window.isLocalMode) {
     };
 }
 
-// Injeção global do Chatbot Financeiro Offline
-const loadChatbotScripts = () => {
-    if (window.location.pathname.endsWith('login.html')) return;
-    if (document.getElementById('advisor-script-global')) return;
-
-    // As injeções ocorrem já de forma assíncrona, portanto o Advisor deve avaliar os dados quando chamado
-    const advScript = document.createElement('script');
-    advScript.id = 'advisor-script-global';
-    advScript.src = 'advisor.js';
-    document.body.appendChild(advScript);
-};
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadChatbotScripts);
-} else {
-    loadChatbotScripts();
-}
+// IA removida para otimizar carregamento do site.
