@@ -3083,6 +3083,40 @@ body.neo-dashboard {
   font-size: .86rem;
 }
 
+.neo-dashboard .metric-card--profit {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(52, 211, 153, .34);
+  background:
+    radial-gradient(130% 140% at 85% -10%, rgba(45, 212, 191, .24), transparent 58%),
+    linear-gradient(165deg, rgba(6, 78, 59, .42), rgba(8, 47, 73, .26) 58%, rgba(15, 23, 42, .62));
+  box-shadow: 0 18px 40px rgba(3, 105, 92, .24), inset 0 1px 0 rgba(255, 255, 255, .14);
+}
+
+.neo-dashboard .metric-card--profit::after {
+  content: '';
+  position: absolute;
+  inset: auto -25% 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(45, 212, 191, .88), transparent);
+}
+
+.neo-dashboard .metric-ic--profit {
+  color: #5eead4;
+  filter: drop-shadow(0 0 10px rgba(94, 234, 212, .35));
+}
+
+.neo-dashboard .metric-value--profit {
+  color: #86efac;
+  text-shadow: 0 0 28px rgba(34, 197, 94, .3);
+}
+
+.neo-dashboard .metric-sub--profit {
+  color: rgba(167, 243, 208, .92);
+  font-size: .8rem;
+}
+
+
 .neo-dashboard .mini-bar {
   margin-top: 10px;
   height: 8px;
