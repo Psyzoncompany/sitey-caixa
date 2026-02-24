@@ -750,14 +750,14 @@ select:focus {
   height: 58px;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(15, 23, 42, 0.7);
+  background: transparent;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   color: rgba(255, 255, 255, 0.4);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 0 2px rgba(186, 230, 253, 0.28), 0 10px 22px rgba(186, 230, 253, 0.2);
   z-index: 10035;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
@@ -770,14 +770,14 @@ select:focus {
 }
 
 #floating-save-btn:hover {
-  background: rgba(15, 23, 42, 0.9);
+  background: transparent;
   color: rgba(255, 255, 255, 0.8);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 0 2px rgba(186, 230, 253, 0.38), 0 14px 28px rgba(186, 230, 253, 0.24);
   transform: translateY(-2px);
 }
 
 #floating-save-btn.unsaved {
-  background: linear-gradient(135deg, #ef4444, #b91c1c);
+  background: transparent;
   border-color: rgba(248, 113, 113, 0.5);
   color: white;
   box-shadow: 0 0 20px rgba(239, 68, 68, 0.4), 0 16px 32px rgba(127, 29, 29, 0.5);
@@ -3675,9 +3675,9 @@ body.neo-dashboard {
   height: 3.5rem;
   border-radius: 999px;
   border: 1px solid rgba(125, 211, 252, 0.5);
-  background: linear-gradient(145deg, rgba(8, 47, 73, 0.95), rgba(6, 78, 59, 0.82));
+  background: transparent;
   color: #ecfeff;
-  box-shadow: 0 14px 28px rgba(6, 182, 212, 0.26), 0 2px 0 rgba(255, 255, 255, 0.2) inset;
+  box-shadow: 0 0 0 2px rgba(186, 230, 253, 0.32), 0 14px 24px rgba(186, 230, 253, 0.24);
   display: inline-flex;
   justify-content: center;
   align-items: center;
@@ -5396,11 +5396,11 @@ body.neo-dashboard {
   height: 58px;
   border-radius: 999px;
   border: 1px solid rgba(34, 211, 238, 0.45);
-  background: linear-gradient(160deg, rgba(8, 145, 178, 0.95), rgba(37, 99, 235, 0.92));
+  background: transparent;
   color: #fff;
   display: grid;
   place-items: center;
-  box-shadow: 0 16px 28px rgba(2, 6, 23, 0.5);
+  box-shadow: 0 0 0 2px rgba(186, 230, 253, 0.32), 0 14px 26px rgba(186, 230, 253, 0.24);
   z-index: 10020;
 }
 
@@ -5421,11 +5421,11 @@ body.neo-dashboard {
   height: 58px;
   border-radius: 999px;
   border: 1px solid rgba(74, 222, 128, 0.5);
-  background: linear-gradient(160deg, rgba(22, 163, 74, 0.96), rgba(5, 150, 105, 0.93));
+  background: transparent;
   color: #fff;
   display: grid;
   place-items: center;
-  box-shadow: 0 16px 28px rgba(2, 6, 23, 0.5);
+  box-shadow: 0 0 0 2px rgba(186, 230, 253, 0.32), 0 14px 26px rgba(186, 230, 253, 0.24);
   z-index: 10021;
 }
 
@@ -5442,11 +5442,11 @@ body.neo-dashboard {
   height: 56px;
   border-radius: 999px;
   border: 1px solid rgba(250, 204, 21, 0.45);
-  background: linear-gradient(160deg, rgba(217, 119, 6, 0.95), rgba(234, 88, 12, 0.92));
+  background: transparent;
   color: #fff;
   display: grid;
   place-items: center;
-  box-shadow: 0 14px 26px rgba(2, 6, 23, 0.5);
+  box-shadow: 0 0 0 2px rgba(254, 243, 199, 0.32), 0 14px 26px rgba(254, 243, 199, 0.24);
   z-index: 10015;
 }
 
@@ -5815,12 +5815,12 @@ body.neo-dashboard {
   height: 58px;
   border-radius: 999px;
   border: 1px solid rgba(139, 92, 246, 0.5);
-  background: linear-gradient(135deg, rgba(124, 58, 237, 0.95), rgba(76, 29, 149, 0.9));
+  background: transparent;
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 16px 32px rgba(2, 6, 23, 0.5);
+  box-shadow: 0 0 0 2px rgba(221, 214, 254, 0.34), 0 16px 28px rgba(221, 214, 254, 0.24);
   z-index: 10025;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   padding: 0;
@@ -6445,13 +6445,13 @@ body.has-manual-save-fab .due-soon-fab {
   height: 60px;
   border-radius: 999px;
   border: 1.5px solid rgba(139, 92, 246, 0.55);
-  background: linear-gradient(135deg, rgba(88, 28, 235, 0.95), rgba(139, 92, 246, 0.92));
+  background: transparent;
   color: #fff;
   display: grid;
   place-items: center;
   box-shadow:
-    0 0 20px rgba(139, 92, 246, 0.35),
-    0 16px 28px rgba(2, 6, 23, 0.5);
+    0 0 20px rgba(221, 214, 254, 0.38),
+    0 16px 28px rgba(221, 214, 254, 0.24);
   z-index: 10022;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
