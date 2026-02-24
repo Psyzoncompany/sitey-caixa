@@ -39,8 +39,20 @@
 
       <article class="glass-card p-5 border border-cyan-500/20">
         <div class="flex items-center justify-between gap-3 mb-2">
-          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.28</h2>
+          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.29</h2>
           <span class="text-xs text-gray-400">Atual</span>
+        </div>
+        <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
+          <li>Corrigida a chamada da API Gemini no endpoint <strong>/api/chat</strong> para usar os campos corretos do payload multimodal (<strong>inlineData</strong> e <strong>mimeType</strong>), eliminando erro de validação quando houver imagem.</li>
+          <li>Estrutura de <strong>systemInstruction</strong> ajustada com <strong>role: system</strong>, melhorando compatibilidade com a API do Gemini hospedada na Vercel.</li>
+          <li>Histórico de conversa sanitizado para Gemini, convertendo conteúdos não textuais para texto válido e evitando falha quando mensagens anteriores vierem em formato de array/objeto.</li>
+        </ul>
+      </article>
+
+      <article class="glass-card p-5 border border-cyan-500/20">
+        <div class="flex items-center justify-between gap-3 mb-2">
+          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.28</h2>
+          <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
           <li>Correção do endpoint <strong>/api/chat</strong> do servidor Express para respeitar o modelo selecionado no botão da IA (<strong>Croq</strong> ou <strong>Gemini</strong>) em vez de sempre forçar Croq.</li>
