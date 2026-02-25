@@ -29,6 +29,12 @@ body {
   /* 18px */
   --radius-card: 12px;
   --space-card: 16px;
+  --glass-radius: 16px;
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-bg-base: rgba(15, 23, 42, 0.6);
+  --glass-shadow: 0 10px 35px rgba(2, 6, 23, 0.55);
+  --glass-blur: blur(24px) saturate(180%);
+  --transition-card: all 0.28s cubic-bezier(0.2, 0.9, 0.3, 1);
 }
 
 
@@ -159,35 +165,137 @@ body {
   }
 }
 
-/* --- Cards (Material Design) --- */
-/* O nome da classe '.glass-card' foi mantido para compatibilidade */
+/* --- OTIMIZAÇÃO DE CARDS & GLASS UI (Psyzon System) --- */
 .glass-card,
-.glass-card-fullscreen {
-  background: #111a2d;
-  border-radius: 14px;
-  border: 1px solid #24324c;
-  box-shadow: 0 8px 24px rgba(2, 6, 23, 0.35);
-  padding: var(--space-card);
-  transition: box-shadow var(--transition), border-color var(--transition);
+.glass-card-fullscreen,
+.artx-glass-card,
+.cut-card,
+.transaction-card,
+.finishing-board-row,
+.calculator-sheet,
+.notes-sheet,
+.cutting-section-card,
+.cutting-section-card-cortes,
+.gemini-chat-sheet {
   position: relative;
   overflow: hidden;
+  border-radius: var(--glass-radius);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg-base);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: var(--transition-card);
+  color: #e2e8f0;
 }
 
-.glass-card::before {
-  content: none;
+.glass-card {
+  padding: var(--space-card);
 }
 
-.glass-card:hover {
-  box-shadow: 0 14px 28px rgba(2, 6, 23, 0.45);
-  border-color: #33486d;
+.glass-card:hover,
+.artx-glass-card:hover,
+.cut-card:hover,
+.transaction-card:hover,
+.syt-process-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.15);
+  z-index: 1;
 }
 
-/* headings inside cards */
-.glass-card h3 {
-  margin: 0 0 .35rem 0;
+.glass-card::before,
+.cut-card::before {
+  content: "";
+  position: absolute;
+  top: -60%;
+  left: -40%;
+  width: 180%;
+  height: 160%;
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0.02));
+  transform: rotate(-18deg);
+  pointer-events: none;
+  opacity: 0.35;
+  transition: opacity 0.6s;
+}
+
+.glass-card:hover::before {
+  opacity: 0.6;
+}
+
+.glass-card-fullscreen {
+  border-radius: 0;
+  border: none;
+  background: rgba(15, 23, 42, 0.85);
+}
+
+.neo-dashboard .glass-card {
+  background: linear-gradient(160deg, rgba(15, 23, 42, 0.8), rgba(15, 23, 42, 0.48));
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+}
+
+.cut-card {
+  --glass-bg: linear-gradient(145deg, rgba(12, 21, 40, .66), rgba(8, 15, 32, .58));
+  background: var(--glass-bg);
+  padding: 1rem;
+  gap: 0.8rem;
+}
+
+.cut-card::after {
+  content: '';
+  position: absolute;
+  inset: 20% -35% auto;
+  height: 52%;
+  background: radial-gradient(circle at center, rgba(110, 189, 255, .15), transparent 72%);
+  pointer-events: none;
+}
+
+.transaction-card {
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 0.8rem;
+  margin-bottom: 0.5rem;
+}
+
+.finishing-board-row {
+  background: linear-gradient(160deg, rgba(7, 19, 31, .9), rgba(8, 25, 36, .84));
+  border-color: rgba(14, 116, 144, .35);
+  padding: 0.9rem;
+  margin-top: 1rem;
+}
+
+.calculator-sheet,
+.notes-sheet,
+.gemini-chat-sheet {
+  border-radius: 20px;
+  background: linear-gradient(170deg, rgba(15, 23, 42, .98), rgba(15, 23, 42, .92));
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  padding: 1rem;
+}
+
+.glass-card h3,
+.cut-card h3,
+.finishing-board-row h3 {
+  margin: 0 0 0.5rem 0;
   font-size: 1rem;
   font-weight: 700;
   color: #f8fafc;
+  letter-spacing: -0.01em;
+}
+
+@media (max-width: 768px) {
+  .glass-card,
+  .cut-card,
+  .transaction-card {
+    padding: 12px !important;
+    border-radius: 12px;
+  }
+
+  .glass-card::before,
+  .glass-card::after {
+    display: none;
+  }
 }
 
 /* --- Botões e Interatividade --- */
@@ -3708,12 +3816,6 @@ body.neo-dashboard {
   }
 }
 
-
-
-  100% {
-    background-position: 0 50%;
-  }
-}
 
 /* Cutting checklist bottom-sheet refresh */
 .cutting-sheet {
