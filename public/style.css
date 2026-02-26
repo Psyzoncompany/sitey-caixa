@@ -6315,13 +6315,16 @@ body.has-manual-save-fab .due-soon-fab {
     bottom: calc(var(--bottom-nav-height, 78px) + env(safe-area-inset-bottom) + 12px);
   }
 
-  .calculator-fab--raised,
-  .notes-fab {
+  .calculator-fab--raised {
     bottom: calc(var(--bottom-nav-height, 78px) + env(safe-area-inset-bottom) + 76px);
   }
 
-  .due-soon-fab {
+  .notes-fab {
     bottom: calc(var(--bottom-nav-height, 78px) + env(safe-area-inset-bottom) + 140px);
+  }
+
+  .due-soon-fab {
+    bottom: calc(var(--bottom-nav-height, 78px) + env(safe-area-inset-bottom) + 204px);
   }
 
   .due-soon-fab__count {
