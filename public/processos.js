@@ -68,6 +68,11 @@ const init = () => {
     const cutDeleteConfirmModal = document.getElementById('cut-delete-confirm-modal');
     const cutDeleteConfirmBtn = document.getElementById('cut-delete-confirm-btn');
     const cutDeleteCancelBtn = document.getElementById('cut-delete-cancel-btn');
+    const finishingModal = document.getElementById('finishing-modal');
+    const finishingModalTitle = document.getElementById('finishing-modal-title');
+    const finishingModalSubtitle = document.getElementById('finishing-modal-subtitle');
+    const closeFinishingModalBtn = document.getElementById('close-finishing-modal-btn');
+    const finishingModalBody = document.getElementById('finishing-modal-body');
     const orderPrintTypeSelect = document.getElementById('order-print-type');
     const orderColorsContainer = document.getElementById('order-colors-container');
     const addColorBtn = document.getElementById('add-color-btn');
@@ -100,7 +105,12 @@ const init = () => {
     const expandedCutCards = new Set();
     let cuttingChecklistStatusFilter = 'all';
     let cuttingChecklistSearchFilter = '';
+    let cuttingChecklistSizeFilter = 'all';
+    let cuttingChecklistTypeFilter = 'all';
     let isCutSavePending = false;
+    let activeFinishingOrderId = null;
+    let finishingTypeFilter = 'all';
+    let finishingSizeFilter = 'all';
     // toggle visibility of DTF block based on select
     const togglePrintingBlock = () => {
         if (!orderPrintingBlock || !orderPrintTypeSelect) return;
@@ -1699,23 +1709,82 @@ const init = () => {
         return { items };
     };
 
-    const renderFinishingVerificationRows = (orderId, verification) => {
-        if (!verification.items.length) {
-            return '<div class="text-xs text-gray-400">Esse pedido ainda não possui peças cortadas para conferir.</div>';
-        }
+    const getUniqueValues = (list = []) => Array.from(new Set(list.map((v) => String(v || '-').trim() || '-'))).sort((a, b) => a.localeCompare(b, 'pt-BR'));
 
-        return `<div class="finishing-verification-list">${verification.items.map((item, index) => `
+    const renderFinishingVerificationRows = (orderId, verification) => {
+        const allItems = verification.items || [];
+        const sizeOptions = getUniqueValues(allItems.map((item) => item.size));
+        const typeOptions = getUniqueValues(allItems.map((item) => item.type));
+
+        const filtered = allItems.filter((item) => {
+            if (finishingSizeFilter !== 'all' && item.size !== finishingSizeFilter) return false;
+            if (finishingTypeFilter !== 'all' && item.type !== finishingTypeFilter) return false;
+            return true;
+        });
+
+        const options = (vals, selected) => [`<option value="all">Todos</option>`, ...vals.map((v) => `<option value="${sanitizeHtml(v)}" ${v === selected ? 'selected' : ''}>${sanitizeHtml(v)}</option>`)].join('');
+
+        const rows = filtered.length ? filtered.map((item, index) => {
+            const originalIndex = allItems.indexOf(item);
+            return `
             <div class="finishing-verification-item">
               <div class="finishing-verification-meta">
                 <span><strong>TAM:</strong> ${sanitizeHtml(item.size)}</span>
                 <span><strong>Cor:</strong> ${sanitizeHtml(item.color)}</span>
                 <span><strong>Tipo:</strong> ${sanitizeHtml(item.type)}</span>
               </div>
-              <label class="finishing-name-label" for="finish-name-${orderId}-${index}">Nome</label>
-              <input id="finish-name-${orderId}-${index}" type="text" class="finishing-name-input" value="${sanitizeHtml(item.personName)}" placeholder="Digite o nome da pessoa" data-action="edit-finish-name" data-order-id="${orderId}" data-item-index="${index}">
-              <label><input type="checkbox" data-action="toggle-finish-ok" data-order-id="${orderId}" data-item-index="${index}" ${item.isOk ? 'checked' : ''}> Tudo OK</label>
-            </div>
-        `).join('')}</div>`;
+              <label class="finishing-name-label" for="finish-name-${orderId}-${originalIndex}">Nome</label>
+              <input id="finish-name-${orderId}-${originalIndex}" type="text" class="finishing-name-input" value="${sanitizeHtml(item.personName)}" placeholder="Digite o nome da pessoa" data-action="edit-finish-name" data-order-id="${orderId}" data-item-index="${originalIndex}">
+              <label><input type="checkbox" data-action="toggle-finish-ok" data-order-id="${orderId}" data-item-index="${originalIndex}" ${item.isOk ? 'checked' : ''}> Tudo OK</label>
+            </div>`;
+        }).join('') : '<div class="glass-card p-4 text-sm text-gray-300">Nenhuma peça encontrada para os filtros selecionados.</div>';
+
+        return `
+            <section class="cutting-section-card">
+              <div class="cutting-section-head"><h3>Filtros</h3><span class="cutting-status-chip">${filtered.length}/${allItems.length}</span></div>
+              <div class="finishing-filter-grid">
+                <label>
+                  <span>Tamanho</span>
+                  <select data-action="finishing-filter-size" class="cut-filter-search">${options(sizeOptions, finishingSizeFilter)}</select>
+                </label>
+                <label>
+                  <span>Tipo</span>
+                  <select data-action="finishing-filter-type" class="cut-filter-search">${options(typeOptions, finishingTypeFilter)}</select>
+                </label>
+              </div>
+            </section>
+            <div class="finishing-verification-list">${rows}</div>
+        `;
+    };
+
+    const renderFinishingModal = (orderId) => {
+        if (!finishingModal || !finishingModalBody) return;
+        const order = productionOrders.find((item) => item.id === orderId);
+        if (!order) return;
+
+        activeFinishingOrderId = orderId;
+        const verification = normalizeFinishingVerification(order);
+        order.finishingVerification = verification;
+
+        const client = clients.find(c => c.id === order.clientId);
+        finishingModalTitle.textContent = `Finalização: ${order.description}`;
+        finishingModalSubtitle.textContent = `${client ? client.name : 'Cliente'} • ${verification.items.length} peça(s)`;
+
+        const totalOk = verification.items.filter((item) => item.isOk).length;
+        finishingModalBody.innerHTML = `
+            <section class="cutting-section-card">
+                <div class="cutting-section-head"><h3>Status</h3><span class="cutting-status-chip ${totalOk === verification.items.length && verification.items.length ? 'is-ok' : ''}">${totalOk}/${verification.items.length}</span></div>
+                <p class="text-sm ${totalOk === verification.items.length && verification.items.length ? 'text-green-300' : 'text-cyan-200'}">${totalOk === verification.items.length && verification.items.length ? 'Tudo certo! Todas as peças estão com Tudo OK. ✅' : 'Marque Tudo OK nas peças para concluir a finalização.'}</p>
+            </section>
+            ${renderFinishingVerificationRows(order.id, verification)}
+        `;
+
+        finishingModal.classList.remove('hidden');
+    };
+
+    const closeFinishingModal = () => {
+        activeFinishingOrderId = null;
+        if (finishingModal) finishingModal.classList.add('hidden');
     };
 
     const renderFinishingTasks = () => {
@@ -1789,14 +1858,7 @@ const init = () => {
                                     <div><span>DTF</span><strong>${readiness.dtfDone ? 'OK' : 'Pendente'}</strong></div>
                                 </div>
                                 <div class="finishing-progress"><span style="width:${progressPct}%"></span></div>
-                                <section class="finishing-verification-box">
-                                    <div class="finishing-verification-head">
-                                      <h4>Conferência por peça</h4>
-                                      <span class="finishing-pill ${readiness.verificationReady ? 'is-ok' : 'is-pending'}">${readiness.verificationReady ? 'Conferido' : 'Pendente'}</span>
-                                    </div>
-                                    <p class="text-xs ${readiness.verificationReady ? 'text-green-300' : 'text-cyan-200'}">${readiness.verificationReady ? 'Tudo certo! Todas as peças estão com Tudo OK. ✅' : `Progresso: ${readiness.doneVerificationItems} de ${readiness.totalVerificationItems} peças marcadas com Tudo OK.`}</p>
-                                    ${renderFinishingVerificationRows(order.id, readiness.verification)}
-                                </section>
+                                <button type="button" class="cutting-add-btn" data-action="open-finishing-modal" data-order-id="${order.id}">Abrir janela de finalização</button>
                             </article>`;
                     }).join('') : `<div class="glass-card p-4 text-sm text-gray-400">${emptyText}</div>`}
                 </div>`;
@@ -1808,9 +1870,30 @@ const init = () => {
     };
 
     if (finishingTasksContainer) {
-        finishingTasksContainer.addEventListener('change', (event) => {
+        finishingTasksContainer.addEventListener('click', (event) => {
+            const trigger = event.target.closest('[data-action="open-finishing-modal"]');
+            if (!trigger) return;
+            finishingTypeFilter = 'all';
+            finishingSizeFilter = 'all';
+            renderFinishingModal(parseInt(trigger.dataset.orderId, 10));
+        });
+    }
+
+    if (finishingModalBody) {
+        finishingModalBody.addEventListener('change', (event) => {
             const input = event.target;
             const action = input?.dataset?.action;
+            if (action === 'finishing-filter-size') {
+                finishingSizeFilter = String(input.value || 'all');
+                if (activeFinishingOrderId !== null) renderFinishingModal(activeFinishingOrderId);
+                return;
+            }
+            if (action === 'finishing-filter-type') {
+                finishingTypeFilter = String(input.value || 'all');
+                if (activeFinishingOrderId !== null) renderFinishingModal(activeFinishingOrderId);
+                return;
+            }
+
             if (!['toggle-finish-ok', 'edit-finish-name'].includes(action)) return;
 
             const orderId = parseInt(input.dataset.orderId, 10);
@@ -1822,16 +1905,28 @@ const init = () => {
             const item = order.finishingVerification.items[itemIndex];
             if (!item) return;
 
-            if (action === 'toggle-finish-ok') {
-                item.isOk = !!input.checked;
-            } else {
-                item.personName = String(input.value || '').trim();
-            }
+            if (action === 'toggle-finish-ok') item.isOk = !!input.checked;
+            else item.personName = String(input.value || '').trim();
 
             saveOrders();
             renderFinishingTasks();
+            if (activeFinishingOrderId !== null) renderFinishingModal(activeFinishingOrderId);
         });
-    };
+
+        finishingModalBody.addEventListener('input', (event) => {
+            const input = event.target;
+            if (input?.dataset?.action !== 'edit-finish-name') return;
+            const orderId = parseInt(input.dataset.orderId, 10);
+            const itemIndex = parseInt(input.dataset.itemIndex, 10);
+            const order = productionOrders.find((item) => item.id === orderId);
+            if (!order || Number.isNaN(itemIndex)) return;
+            order.finishingVerification = normalizeFinishingVerification(order);
+            const item = order.finishingVerification.items[itemIndex];
+            if (!item) return;
+            item.personName = String(input.value || '').trim();
+            saveOrders();
+        });
+    }
 
     const getCuttingTotalPieces = (subtasks = []) => subtasks.reduce((acc, sub) => acc + (parseInt(sub.total, 10) || 0), 0);
 
@@ -1860,6 +1955,10 @@ const init = () => {
             const isDone = total > 0 && cut >= total;
             if (cuttingChecklistStatusFilter === 'done' && !isDone) return false;
             if (cuttingChecklistStatusFilter === 'pending' && isDone) return false;
+            const sizeValue = String(subtask.gender === 'Infantil' ? (subtask.age || subtask.size || '-') : (subtask.size || '-')).trim() || '-';
+            const typeValue = String(subtask.variation || '-').trim() || '-';
+            if (cuttingChecklistSizeFilter !== 'all' && sizeValue !== cuttingChecklistSizeFilter) return false;
+            if (cuttingChecklistTypeFilter !== 'all' && typeValue !== cuttingChecklistTypeFilter) return false;
             if (!normalizedSearch) return true;
 
             const searchableFields = [subtask.size, subtask.age, subtask.gender, subtask.variation, subtask.color, subtask.colorName, subtask.notes]
@@ -1876,6 +1975,10 @@ const init = () => {
                 return `<span class="cutting-color-item"><span class="swatch" style="${safeBg}"></span>${sanitizeHtml(c)}</span>`;
             }).join('')
             : '<span class="cutting-status-chip">Sem cores</span>';
+
+        const sizeFilterOptions = getUniqueValues(subtasks.map((subtask) => subtask.gender === 'Infantil' ? (subtask.age || subtask.size || '-') : (subtask.size || '-')));
+        const typeFilterOptions = getUniqueValues(subtasks.map((subtask) => subtask.variation || '-'));
+        const filterOptionsHtml = (values, selected) => [`<option value="all">Todos</option>`, ...values.map((v) => `<option value="${sanitizeHtml(v)}" ${String(v) === String(selected) ? 'selected' : ''}>${sanitizeHtml(v)}</option>`)].join('');
 
         const cutsHtml = filteredSubtasks.length ? filteredSubtasks.map((subtask) => {
             const isInf = subtask.gender === 'Infantil';
@@ -1960,6 +2063,10 @@ const init = () => {
                         <button type="button" class="cut-filter-btn ${cuttingChecklistStatusFilter === 'all' ? 'is-active' : ''}" data-action="filter-status" data-filter="all">Todos</button>
                         <button type="button" class="cut-filter-btn ${cuttingChecklistStatusFilter === 'pending' ? 'is-active' : ''}" data-action="filter-status" data-filter="pending">Em andamento</button>
                         <button type="button" class="cut-filter-btn ${cuttingChecklistStatusFilter === 'done' ? 'is-active' : ''}" data-action="filter-status" data-filter="done">Concluídos</button>
+                    </div>
+                    <div class="finishing-filter-grid">
+                      <label><span>Tamanho</span><select data-action="cut-filter-size" class="cut-filter-search">${filterOptionsHtml(sizeFilterOptions, cuttingChecklistSizeFilter)}</select></label>
+                      <label><span>Tipo</span><select data-action="cut-filter-type" class="cut-filter-search">${filterOptionsHtml(typeFilterOptions, cuttingChecklistTypeFilter)}</select></label>
                     </div>
                     <input type="search" id="cut-filter-search" class="cut-filter-search" value="${sanitizeHtml(cuttingChecklistSearchFilter)}" placeholder="Filtrar por tamanho, cor, observação..." aria-label="Filtrar cortes por texto">
                 </div>
@@ -2077,6 +2184,8 @@ const init = () => {
         activeCuttingOrderId = orderId;
         cuttingChecklistStatusFilter = 'all';
         cuttingChecklistSearchFilter = '';
+        cuttingChecklistSizeFilter = 'all';
+        cuttingChecklistTypeFilter = 'all';
         const order = productionOrders.find(o => o.id === orderId);
         if (!order) return;
         setCutSavePending(false);
@@ -2214,6 +2323,16 @@ const init = () => {
                 renderCutCards(order);
                 return;
             }
+            if (e.target.dataset.action === 'cut-filter-size') {
+                cuttingChecklistSizeFilter = String(e.target.value || 'all');
+                renderCutCards(order);
+                return;
+            }
+            if (e.target.dataset.action === 'cut-filter-type') {
+                cuttingChecklistTypeFilter = String(e.target.value || 'all');
+                renderCutCards(order);
+                return;
+            }
 
             if (e.target.classList.contains('cut-quantity-input')) {
                 const id = parseFloat(e.target.dataset.subtaskId);
@@ -2336,6 +2455,11 @@ const init = () => {
             closeCutDeleteConfirmation();
             showCuttingSnackbar('Corte removido com sucesso.', 'success');
         });
+    }
+
+    if (closeFinishingModalBtn) closeFinishingModalBtn.addEventListener('click', closeFinishingModal);
+    if (finishingModal) {
+        finishingModal.addEventListener('click', (e) => { if (e.target === finishingModal) closeFinishingModal(); });
     }
 
     const closeCuttingModal = () => {
@@ -2850,7 +2974,7 @@ const init = () => {
     }
 
     // DEBUG — lista elementos ausentes
-    ['add-order-btn', 'tab-quadro', 'tab-afazeres', 'tab-cortes', 'view-quadro', 'view-afazeres', 'view-cortes', 'order-modal', 'cancel-order-btn', 'close-cutting-modal-btn', 'close-art-modal-btn']
+    ['add-order-btn', 'tab-quadro', 'tab-afazeres', 'tab-cortes', 'tab-finalizacao', 'view-quadro', 'view-afazeres', 'view-cortes', 'view-finalizacao', 'order-modal', 'cancel-order-btn', 'close-cutting-modal-btn', 'close-finishing-modal-btn', 'close-art-modal-btn']
         .forEach(id => {
             if (!document.getElementById(id)) console.warn(`processos.js: elemento ausente no DOM -> #${id}`);
         });
@@ -2874,6 +2998,13 @@ const init = () => {
             if (modal) { modal.classList.add('hidden'); console.log('processos.js: cuttingModal fechado (delegado)'); }
             activeCuttingOrderId = null;
         }
+        // Fechar modal de finalização
+        if (btn.id === 'close-finishing-modal-btn' || btn.closest && btn.closest('[data-action="close-finishing-modal"]')) {
+            e.preventDefault();
+            const modal = document.getElementById('finishing-modal');
+            if (modal) { modal.classList.add('hidden'); console.log('processos.js: finishingModal fechado (delegado)'); }
+            activeFinishingOrderId = null;
+        }
         // Fechar modal de arte
         if (btn.id === 'close-art-modal-btn' || btn.closest && btn.closest('[data-action="close-art-modal"]')) {
             e.preventDefault();
@@ -2890,7 +3021,7 @@ const init = () => {
 
     // Diagnóstico e correção temporária de overlays que cobrem a tela
     (function detectAndFixOverlays() {
-        const modalIds = ['order-modal', 'cutting-modal', 'art-modal', 'art-image-fullscreen-modal'];
+        const modalIds = ['order-modal', 'cutting-modal', 'finishing-modal', 'art-modal', 'art-image-fullscreen-modal'];
         const vw = window.innerWidth;
         const vh = window.innerHeight;
 

@@ -7238,6 +7238,22 @@ body {
   padding: .34rem .5rem;
 }
 
+.finishing-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .55rem;
+}
+
+.finishing-filter-grid label {
+  display: grid;
+  gap: .25rem;
+}
+
+.finishing-filter-grid label span {
+  font-size: .7rem;
+  color: #cbd5e1;
+}
+
 .finishing-verification-list {
   display: grid;
   gap: .45rem;
@@ -7316,5 +7332,9 @@ body {
 
   .finishing-kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .finishing-filter-grid {
+    grid-template-columns: 1fr;
   }
 }
