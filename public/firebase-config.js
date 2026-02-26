@@ -71,9 +71,11 @@ const isIndexPage = () => {
 const updateFloatingSaveButtonState = () => {
     if (!floatingSaveButton) return;
     const isDirty = hasUnsavedChanges;
+    floatingSaveButton.style.display = isDirty ? 'inline-flex' : 'none';
     floatingSaveButton.classList.toggle('unsaved', isDirty);
     floatingSaveButton.setAttribute('aria-label', isDirty ? 'Salvar alterações pendentes' : 'Tudo salvo');
     floatingSaveButton.title = isDirty ? 'Salvar alterações pendentes' : 'Tudo salvo';
+    document.body.classList.toggle('has-manual-save-fab', isDirty);
 };
 
 const ensureFloatingSaveButton = () => {
@@ -82,7 +84,6 @@ const ensureFloatingSaveButton = () => {
         return;
     }
     if (floatingSaveButton?.isConnected) {
-        document.body.classList.add('has-manual-save-fab');
         updateFloatingSaveButtonState();
         return;
     }
@@ -90,7 +91,6 @@ const ensureFloatingSaveButton = () => {
     const existingBtn = document.getElementById('floating-save-btn');
     if (existingBtn) {
         floatingSaveButton = existingBtn;
-        document.body.classList.add('has-manual-save-fab');
         updateFloatingSaveButtonState();
         return;
     }
@@ -209,7 +209,6 @@ const ensureFloatingSaveButton = () => {
     `;
     btn.addEventListener('click', () => saveToCloud({ force: true }));
     document.body.appendChild(btn);
-    document.body.classList.add('has-manual-save-fab');
 
     floatingSaveButton = btn;
     updateFloatingSaveButtonState();
@@ -1259,6 +1258,15 @@ const saveToCloud = async ({ silent = false, force = false } = {}) => {
     if (autosaveInFlight) return autosaveInFlight;
 
     const uid = auth.currentUser.uid;
+    const previousSnapshot = initialSnapshot;
+    const shouldRestoreDirtyOnError = hasUnsavedChanges;
+
+    // UX: ao clicar em salvar manualmente, ocultamos o botão imediatamente
+    // e restauramos o estado somente se o salvamento falhar.
+    hasUnsavedChanges = false;
+    initialSnapshot = getSnapshot(memoryStore);
+    updateFloatingSaveButtonState();
+
     autosaveInFlight = (async () => {
         try {
             await setDoc(doc(db, "users", uid), memoryStore, { merge: true });
@@ -1268,6 +1276,9 @@ const saveToCloud = async ({ silent = false, force = false } = {}) => {
             updateFloatingSaveButtonState();
             if (!silent) playSuccessSound();
         } catch (e) {
+            initialSnapshot = previousSnapshot;
+            hasUnsavedChanges = shouldRestoreDirtyOnError;
+            updateFloatingSaveButtonState();
             console.error("❌ Erro ao salvar na nuvem:", e);
             if (!silent) alert("Erro ao salvar na nuvem. Verifique sua conexão.");
         } finally {
