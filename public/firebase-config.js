@@ -71,9 +71,11 @@ const isIndexPage = () => {
 const updateFloatingSaveButtonState = () => {
     if (!floatingSaveButton) return;
     const isDirty = hasUnsavedChanges;
+    floatingSaveButton.hidden = !isDirty;
     floatingSaveButton.classList.toggle('unsaved', isDirty);
     floatingSaveButton.setAttribute('aria-label', isDirty ? 'Salvar alterações pendentes' : 'Tudo salvo');
     floatingSaveButton.title = isDirty ? 'Salvar alterações pendentes' : 'Tudo salvo';
+    document.body.classList.toggle('has-manual-save-fab', isDirty);
 };
 
 const ensureFloatingSaveButton = () => {
@@ -82,7 +84,6 @@ const ensureFloatingSaveButton = () => {
         return;
     }
     if (floatingSaveButton?.isConnected) {
-        document.body.classList.add('has-manual-save-fab');
         updateFloatingSaveButtonState();
         return;
     }
@@ -90,7 +91,6 @@ const ensureFloatingSaveButton = () => {
     const existingBtn = document.getElementById('floating-save-btn');
     if (existingBtn) {
         floatingSaveButton = existingBtn;
-        document.body.classList.add('has-manual-save-fab');
         updateFloatingSaveButtonState();
         return;
     }
@@ -209,7 +209,6 @@ const ensureFloatingSaveButton = () => {
     `;
     btn.addEventListener('click', () => saveToCloud({ force: true }));
     document.body.appendChild(btn);
-    document.body.classList.add('has-manual-save-fab');
 
     floatingSaveButton = btn;
     updateFloatingSaveButtonState();
