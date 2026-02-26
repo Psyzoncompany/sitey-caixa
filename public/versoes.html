@@ -38,12 +38,13 @@
 
       <article class="glass-card p-5 border border-cyan-500/20">
         <div class="flex items-center justify-between gap-3 mb-2">
-          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.35</h2>
+          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.36</h2>
           <span class="text-xs text-gray-400">Atual</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
-          <li>Botão de <strong>Salvar</strong> da Index agora some imediatamente após o clique quando não existe mais alteração pendente.</li>
-          <li>Se ocorrer falha de rede ao salvar, o estado pendente é restaurado e o botão reaparece para não perder controle manual.</li>
+          <li>Correção do FAB de <strong>Salvar</strong> na Index: agora a ocultação usa controle direto de <strong>display</strong> para evitar conflito com CSS e o botão realmente some após salvar.</li>
+          <li>Corrigida sobreposição visual perto da calculadora após salvar, removendo o caso em que o botão de salvar permanecia visível por cima de outros FABs.</li>
+          <li>Se ocorrer falha de rede ao salvar, o estado pendente continua sendo restaurado e o botão reaparece para não perder controle manual.</li>
           <li>Cada pedido em <strong>Controle de Finalização</strong> agora abre em uma <strong>janela própria</strong>, deixando a conferência mais organizada.</li>
           <li>Dentro da janela de finalização foi adicionado filtro por <strong>Tamanho</strong> e <strong>Tipo</strong>, mantendo o campo <strong>Nome</strong> e o check <strong>Tudo OK</strong> por peça.</li>
           <li>No <strong>Controle de Cortes</strong> também foram adicionados filtros por <strong>Tamanho</strong> e <strong>Tipo</strong> dentro da janela de checklist de cortes.</li>

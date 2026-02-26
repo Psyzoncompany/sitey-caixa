@@ -71,7 +71,7 @@ const isIndexPage = () => {
 const updateFloatingSaveButtonState = () => {
     if (!floatingSaveButton) return;
     const isDirty = hasUnsavedChanges;
-    floatingSaveButton.hidden = !isDirty;
+    floatingSaveButton.style.display = isDirty ? 'inline-flex' : 'none';
     floatingSaveButton.classList.toggle('unsaved', isDirty);
     floatingSaveButton.setAttribute('aria-label', isDirty ? 'Salvar alterações pendentes' : 'Tudo salvo');
     floatingSaveButton.title = isDirty ? 'Salvar alterações pendentes' : 'Tudo salvo';
