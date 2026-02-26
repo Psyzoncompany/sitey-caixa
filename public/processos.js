@@ -1664,38 +1664,56 @@ const init = () => {
         });
     }
 
-    const normalizeFinishingVerification = (order, suggestedTotal = 0) => {
-        const targetTotal = Math.max(parseInt(suggestedTotal, 10) || 0, 0);
+    const buildFinishingVerificationEntries = (order) => {
+        const subtasks = order?.checklist?.cutting?.subtasks || [];
+        const entries = [];
+
+        subtasks.forEach((subtask) => {
+            const total = Math.max(parseInt(subtask.total || 0, 10) || 0, 0);
+            for (let i = 0; i < total; i += 1) {
+                entries.push({
+                    size: String(subtask.size || '-').trim() || '-',
+                    color: String(subtask.colorName || subtask.color || '-').trim() || '-',
+                    type: String(subtask.variation || subtask.gender || subtask.age || '-').trim() || '-'
+                });
+            }
+        });
+
+        return entries;
+    };
+
+    const normalizeFinishingVerification = (order) => {
+        const entries = buildFinishingVerificationEntries(order);
         const raw = order.finishingVerification || {};
-        let quantity = parseInt(raw.quantity, 10);
-        if (!Number.isFinite(quantity) || quantity < 0) quantity = targetTotal;
-        if (!quantity && targetTotal > 0) quantity = targetTotal;
+        const rawItems = Array.isArray(raw.items) ? raw.items : [];
 
-        const shirts = Array.isArray(raw.shirts) ? raw.shirts : [];
-        const normalized = [];
-        for (let i = 0; i < quantity; i += 1) {
-            const current = shirts[i] || {};
-            normalized.push({
-                printed: !!current.printed,
-                nameOk: !!current.nameOk,
-                notMissing: !!current.notMissing
-            });
-        }
+        const items = entries.map((entry, index) => {
+            const current = rawItems[index] || {};
+            return {
+                ...entry,
+                personName: String(current.personName || '').trim(),
+                isOk: !!current.isOk
+            };
+        });
 
-        return { quantity, shirts: normalized };
+        return { items };
     };
 
     const renderFinishingVerificationRows = (orderId, verification) => {
-        if (!verification.quantity) {
-            return '<div class="text-xs text-gray-400">Defina a quantidade para montar a conferência de estampas.</div>';
+        if (!verification.items.length) {
+            return '<div class="text-xs text-gray-400">Esse pedido ainda não possui peças cortadas para conferir.</div>';
         }
 
-        return `<div class="finishing-verification-list">${verification.shirts.map((shirt, index) => `
+        return `<div class="finishing-verification-list">${verification.items.map((item, index) => `
             <div class="finishing-verification-item">
-              <p class="finishing-verification-title">Camisa ${index + 1}</p>
-              <label><input type="checkbox" data-action="toggle-finish-check" data-order-id="${orderId}" data-shirt-index="${index}" data-field="printed" ${shirt.printed ? 'checked' : ''}> Já estampei</label>
-              <label><input type="checkbox" data-action="toggle-finish-check" data-order-id="${orderId}" data-shirt-index="${index}" data-field="nameOk" ${shirt.nameOk ? 'checked' : ''}> Nome certo</label>
-              <label><input type="checkbox" data-action="toggle-finish-check" data-order-id="${orderId}" data-shirt-index="${index}" data-field="notMissing" ${shirt.notMissing ? 'checked' : ''}> Não está faltando</label>
+              <div class="finishing-verification-meta">
+                <span><strong>TAM:</strong> ${sanitizeHtml(item.size)}</span>
+                <span><strong>Cor:</strong> ${sanitizeHtml(item.color)}</span>
+                <span><strong>Tipo:</strong> ${sanitizeHtml(item.type)}</span>
+              </div>
+              <label class="finishing-name-label" for="finish-name-${orderId}-${index}">Nome</label>
+              <input id="finish-name-${orderId}-${index}" type="text" class="finishing-name-input" value="${sanitizeHtml(item.personName)}" placeholder="Digite o nome da pessoa" data-action="edit-finish-name" data-order-id="${orderId}" data-item-index="${index}">
+              <label><input type="checkbox" data-action="toggle-finish-ok" data-order-id="${orderId}" data-item-index="${index}" ${item.isOk ? 'checked' : ''}> Tudo OK</label>
             </div>
         `).join('')}</div>`;
     };
@@ -1718,12 +1736,10 @@ const init = () => {
             const hasCutting = subtasks.length > 0;
             const cuttingDone = hasCutting && totalCut > 0 && cutDone >= totalCut;
             const dtfDone = order.printType !== 'dtf' || !!order?.printing?.completed;
-            const verification = normalizeFinishingVerification(order, totalCut);
-            const totalVerificationItems = verification.quantity * 3;
-            const doneVerificationItems = verification.shirts.reduce((acc, shirt) => {
-                return acc + (shirt.printed ? 1 : 0) + (shirt.nameOk ? 1 : 0) + (shirt.notMissing ? 1 : 0);
-            }, 0);
-            const verificationReady = verification.quantity > 0 && verification.quantity === totalCut && totalVerificationItems > 0 && doneVerificationItems === totalVerificationItems;
+            const verification = normalizeFinishingVerification(order);
+            const totalVerificationItems = verification.items.length;
+            const doneVerificationItems = verification.items.filter((item) => item.isOk).length;
+            const verificationReady = totalVerificationItems > 0 && doneVerificationItems === totalVerificationItems;
             const ready = done === total && cuttingDone && dtfDone && verificationReady;
 
             return { done, total, totalCut, cutDone, hasCutting, cuttingDone, dtfDone, verification, totalVerificationItems, doneVerificationItems, verificationReady, ready };
@@ -1769,24 +1785,16 @@ const init = () => {
                                 <div class="finishing-kpis">
                                     <div><span>Checklist</span><strong>${readiness.done}/${readiness.total}</strong></div>
                                     <div><span>Cortes</span><strong>${readiness.hasCutting ? `${readiness.cutDone}/${readiness.totalCut}` : 'Sem corte'}</strong></div>
-                                    <div><span>Verificações</span><strong>${readiness.doneVerificationItems}/${Math.max(readiness.totalVerificationItems, 0)}</strong></div>
+                                    <div><span>Tudo OK</span><strong>${readiness.doneVerificationItems}/${Math.max(readiness.totalVerificationItems, 0)}</strong></div>
                                     <div><span>DTF</span><strong>${readiness.dtfDone ? 'OK' : 'Pendente'}</strong></div>
                                 </div>
                                 <div class="finishing-progress"><span style="width:${progressPct}%"></span></div>
                                 <section class="finishing-verification-box">
                                     <div class="finishing-verification-head">
-                                      <h4>Conferência das camisas</h4>
+                                      <h4>Conferência por peça</h4>
                                       <span class="finishing-pill ${readiness.verificationReady ? 'is-ok' : 'is-pending'}">${readiness.verificationReady ? 'Conferido' : 'Pendente'}</span>
                                     </div>
-                                    <p class="text-xs text-gray-400">A quantidade de camisas para verificar precisa ser igual ao total cortado (${readiness.totalCut}).</p>
-                                    <div class="finishing-verification-controls">
-                                      <label for="finish-qty-${order.id}" class="text-xs text-gray-300">Qtd. camisas cortadas</label>
-                                      <div class="finishing-verification-actions">
-                                        <input id="finish-qty-${order.id}" type="number" min="1" value="${readiness.verification.quantity || ''}" data-role="finish-qty-input" data-order-id="${order.id}" class="finishing-qty-input">
-                                        <button type="button" class="btn-shine finishing-generate-btn" data-action="generate-finish-checklist" data-order-id="${order.id}">Criar lista</button>
-                                      </div>
-                                    </div>
-                                    <p class="text-xs ${readiness.verificationReady ? 'text-green-300' : 'text-cyan-200'}">${readiness.verificationReady ? 'Tudo certo! Todas as camisas foram verificadas. ✅' : `Progresso: ${readiness.doneVerificationItems} de ${readiness.totalVerificationItems} itens verificados.`}</p>
+                                    <p class="text-xs ${readiness.verificationReady ? 'text-green-300' : 'text-cyan-200'}">${readiness.verificationReady ? 'Tudo certo! Todas as peças estão com Tudo OK. ✅' : `Progresso: ${readiness.doneVerificationItems} de ${readiness.totalVerificationItems} peças marcadas com Tudo OK.`}</p>
                                     ${renderFinishingVerificationRows(order.id, readiness.verification)}
                                 </section>
                             </article>`;
@@ -1800,48 +1808,30 @@ const init = () => {
     };
 
     if (finishingTasksContainer) {
-        finishingTasksContainer.addEventListener('click', (event) => {
-            const trigger = event.target.closest('[data-action]');
-            if (!trigger) return;
-
-            if (trigger.dataset.action === 'generate-finish-checklist') {
-                const orderId = parseInt(trigger.dataset.orderId, 10);
-                const order = productionOrders.find((item) => item.id === orderId);
-                if (!order) return;
-                const input = finishingTasksContainer.querySelector(`[data-role="finish-qty-input"][data-order-id="${orderId}"]`);
-                const quantity = parseInt(input?.value || '', 10);
-                if (!Number.isFinite(quantity) || quantity <= 0) {
-                    showCuttingSnackbar('Informe uma quantidade válida de camisas para verificar.', 'error');
-                    return;
-                }
-
-                order.finishingVerification = normalizeFinishingVerification(order, quantity);
-                order.finishingVerification.quantity = quantity;
-                saveOrders();
-                renderFinishingTasks();
-            }
-        });
-
         finishingTasksContainer.addEventListener('change', (event) => {
             const input = event.target;
-            if (!input.matches('[data-action="toggle-finish-check"]')) return;
+            const action = input?.dataset?.action;
+            if (!['toggle-finish-ok', 'edit-finish-name'].includes(action)) return;
 
             const orderId = parseInt(input.dataset.orderId, 10);
-            const shirtIndex = parseInt(input.dataset.shirtIndex, 10);
-            const field = input.dataset.field;
+            const itemIndex = parseInt(input.dataset.itemIndex, 10);
             const order = productionOrders.find((item) => item.id === orderId);
-            if (!order || Number.isNaN(shirtIndex)) return;
+            if (!order || Number.isNaN(itemIndex)) return;
 
-            const totalCut = ((order?.checklist?.cutting?.subtasks) || []).reduce((acc, item) => acc + (parseInt(item.total || 0, 10) || 0), 0);
-            order.finishingVerification = normalizeFinishingVerification(order, totalCut);
-            const shirt = order.finishingVerification.shirts[shirtIndex];
-            if (!shirt || !['printed', 'nameOk', 'notMissing'].includes(field)) return;
+            order.finishingVerification = normalizeFinishingVerification(order);
+            const item = order.finishingVerification.items[itemIndex];
+            if (!item) return;
 
-            shirt[field] = !!input.checked;
+            if (action === 'toggle-finish-ok') {
+                item.isOk = !!input.checked;
+            } else {
+                item.personName = String(input.value || '').trim();
+            }
+
             saveOrders();
             renderFinishingTasks();
         });
-    }
+    };
 
     const getCuttingTotalPieces = (subtasks = []) => subtasks.reduce((acc, sub) => acc + (parseInt(sub.total, 10) || 0), 0);
 
