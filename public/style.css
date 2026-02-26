@@ -7150,7 +7150,7 @@ body {
 
 .finishing-kpis {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: .5rem;
 }
 
@@ -7185,6 +7185,92 @@ body {
   height: 100%;
   border-radius: inherit;
   background: linear-gradient(90deg, #06b6d4, #3b82f6);
+}
+
+.finishing-verification-box {
+  border: 1px solid rgba(148, 163, 184, .24);
+  border-radius: 12px;
+  padding: .7rem;
+  display: grid;
+  gap: .55rem;
+  background: rgba(2, 6, 23, .35);
+}
+
+.finishing-verification-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .55rem;
+}
+
+.finishing-verification-head h4 {
+  font-size: .82rem;
+  font-weight: 700;
+  color: #dbeafe;
+}
+
+.finishing-verification-controls {
+  display: grid;
+  gap: .4rem;
+}
+
+.finishing-verification-actions {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  flex-wrap: wrap;
+}
+
+.finishing-qty-input {
+  width: 110px;
+  min-height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, .35);
+  background: rgba(15, 23, 42, .55);
+  color: #f8fafc;
+  padding: .38rem .5rem;
+}
+
+.finishing-generate-btn {
+  min-height: 36px;
+  padding: .35rem .8rem;
+  border-radius: 10px;
+  font-size: .75rem;
+}
+
+.finishing-verification-list {
+  display: grid;
+  gap: .45rem;
+  max-height: 200px;
+  overflow-y: auto;
+  padding-right: .2rem;
+}
+
+.finishing-verification-item {
+  border: 1px solid rgba(148, 163, 184, .2);
+  border-radius: 10px;
+  padding: .5rem;
+  background: rgba(15, 23, 42, .45);
+  display: grid;
+  gap: .2rem;
+}
+
+.finishing-verification-title {
+  font-size: .74rem;
+  font-weight: 700;
+  color: #bae6fd;
+}
+
+.finishing-verification-item label {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  font-size: .74rem;
+  color: #d1d5db;
+}
+
+.finishing-verification-item input[type="checkbox"] {
+  accent-color: #06b6d4;
 }
 
 @media (max-width: 768px) {
@@ -7226,5 +7312,9 @@ body {
 
   .finishing-board-row-grid {
     grid-template-columns: 1fr;
+  }
+
+  .finishing-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
