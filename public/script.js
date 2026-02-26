@@ -25,6 +25,36 @@ const init = () => {
     const totalPayablesEl = document.getElementById('total-payables');       // A pagar
     const totalMonthlyExpensesEl = document.getElementById('total-monthly-expenses');
 
+    const loggedAccountDisplayEl = document.getElementById('logged-account-display');
+
+    const resolveAccountLabel = (user) => {
+        if (!user) return 'Conta logada: não identificada';
+        const name = typeof user.displayName === 'string' ? user.displayName.trim() : '';
+        const email = typeof user.email === 'string' ? user.email.trim() : '';
+        const uid = typeof user.uid === 'string' ? user.uid.trim() : '';
+
+        if (name && email) return `Conta logada: ${name} (${email})`;
+        if (name) return `Conta logada: ${name}`;
+        if (email) return `Conta logada: ${email}`;
+        if (uid === 'local_user') return 'Conta logada: modo local';
+        if (uid) return `Conta logada: ${uid}`;
+        return 'Conta logada: não identificada';
+    };
+
+    const updateLoggedAccountDisplay = () => {
+        if (!loggedAccountDisplayEl) return;
+        const user = typeof window.firebaseAuth?.currentUser === 'function'
+            ? window.firebaseAuth.currentUser()
+            : null;
+        loggedAccountDisplayEl.textContent = resolveAccountLabel(user);
+    };
+
+    updateLoggedAccountDisplay();
+    setTimeout(updateLoggedAccountDisplay, 600);
+    setTimeout(updateLoggedAccountDisplay, 1800);
+    window.addEventListener('focus', updateLoggedAccountDisplay);
+
+
     // Quando clica no valor de "A Receber", leva o usuário para a tela de Processos
     if (totalReceivablesEl) {
         totalReceivablesEl.addEventListener('click', () => {
