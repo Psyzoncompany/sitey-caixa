@@ -1258,6 +1258,15 @@ const saveToCloud = async ({ silent = false, force = false } = {}) => {
     if (autosaveInFlight) return autosaveInFlight;
 
     const uid = auth.currentUser.uid;
+    const previousSnapshot = initialSnapshot;
+    const shouldRestoreDirtyOnError = hasUnsavedChanges;
+
+    // UX: ao clicar em salvar manualmente, ocultamos o botão imediatamente
+    // e restauramos o estado somente se o salvamento falhar.
+    hasUnsavedChanges = false;
+    initialSnapshot = getSnapshot(memoryStore);
+    updateFloatingSaveButtonState();
+
     autosaveInFlight = (async () => {
         try {
             await setDoc(doc(db, "users", uid), memoryStore, { merge: true });
@@ -1267,6 +1276,9 @@ const saveToCloud = async ({ silent = false, force = false } = {}) => {
             updateFloatingSaveButtonState();
             if (!silent) playSuccessSound();
         } catch (e) {
+            initialSnapshot = previousSnapshot;
+            hasUnsavedChanges = shouldRestoreDirtyOnError;
+            updateFloatingSaveButtonState();
             console.error("❌ Erro ao salvar na nuvem:", e);
             if (!silent) alert("Erro ao salvar na nuvem. Verifique sua conexão.");
         } finally {
