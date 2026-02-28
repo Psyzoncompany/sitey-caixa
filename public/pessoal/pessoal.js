@@ -121,7 +121,7 @@
     }
 
     tbody.innerHTML = filtered.map((tx) => `
-      <tr class="border-b border-slate-100">
+      <tr class="personal-row">
         <td class="py-2">${formatDate(tx.data)}</td>
         <td class="py-2">${escapeHtml(tx.descricao)}</td>
         <td class="py-2">${escapeHtml(tx.categoria)}</td>
@@ -337,7 +337,7 @@
           backgroundColor: ['#4f46e5', '#3b82f6', '#6366f1', '#8b5cf6', '#06b6d4', '#14b8a6', '#f97316', '#ef4444', '#84cc16', '#64748b']
         }]
       },
-      options: { plugins: { legend: { position: 'bottom' } } }
+      options: { plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1' } } } }
     });
   }
 
@@ -369,7 +369,7 @@
           { label: 'Despesas', data: despesas, backgroundColor: '#ef4444' }
         ]
       },
-      options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+      options: { responsive: true, plugins: { legend: { position: 'bottom', labels: { color: '#cbd5e1' } } }, scales: { x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,0.18)' } }, y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,0.18)' } } } }
     });
   }
 
