@@ -1,0 +1,148 @@
+:root {
+  --bg-primary: #020617;
+  --bg-secondary: #0b1220;
+  --bg-card: rgba(15, 23, 42, 0.7);
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --border-color: rgba(148, 163, 184, 0.25);
+  --accent: #22d3ee;
+  --accent-light: rgba(34, 211, 238, 0.15);
+  --success: #4ade80;
+  --danger: #f87171;
+}
+
+body.theme-personal {
+  min-height: 100vh;
+  background:
+    radial-gradient(1000px 480px at -10% -10%, rgba(34, 211, 238, 0.18), transparent 60%),
+    radial-gradient(900px 420px at 110% 0%, rgba(59, 130, 246, 0.18), transparent 58%),
+    linear-gradient(155deg, #020617 0%, #081228 46%, #0b1220 100%);
+  color: var(--text-primary);
+}
+
+.personal-topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 60;
+  background: rgba(2, 6, 23, 0.72);
+  border-bottom: 1px solid var(--border-color);
+  backdrop-filter: blur(10px);
+}
+
+.personal-topbar-inner { min-height: 74px; }
+
+.personal-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  box-shadow: 0 14px 40px rgba(2, 6, 23, 0.4);
+  backdrop-filter: blur(12px);
+  animation: cardFadeIn .35s ease both;
+}
+
+@keyframes cardFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.personal-tabs { display:flex; flex-wrap:wrap; gap:.5rem; }
+.personal-tab {
+  border: 1px solid var(--border-color);
+  background: rgba(15, 23, 42, 0.5);
+  color: var(--text-secondary);
+  padding: .55rem .95rem;
+  border-radius: 999px;
+  font-size: .88rem;
+  font-weight: 700;
+  transition: all .2s ease;
+}
+.personal-tab:hover { transform: translateY(-1px); color: #bae6fd; }
+.personal-tab.active {
+  background: var(--accent-light);
+  color: #67e8f9;
+  border-color: rgba(34, 211, 238, 0.45);
+  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.22) inset;
+}
+
+.personal-input {
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: .58rem .78rem;
+  background: rgba(15, 23, 42, 0.6);
+  color: var(--text-primary);
+}
+
+.personal-btn {
+  border-radius: 10px;
+  padding: .45rem .78rem;
+  font-size: .83rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+  transition: .2s ease;
+}
+.personal-btn:hover { transform: translateY(-1px); }
+.personal-btn-primary { background: linear-gradient(90deg, #06b6d4, #0ea5e9); color: #022c22; }
+.personal-btn-ghost { border-color: var(--border-color); background: rgba(15, 23, 42, .6); color: var(--text-primary); }
+.personal-btn-danger { border-color: rgba(248,113,113,.35); background: rgba(127,29,29,.25); color: #fecaca; }
+
+.personal-list-item {
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, .6);
+  padding: .9rem;
+  display: flex;
+  justify-content: space-between;
+  gap: .75rem;
+}
+
+.toggle-mode-switcher {
+  display:inline-flex;
+  gap:.35rem;
+  padding:.2rem;
+  border-radius:999px;
+  border:1px solid var(--border-color);
+  background: rgba(15,23,42,.5);
+}
+.toggle-mode-switcher .toggle-btn {
+  padding:.45rem .9rem;
+  border-radius:999px;
+  font-size:.82rem;
+  font-weight:700;
+  color:#cbd5e1;
+  border:1px solid transparent;
+}
+.toggle-mode-switcher .toggle-btn.active {
+  background: var(--accent-light);
+  color: #67e8f9;
+}
+
+.personal-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.68);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 96px 16px 16px;
+  z-index: 80;
+}
+.personal-modal {
+  width: min(100%, 460px);
+  background: rgba(15,23,42,.9);
+  border-radius: 14px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 18px 44px rgba(2,6,23,.45);
+  padding: 1rem;
+  position: relative;
+  color: var(--text-primary);
+}
+.personal-modal-close { position:absolute; right:10px; top:10px; color:#94a3b8; }
+
+.personal-table-head { color:#94a3b8; border-bottom:1px solid rgba(148,163,184,.2); }
+.personal-row { border-bottom:1px solid rgba(148,163,184,.12); }
+
+@media (max-width: 768px) {
+  .personal-main { padding-top: 106px; }
+}
