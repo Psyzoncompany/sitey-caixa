@@ -396,6 +396,13 @@ document.addEventListener('DOMContentLoaded', () => {
     closeSettingsBtn.addEventListener('click', closeSettings);
     settingsForm.addEventListener('submit', saveSettings);
 
+    const handleCloudDataUpdated = () => {
+        updateDashboard();
+    };
+
+    window.addEventListener('cloud-data-updated', handleCloudDataUpdated);
+    window.addEventListener('cloud-data-refresh-requested', handleCloudDataUpdated);
+
     // Wait for Firebase to initialize and load data
     const checkBackend = setInterval(() => {
         if (window.BackendInitialized) {

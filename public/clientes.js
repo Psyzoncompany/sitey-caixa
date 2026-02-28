@@ -242,6 +242,14 @@ const init = () => {
     sortBySelect.addEventListener('change', renderClientList);
     filterGenderSelect.addEventListener('change', renderClientList);
 
+    const handleCloudDataUpdated = () => {
+        clients = JSON.parse(localStorage.getItem('clients')) || [];
+        renderClientList();
+    };
+
+    window.addEventListener('cloud-data-updated', handleCloudDataUpdated);
+    window.addEventListener('cloud-data-refresh-requested', handleCloudDataUpdated);
+
     renderClientList();
 };
 

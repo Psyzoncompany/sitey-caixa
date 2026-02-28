@@ -673,6 +673,15 @@ const initContas = () => {
     importFileInput.addEventListener('change', (e) => importDb(e.target.files[0]));
 
     // --- INITIALIZATION ---
+    const handleCloudDataUpdated = () => {
+        loadDb();
+        renderForDate(currentDate);
+        loadReminderSettings();
+    };
+
+    window.addEventListener('cloud-data-updated', handleCloudDataUpdated);
+    window.addEventListener('cloud-data-refresh-requested', handleCloudDataUpdated);
+
     loadDb();
     renderForDate(currentDate);
     loadReminderSettings();

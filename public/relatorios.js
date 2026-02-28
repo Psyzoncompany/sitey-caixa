@@ -21,12 +21,18 @@ const init = () => {
     const calculateCostBtn = document.getElementById('calculate-cost-btn');
     
     let currentFilteredTransactions = [];
-    const incomeCategories = JSON.parse(localStorage.getItem('incomeCategories')) || ['Venda de Produto', 'Adiantamento', 'Serviços', 'Outros'];
-    const expenseCategories = JSON.parse(localStorage.getItem('expenseCategories')) || ['Matéria-Prima (Custo Direto)', 'Aluguel', 'Contas (Água, Luz, Internet)', 'Marketing e Vendas', 'Salários e Pró-labore', 'Impostos', 'Software e Ferramentas', 'Manutenção', 'Despesas Pessoais', 'Outros'];
+    let incomeCategories = JSON.parse(localStorage.getItem('incomeCategories')) || ['Venda de Produto', 'Adiantamento', 'Serviços', 'Outros'];
+    let expenseCategories = JSON.parse(localStorage.getItem('expenseCategories')) || ['Matéria-Prima (Custo Direto)', 'Aluguel', 'Contas (Água, Luz, Internet)', 'Marketing e Vendas', 'Salários e Pró-labore', 'Impostos', 'Software e Ferramentas', 'Manutenção', 'Despesas Pessoais', 'Outros'];
     let monthlyProduction = JSON.parse(localStorage.getItem('monthlyProduction')) || [];
 
     const formatCurrency = (amount) => amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     const formatDate = (dateString) => new Date(dateString + 'T03:00:00').toLocaleDateString('pt-BR');
+
+    const loadRuntimeDataFromStorage = () => {
+        incomeCategories = JSON.parse(localStorage.getItem('incomeCategories')) || ['Venda de Produto', 'Adiantamento', 'Serviços', 'Outros'];
+        expenseCategories = JSON.parse(localStorage.getItem('expenseCategories')) || ['Matéria-Prima (Custo Direto)', 'Aluguel', 'Contas (Água, Luz, Internet)', 'Marketing e Vendas', 'Salários e Pró-labore', 'Impostos', 'Software e Ferramentas', 'Manutenção', 'Despesas Pessoais', 'Outros'];
+        monthlyProduction = JSON.parse(localStorage.getItem('monthlyProduction')) || [];
+    };
 
     const updateCategoryFilter = () => {
         const selectedType = typeFilter.value;
@@ -188,6 +194,17 @@ const init = () => {
         });
     }
 
+    const handleCloudDataUpdated = () => {
+        loadRuntimeDataFromStorage();
+        updateCategoryFilter();
+        generateReport();
+        renderProductionList();
+    };
+
+    window.addEventListener('cloud-data-updated', handleCloudDataUpdated);
+    window.addEventListener('cloud-data-refresh-requested', handleCloudDataUpdated);
+
+    loadRuntimeDataFromStorage();
     updateCategoryFilter();
     generateReport();
     renderProductionList();

@@ -38,8 +38,21 @@
 
       <article class="glass-card p-5 border border-cyan-500/20">
         <div class="flex items-center justify-between gap-3 mb-2">
-          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.42</h2>
+          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.43</h2>
           <span class="text-xs text-gray-400">Atual</span>
+        </div>
+        <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
+          <li>Sincronização em tempo real sem recarregar página aplicada na <strong>Index</strong>: quando chega atualização remota, os cards e listas agora se redesenham automaticamente no mesmo layout.</li>
+          <li>O gatilho global de atualização remota foi migrado de <strong>reload da página</strong> para <strong>evento de refresh em memória</strong>, mantendo login protegido e evitando piscar de tela.</li>
+          <li>Mesmo comportamento estendido para <strong>Central, Clientes, Contas, Relatórios, Histórico e Configurações</strong>, garantindo atualização entre dispositivos sem F5 manual.</li>
+        </ul>
+      </article>
+
+
+      <article class="glass-card p-5 border border-cyan-500/20">
+        <div class="flex items-center justify-between gap-3 mb-2">
+          <h2 class="text-xl font-bold text-cyan-200">Versão 6.0.42</h2>
+          <span class="text-xs text-gray-400">Anterior</span>
         </div>
         <ul class="list-disc pl-5 text-sm text-gray-200 space-y-1">
           <li>Sincronização em <strong>tempo real entre dispositivos</strong> reforçada: quando chegar atualização remota da nuvem, as páginas do sistema agora se atualizam automaticamente sem precisar dar F5.</li>

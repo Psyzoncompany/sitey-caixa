@@ -51,6 +51,14 @@ const init = () => {
   let fabricChart = null;
   let incomeSourceChart = null;
 
+  const reloadRuntimeDataFromStorage = () => {
+    transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+    clients = JSON.parse(localStorage.getItem('clients')) || [];
+    productionOrders = JSON.parse(localStorage.getItem('production_orders')) || [];
+    incomeCategories = JSON.parse(localStorage.getItem('incomeCategories')) || ['Venda de Produto', 'Adiantamento', 'Serviços', 'Outros'];
+    expenseCategories = JSON.parse(localStorage.getItem('expenseCategories')) || ['Matéria-Prima (Custo Direto)', 'Aluguel', 'Contas (Água, Luz, Internet)', 'Marketing e Vendas', 'Salários e Pró-labore', 'Impostos', 'Software e Ferramentas', 'Manutenção', 'Despesas Pessoais', 'Outros'];
+  };
+
   // utils
   const saveTransactions = () => localStorage.setItem('transactions', JSON.stringify(transactions));
   const formatCurrency = (amount) => amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -407,6 +415,16 @@ const init = () => {
     if (monthSelector) monthSelector.value = `${y}-${m}`;
     renderDashboardForMonth(`${y}-${m}`);
   };
+
+  const handleCloudDataUpdated = () => {
+    reloadRuntimeDataFromStorage();
+    updateCategoryOptions();
+    populateClientSelect();
+    renderDashboardForMonth(getSelectedMonth());
+  };
+
+  window.addEventListener('cloud-data-updated', handleCloudDataUpdated);
+  window.addEventListener('cloud-data-refresh-requested', handleCloudDataUpdated);
 
   initialize();
 };
