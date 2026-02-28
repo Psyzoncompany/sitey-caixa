@@ -242,6 +242,19 @@ const init = () => {
     let activeCuttingOrderId = null;
     let activeArtOrderId = null;
 
+    window.disableRealtimePageReload = true;
+
+    const syncProcessDataFromCloud = () => {
+        productionOrders = JSON.parse(localStorage.getItem('production_orders')) || [];
+        clients = JSON.parse(localStorage.getItem('clients')) || [];
+        populateClientSelect();
+        renderProcessBoard();
+        applyDragScroll();
+    };
+
+    window.addEventListener('cloud-data-updated', syncProcessDataFromCloud);
+    window.addEventListener('beforeunload', () => { window.disableRealtimePageReload = false; });
+
     // API interna da página
     window.PsyzonApp = {
         productionOrders,
