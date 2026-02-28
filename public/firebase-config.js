@@ -1216,6 +1216,7 @@ const scheduleRealtimePageRefresh = ({ source = 'cloud', hasRemoteChange = false
     if (!window.BackendInitialized) return;
     if (window.location.pathname.endsWith('login.html')) return;
     if (document.visibilityState !== 'visible') return;
+    if (window.disableRealtimePageReload === true) return;
 
     clearTimeout(realtimeRefreshTimer);
     realtimeRefreshTimer = setTimeout(() => {
