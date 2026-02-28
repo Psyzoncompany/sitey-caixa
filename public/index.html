@@ -22,6 +22,51 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link href="style.css" rel="stylesheet">
+  <script>
+    (function () {
+      const isPersonalMode = new URLSearchParams(window.location.search).get('mode') === 'personal';
+      window.__PSYZON_MODE__ = isPersonalMode ? 'personal' : 'business';
+      if (!isPersonalMode || !window.Storage || !window.Storage.prototype) return;
+
+      const PERSONAL_PREFIX = '__personal__';
+      const scopedKeys = new Set([
+        'incomeCategories',
+        'expenseCategories',
+        'transactions',
+        'clients',
+        'production_orders',
+        'monthlyProduction',
+        'psyzon_accounts_db_v1',
+        'businessSpendingLimit',
+        'personalSpendingLimit',
+        'investments_goals',
+        'investment_reserve_goal'
+      ]);
+
+      const mapKey = (key) => {
+        if (typeof key !== 'string') return key;
+        if (key.startsWith(PERSONAL_PREFIX)) return key;
+        return scopedKeys.has(key) ? `${PERSONAL_PREFIX}${key}` : key;
+      };
+
+      const proto = window.Storage.prototype;
+      const originalGetItem = proto.getItem;
+      const originalSetItem = proto.setItem;
+      const originalRemoveItem = proto.removeItem;
+
+      proto.getItem = function (key) {
+        return originalGetItem.call(this, mapKey(key));
+      };
+
+      proto.setItem = function (key, value) {
+        return originalSetItem.call(this, mapKey(key), value);
+      };
+
+      proto.removeItem = function (key) {
+        return originalRemoveItem.call(this, mapKey(key));
+      };
+    })();
+  </script>
   <!-- Firebase Config (Carrega Auth e Sync) -->
   <script type="module" src="firebase-config.js"></script>
   <!-- Force unregister any service workers from future versions -->

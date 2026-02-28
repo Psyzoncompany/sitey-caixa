@@ -31,28 +31,38 @@ const init = () => {
 
         const desktopNav = document.querySelector('.desktop-topbar-nav');
         if (desktopNav) {
-            desktopNav.querySelectorAll('a').forEach((link) => {
-                const text = (link.textContent || '').trim().toUpperCase();
-                if (text !== 'DASHBOARD') link.remove();
+            desktopNav.querySelectorAll('a').forEach((link) => link.remove());
+            const personalLinks = [
+                { href: 'pessoal/pessoal.html', label: 'PESSOAL', active: true },
+                { href: 'contas.html', label: 'CONTAS' },
+                { href: 'investimentos.html', label: 'METAS' }
+            ];
+            personalLinks.forEach(({ href, label, active }) => {
+                const link = document.createElement('a');
+                link.href = href;
+                link.textContent = label;
+                link.className = `desktop-nav-link${active ? ' is-active' : ''}`;
+                desktopNav.insertBefore(link, desktopNav.querySelector('.desktop-nav-logout'));
             });
-            const dashboardLink = desktopNav.querySelector('a');
-            if (dashboardLink) {
-                dashboardLink.textContent = 'PESSOAL';
-                dashboardLink.classList.add('is-active');
-                dashboardLink.setAttribute('href', 'pessoal/pessoal.html');
-            }
         }
 
         if (mobileMenu) {
-            mobileMenu.querySelectorAll('a').forEach((link) => {
-                const txt = (link.textContent || '').trim().toUpperCase();
-                if (txt !== 'DASHBOARD') link.remove();
+            mobileMenu.querySelectorAll('a').forEach((link) => link.remove());
+            const menuContainer = mobileMenu.querySelector('div');
+            const mobileLinks = [
+                { href: 'pessoal/pessoal.html', label: 'Pessoal', active: true },
+                { href: 'contas.html', label: 'Contas' },
+                { href: 'investimentos.html', label: 'Metas' }
+            ];
+            mobileLinks.forEach(({ href, label, active }) => {
+                const link = document.createElement('a');
+                link.href = href;
+                link.textContent = label;
+                link.className = active
+                    ? 'bg-cyan-500/20 text-cyan-300 block px-3 py-2 rounded-md text-base font-bold'
+                    : 'text-gray-300 hover:bg-white/10 block px-3 py-2 rounded-md text-base font-medium';
+                menuContainer?.insertBefore(link, menuContainer.querySelector('button'));
             });
-            const mobileDashboardLink = mobileMenu.querySelector('a');
-            if (mobileDashboardLink) {
-                mobileDashboardLink.textContent = 'Pessoal';
-                mobileDashboardLink.setAttribute('href', 'pessoal/pessoal.html');
-            }
         }
     };
 
