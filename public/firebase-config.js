@@ -63,6 +63,7 @@ let unsubscribeCloudSync = null;
 const activeListeners = [];
 const AUTOSAVE_DELAY_MS = 900;
 let floatingSaveButton = null;
+let realtimeRefreshTimer = null;
 
 const registerActiveListener = (unsubscribe) => {
     if (typeof unsubscribe !== 'function') return;
@@ -1208,6 +1209,20 @@ const hideInitialLoader = () => {
     if (loader) loader.remove();
 };
 
+const scheduleRealtimePageRefresh = ({ source = 'cloud', hasRemoteChange = false } = {}) => {
+    // Atualiza automaticamente as páginas para refletir mudanças vindas de outros dispositivos
+    // sem exigir reload manual do usuário.
+    if (source !== 'cloud' || !hasRemoteChange) return;
+    if (!window.BackendInitialized) return;
+    if (window.location.pathname.endsWith('login.html')) return;
+    if (document.visibilityState !== 'visible') return;
+
+    clearTimeout(realtimeRefreshTimer);
+    realtimeRefreshTimer = setTimeout(() => {
+        window.location.reload();
+    }, 120);
+};
+
 const bootstrapBackendUI = () => {
     window.BackendInitialized = true;
     createGlobalCalculator();
@@ -1257,6 +1272,7 @@ const applyCloudState = (uid, data, { source = 'cloud' } = {}) => {
         bootstrapBackendUI();
     } else {
         window.dispatchEvent(new CustomEvent('cloud-data-updated', { detail: { source } }));
+        scheduleRealtimePageRefresh({ source, hasRemoteChange });
     }
 
     return true;
