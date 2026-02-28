@@ -76,6 +76,14 @@ const init = () => {
     const orderPrintTypeSelect = document.getElementById('order-print-type');
     const orderColorsContainer = document.getElementById('order-colors-container');
     const addColorBtn = document.getElementById('add-color-btn');
+    const paymentFlowModal = document.getElementById('payment-flow-modal');
+    const paymentFlowModalTitle = document.getElementById('payment-flow-modal-title');
+    const paymentFlowForm = document.getElementById('payment-flow-form');
+    const paymentFlowAmountInput = document.getElementById('payment-flow-amount');
+    const paymentFlowTotalInput = document.getElementById('payment-flow-total');
+    const paymentFlowDateInput = document.getElementById('payment-flow-date');
+    const closePaymentFlowModalBtn = document.getElementById('close-payment-flow-modal-btn');
+    const cancelPaymentFlowBtn = document.getElementById('cancel-payment-flow-btn');
 
     // Art Only Mode Refs
     const isArtOnlyCheckbox = document.getElementById('is-art-only');
@@ -241,6 +249,7 @@ const init = () => {
     let editingOrderId = null;
     let activeCuttingOrderId = null;
     let activeArtOrderId = null;
+    let activePaymentOrderId = null;
 
     // API interna da página
     window.PsyzonApp = {
@@ -392,6 +401,92 @@ const init = () => {
         applyDragScroll();
     };
     const formatCurrency = (amount) => amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    const notify = (message, type = 'info') => {
+        if (typeof window.showNotification === 'function') {
+            window.showNotification(message, type);
+            return;
+        }
+        console[type === 'danger' ? 'error' : 'log'](message);
+    };
+    const getTodayIsoDate = () => new Date().toISOString().split('T')[0];
+    const getTotalPecasDosPedido = (order) => {
+        const subtasks = order?.checklist?.cutting?.subtasks || [];
+        return subtasks.reduce((acc, sub) => acc + (parseInt(sub?.total || 0, 10) || 0), 0);
+    };
+    const isLegacyManualPaymentOrder = (order) => {
+        const paid = Number(order?.amountPaid || 0);
+        return paid > 0 && !order?.transactionId && !order?.paymentFlowVersion;
+    };
+    const closePaymentFlowModal = () => {
+        if (!paymentFlowModal) return;
+        paymentFlowModal.classList.add('hidden');
+        if (paymentFlowForm) paymentFlowForm.reset();
+        activePaymentOrderId = null;
+    };
+    const openPaymentFlowModal = (orderId) => {
+        if (!paymentFlowModal || !paymentFlowForm) return;
+        const order = productionOrders.find((item) => item.id === Number(orderId));
+        if (!order) return;
+        const hasLegacyManualPaid = isLegacyManualPaymentOrder(order);
+        if (hasLegacyManualPaid) {
+            notify('Este pedido já possui pagamento manual antigo. Use a edição completa do pedido para manter consistência.', 'warning');
+            return;
+        }
+
+        activePaymentOrderId = Number(orderId);
+        const paid = Number(order.amountPaid || 0);
+        if (paymentFlowModalTitle) {
+            paymentFlowModalTitle.textContent = paid <= 0 ? 'Registrar entrada' : 'Registrar pagamento';
+        }
+        paymentFlowAmountInput.value = '';
+        paymentFlowTotalInput.value = Number(order.totalValue || 0) > 0 ? Number(order.totalValue).toFixed(2) : '';
+        paymentFlowDateInput.value = getTodayIsoDate();
+        paymentFlowModal.classList.remove('hidden');
+        setTimeout(() => paymentFlowAmountInput?.focus(), 30);
+    };
+    const syncOrderPaymentTransaction = ({ order, receivedNow, paymentDate }) => {
+        if (!order) return false;
+        const transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+        const paidBefore = Number(order.amountPaid || 0);
+        const isFirstPayment = !order.transactionId;
+
+        order.amountPaid = paidBefore + receivedNow;
+        order.isPaid = order.amountPaid >= Number(order.totalValue || 0);
+
+        if (isFirstPayment) {
+            const client = clients.find((c) => c.id === order.clientId);
+            const newTransaction = {
+                id: Date.now(),
+                orderId: order.id,
+                description: `Entrada — ${order.description}`,
+                name: client?.name || order.clientName || 'Cliente não informado',
+                amount: order.amountPaid,
+                totalValue: Number(order.totalValue || 0),
+                type: 'income',
+                category: 'Venda de Produto',
+                date: paymentDate,
+                clientId: order.clientId,
+                quantity: getTotalPecasDosPedido(order),
+                createdAt: new Date().toISOString()
+            };
+            transactions.push(newTransaction);
+            order.transactionId = newTransaction.id;
+        } else if (order.transactionId) {
+            const existing = transactions.find((t) => t.id === order.transactionId);
+            if (existing) {
+                existing.amount = order.amountPaid;
+                existing.totalValue = Number(order.totalValue || 0);
+                existing.quantity = getTotalPecasDosPedido(order);
+                existing.date = paymentDate;
+                existing.updatedAt = new Date().toISOString();
+            } else {
+                notify('Lançamento vinculado não encontrado no Dashboard. Confira o histórico financeiro.', 'warning');
+            }
+        }
+
+        localStorage.setItem('transactions', JSON.stringify(transactions));
+        return true;
+    };
 
     const validTabs = new Set(['quadro', 'afazeres', 'artes', 'cortes', 'finalizacao', 'dtf', 'historico-pedidos']);
     if (!validTabs.has(currentTab)) currentTab = 'quadro';
@@ -881,7 +976,7 @@ const init = () => {
                 const orderIndex = productionOrders.findIndex(o => o.id === editingOrderId);
                 productionOrders[orderIndex] = { ...productionOrders[orderIndex], ...orderData };
             } else {
-                const newOrder = { id: Date.now(), status: 'todo', ...orderData };
+                const newOrder = { id: Date.now(), status: 'todo', paymentFlowVersion: 1, ...orderData };
                 productionOrders.push(newOrder);
 
                 // HOOK HIPOCAMPO: Pedido Criado
@@ -1025,7 +1120,20 @@ const init = () => {
             </div>
 
             <div class="syt-card-footer">
-                <button class="syt-action-btn primary" onclick="event.stopPropagation(); window.openOrderModal(${order.id})">Receber pagamento</button>
+                ${(() => {
+                    const paidValue = Number(order.amountPaid || 0);
+                    const legacyManualFlow = isLegacyManualPaymentOrder(order);
+                    if (legacyManualFlow) {
+                        return '<span class="text-xs text-amber-300">Pagamento antigo detectado: use “Ver detalhes”.</span>';
+                    }
+                    if (paidValue <= 0) {
+                        return `<button class="syt-action-btn primary" onclick="event.stopPropagation(); window.openPaymentFlowModal(${order.id})">Registrar Entrada</button>`;
+                    }
+                    if (!order.isPaid) {
+                        return `<button class="syt-action-btn primary" onclick="event.stopPropagation(); window.openPaymentFlowModal(${order.id})">Registrar Pagamento</button>`;
+                    }
+                    return '<span class="text-xs text-emerald-300">Pedido totalmente pago.</span>';
+                })()}
                 <button class="syt-action-btn secondary" onclick="event.stopPropagation(); window.openOrderModal(${order.id})">Ver detalhes <span aria-hidden="true">→</span></button>
             </div>
             </div>
@@ -1062,6 +1170,54 @@ const init = () => {
         return card;
     };
 
+    if (closePaymentFlowModalBtn) {
+        closePaymentFlowModalBtn.addEventListener('click', closePaymentFlowModal);
+    }
+    if (cancelPaymentFlowBtn) {
+        cancelPaymentFlowBtn.addEventListener('click', closePaymentFlowModal);
+    }
+    if (paymentFlowModal) {
+        paymentFlowModal.addEventListener('click', (event) => {
+            if (event.target === paymentFlowModal) closePaymentFlowModal();
+        });
+    }
+    if (paymentFlowForm) {
+        paymentFlowForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            if (!activePaymentOrderId) return;
+
+            const order = productionOrders.find((item) => item.id === Number(activePaymentOrderId));
+            if (!order) return;
+
+            const hasLegacyManualPaid = isLegacyManualPaymentOrder(order);
+            if (hasLegacyManualPaid) {
+                notify('Este pedido já possui pagamento manual antigo e não pode usar este fluxo.', 'warning');
+                closePaymentFlowModal();
+                return;
+            }
+
+            const receivedNow = Number(paymentFlowAmountInput.value);
+            const newTotal = Number(paymentFlowTotalInput.value);
+            const paymentDate = paymentFlowDateInput.value || getTodayIsoDate();
+
+            if (!Number.isFinite(receivedNow) || receivedNow <= 0) {
+                notify('Informe um valor recebido válido.', 'warning');
+                return;
+            }
+            if (!Number.isFinite(newTotal) || newTotal <= 0) {
+                notify('Informe um novo valor total válido.', 'warning');
+                return;
+            }
+
+            order.totalValue = newTotal;
+            syncOrderPaymentTransaction({ order, receivedNow, paymentDate });
+            saveOrders();
+            renderKanban();
+            closePaymentFlowModal();
+            notify('Pagamento registrado com sucesso!', 'success');
+        });
+    }
+
     window.removeOrder = (orderId) => {
         if (confirm('Tem certeza que deseja excluir permanentemente este card/pedido?')) {
             productionOrders = productionOrders.filter(o => o.id !== orderId);
@@ -1071,6 +1227,7 @@ const init = () => {
     };
 
     window.openOrderModal = (orderId) => openModal(orderId);
+    window.openPaymentFlowModal = (orderId) => openPaymentFlowModal(orderId);
 
     const moveOrderStatus = (orderId, newStatus) => {
         const order = productionOrders.find((item) => item.id === Number(orderId));

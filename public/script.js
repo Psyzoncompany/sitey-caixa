@@ -1147,7 +1147,21 @@ const init = () => {
         updateUI();
     };
 
+    const syncDashboardIfNeeded = () => {
+        handleCloudDataUpdated();
+    };
+
     window.addEventListener('cloud-data-updated', handleCloudDataUpdated);
+    window.addEventListener('storage', (event) => {
+        if (!event || !event.key) return;
+        if (event.key === 'transactions' || event.key === 'production_orders' || event.key === 'clients') {
+            syncDashboardIfNeeded();
+        }
+    });
+    window.addEventListener('focus', syncDashboardIfNeeded);
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) syncDashboardIfNeeded();
+    });
 
     const updateUI = () => {
         const now = new Date();
