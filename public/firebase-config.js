@@ -2,7 +2,7 @@
 
 // Importa as funções do Firebase (versão compat para facilitar o uso com scripts existentes)
 import { onAuthStateChanged, setPersistence, browserLocalPersistence, browserSessionPersistence, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, signInWithRedirect, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, onSnapshot, setDoc, updateDoc, serverTimestamp, deleteField } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, doc, onSnapshot, setDoc, updateDoc, serverTimestamp, deleteField } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 import { app, auth, db } from "./js/firebase-init.js";
 
@@ -60,8 +60,25 @@ let initialSnapshot = "{}"; // Armazena o estado inicial para comparação
 let autosaveTimer = null;
 let autosaveInFlight = null;
 let unsubscribeCloudSync = null;
+const activeListeners = [];
 const AUTOSAVE_DELAY_MS = 900;
 let floatingSaveButton = null;
+
+const registerActiveListener = (unsubscribe) => {
+    if (typeof unsubscribe !== 'function') return;
+    activeListeners.push(unsubscribe);
+};
+
+const cleanupActiveListeners = () => {
+    activeListeners.forEach((unsubscribe) => {
+        try {
+            unsubscribe();
+        } catch (error) {
+            console.warn('Falha ao encerrar listener ativo:', error);
+        }
+    });
+    activeListeners.length = 0;
+};
 
 const isIndexPage = () => {
     const path = window.location.pathname || '';
@@ -1250,6 +1267,7 @@ const stopCloudSync = () => {
         unsubscribeCloudSync();
         unsubscribeCloudSync = null;
     }
+    cleanupActiveListeners();
 };
 
 const saveToCloud = async ({ silent = false, force = false } = {}) => {
@@ -1447,12 +1465,7 @@ if (window.isLocalMode) {
                 }, (error) => {
                     console.error('Erro no listener de sincronização em tempo real:', error);
                 });
-
-                // Fallback inicial para quando o listener demora em redes instáveis.
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    applyCloudState(user.uid, docSnap.data(), { source: 'cloud-fallback' });
-                }
+                registerActiveListener(unsubscribeCloudSync);
 
             } catch (error) {
                 console.error("Erro crítico ao carregar dados:", error);
@@ -1460,19 +1473,6 @@ if (window.isLocalMode) {
                 if (!window.BackendInitialized) {
                     bootstrapBackendUI();
                 }
-
-                // Mantém UX sem travar: tenta novamente em background sem exigir F5.
-                setTimeout(async () => {
-                    try {
-                        const retryRef = doc(db, "users", user.uid);
-                        const retrySnap = await getDoc(retryRef);
-                        if (retrySnap.exists()) {
-                            applyCloudState(user.uid, retrySnap.data(), { source: 'cloud-retry' });
-                        }
-                    } catch (retryError) {
-                        console.error('Falha na tentativa de reconexão automática:', retryError);
-                    }
-                }, 2500);
             }
         } else {
             // Não logado
