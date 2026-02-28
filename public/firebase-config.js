@@ -1220,7 +1220,9 @@ const scheduleRealtimePageRefresh = ({ source = 'cloud', hasRemoteChange = false
 
     clearTimeout(realtimeRefreshTimer);
     realtimeRefreshTimer = setTimeout(() => {
-        window.location.reload();
+        window.dispatchEvent(new CustomEvent('cloud-data-refresh-requested', {
+            detail: { source, hasRemoteChange }
+        }));
     }, 120);
 };
 

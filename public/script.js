@@ -1209,6 +1209,7 @@ const init = () => {
     };
 
     window.addEventListener('cloud-data-updated', handleCloudDataUpdated);
+    window.addEventListener('cloud-data-refresh-requested', handleCloudDataUpdated);
 
     const updateUI = () => {
         const now = new Date();

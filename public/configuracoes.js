@@ -246,6 +246,17 @@ const init = () => {
         });
     }
 
+    const handleCloudDataUpdated = () => {
+        incomeCategories = JSON.parse(localStorage.getItem('incomeCategories')) || ['Venda de Produto', 'Adiantamento', 'Serviços', 'Outros'];
+        expenseCategories = JSON.parse(localStorage.getItem('expenseCategories')) || ['Matéria-Prima (Custo Direto)', 'Aluguel', 'Contas (Água, Luz, Internet)', 'Marketing e Vendas', 'Salários e Pró-labore', 'Impostos', 'Software e Ferramentas', 'Manutenção', 'Despesas Pessoais', 'Outros'];
+        loadLimits();
+        renderCategories();
+        loadKeysStatus();
+    };
+
+    window.addEventListener('cloud-data-updated', handleCloudDataUpdated);
+    window.addEventListener('cloud-data-refresh-requested', handleCloudDataUpdated);
+
     loadLimits();
     renderCategories();
     loadKeysStatus();
