@@ -1404,13 +1404,13 @@ if (window.isLocalMode) {
         loginWithGoogle: async () => { },
         logout: () => {
             nativeLocalStorage.removeItem('forceLocalMode');
-            window.location.href = 'login.html';
+            window.location.href = '/login.html';
         },
         currentUser: () => ({ uid: 'local_user' }),
     };
 
     if (window.location.pathname.endsWith('login.html')) {
-        window.location.href = 'index.html';
+        window.location.href = '/index.html';
     }
 } else {
     onAuthStateChanged(auth, async (user) => {
@@ -1418,7 +1418,7 @@ if (window.isLocalMode) {
             ensureFloatingSaveButton();
             // Se estivermos na página de login, redireciona para index
             if (window.location.pathname.endsWith('login.html')) {
-                window.location.href = 'index.html';
+                window.location.href = '/index.html';
                 return;
             }
 
@@ -1481,7 +1481,7 @@ if (window.isLocalMode) {
             memoryStore = {};
             clearTimeout(autosaveTimer);
             if (!window.location.pathname.endsWith('login.html')) {
-                window.location.href = 'login.html';
+                window.location.href = '/login.html';
             }
         }
     });
