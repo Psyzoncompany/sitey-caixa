@@ -7,6 +7,57 @@ const init = () => {
     const mobileMenuButton = document.getElementById('mobile-menu-button');
     const mobileMenu = document.getElementById('mobile-menu');
 
+    const isPersonalMode = new URLSearchParams(window.location.search).get('mode') === 'personal';
+
+    const applyPersonalModeLayout = () => {
+        if (!isPersonalMode) return;
+
+        document.body.classList.add('personal-dashboard-mode');
+        document.title = 'PSYZON - Dashboard Financeiro Pessoal';
+
+        const heroTitle = document.querySelector('.dashboard-hero h1');
+        if (heroTitle) heroTitle.textContent = 'DASHBOARD PESSOAL';
+
+        const addLaunchBtnLabel = document.querySelector('#add-transaction-btn span');
+        if (addLaunchBtnLabel) addLaunchBtnLabel.textContent = 'Lançamento Pessoal';
+
+        const modeButtons = document.querySelectorAll('.toggle-mode-switcher .toggle-btn');
+        modeButtons.forEach((btn) => {
+            const isPersonalButton = (btn.getAttribute('href') || '').includes('pessoal/pessoal.html');
+            btn.classList.toggle('active', isPersonalButton);
+            if (isPersonalButton) btn.setAttribute('href', 'pessoal/pessoal.html');
+            if (!isPersonalButton) btn.setAttribute('href', 'index.html');
+        });
+
+        const desktopNav = document.querySelector('.desktop-topbar-nav');
+        if (desktopNav) {
+            desktopNav.querySelectorAll('a').forEach((link) => {
+                const text = (link.textContent || '').trim().toUpperCase();
+                if (text !== 'DASHBOARD') link.remove();
+            });
+            const dashboardLink = desktopNav.querySelector('a');
+            if (dashboardLink) {
+                dashboardLink.textContent = 'PESSOAL';
+                dashboardLink.classList.add('is-active');
+                dashboardLink.setAttribute('href', 'pessoal/pessoal.html');
+            }
+        }
+
+        if (mobileMenu) {
+            mobileMenu.querySelectorAll('a').forEach((link) => {
+                const txt = (link.textContent || '').trim().toUpperCase();
+                if (txt !== 'DASHBOARD') link.remove();
+            });
+            const mobileDashboardLink = mobileMenu.querySelector('a');
+            if (mobileDashboardLink) {
+                mobileDashboardLink.textContent = 'Pessoal';
+                mobileDashboardLink.setAttribute('href', 'pessoal/pessoal.html');
+            }
+        }
+    };
+
+    applyPersonalModeLayout();
+
     // Variáveis para guardar os Gráficos do Dashboard, 
     // definidas aqui fora para não sumirem quando a tela atualiza
     let incomeExpenseChart, categoryChart, incomeSourceChart, fabricChart;

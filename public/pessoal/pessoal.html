@@ -1,149 +1,15 @@
 <!DOCTYPE html>
-<html lang="pt-br" class="scroll-smooth">
-
+<html lang="pt-br">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="icon" type="image/png" href="../img/logo.png">
-  <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180.png">
-  <meta name="apple-mobile-web-app-title" content="PSYZON Caixa">
-  <meta name="application-name" content="PSYZON Caixa">
-  <meta name="theme-color" content="#0f172a">
-  <link rel="manifest" href="../manifest.webmanifest">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PSYZON - Finanças Pessoais</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
-  <link href="../style.css" rel="stylesheet">
-  <link href="pessoal.css" rel="stylesheet">
-  <script type="module" src="../firebase-config.js"></script>
+  <meta http-equiv="refresh" content="0; url=../index.html?mode=personal" />
+  <script>
+    window.location.replace('../index.html?mode=personal');
+  </script>
 </head>
-
-<body class="theme-personal">
-  <header class="personal-topbar">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="personal-topbar-inner flex items-center justify-between gap-3">
-        <div class="flex items-center gap-3">
-          <a href="pessoal.html" class="flex-shrink-0">
-            <img src="../img/logo.png" alt="Logo Psyzon" class="h-10 md:h-12">
-          </a>
-          <div>
-            <h1 class="text-xl md:text-2xl font-extrabold tracking-tight">Finanças Pessoais</h1>
-            <p class="text-sm text-slate-400">Controle pessoal separado do empresarial</p>
-          </div>
-        </div>
-        <div class="hidden md:flex items-center gap-3">
-          <div class="toggle-mode-switcher">
-            <a href="../index.html" class="toggle-btn">💼 Empresarial</a>
-            <a href="pessoal.html" class="toggle-btn active">👤 Pessoal</a>
-          </div>
-          <button onclick="window.firebaseAuth?.logout?.()" class="personal-btn personal-btn-ghost">Sair</button>
-        </div>
-        <button id="mobile-menu-button" class="md:hidden personal-btn personal-btn-ghost" aria-label="Abrir menu">☰</button>
-      </div>
-    </div>
-  </header>
-
-  <div id="mobile-menu" class="md:hidden hidden border-b border-slate-700/60 bg-slate-950/95 backdrop-blur-sm fixed top-[74px] inset-x-0 z-50">
-    <div class="px-4 pt-3 pb-4 space-y-2">
-      <div class="toggle-mode-switcher w-full">
-        <a href="../index.html" class="toggle-btn">💼 Empresarial</a>
-        <a href="pessoal.html" class="toggle-btn active">👤 Pessoal</a>
-      </div>
-      <button onclick="window.firebaseAuth?.logout?.()" class="w-full personal-btn personal-btn-ghost">Sair</button>
-    </div>
-  </div>
-
-  <main class="personal-main max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10 pt-24 md:pt-28">
-    <section class="mb-6">
-      <nav class="personal-tabs" id="personal-tabs">
-        <button class="personal-tab active" data-tab="visao-geral">Visão Geral</button>
-        <button class="personal-tab" data-tab="lancamentos">Lançamentos</button>
-        <button class="personal-tab" data-tab="contas">Contas Mensais</button>
-        <button class="personal-tab" data-tab="investimentos">Investimentos Pessoais</button>
-        <button class="personal-tab" data-tab="dividas">Dívidas</button>
-      </nav>
-    </section>
-
-    <section id="tab-visao-geral" class="tab-content">
-      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6" id="metric-cards"></div>
-      <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-6">
-        <article class="personal-card p-5">
-          <h3 class="font-bold mb-4">Despesas por Categoria</h3>
-          <canvas id="expensesCategoryChart" height="220"></canvas>
-        </article>
-        <article class="personal-card p-5">
-          <h3 class="font-bold mb-4">Receitas vs Despesas (6 meses)</h3>
-          <canvas id="incomeExpenseChart" height="220"></canvas>
-        </article>
-      </div>
-      <article class="personal-card p-5">
-        <h3 class="font-bold mb-4">Últimos 10 lançamentos</h3>
-        <div id="recent-transactions" class="space-y-2 text-sm"></div>
-      </article>
-    </section>
-
-    <section id="tab-lancamentos" class="tab-content hidden">
-      <article class="personal-card p-5">
-        <div class="flex flex-wrap gap-3 justify-between items-end mb-4">
-          <div class="flex flex-wrap gap-3">
-            <div>
-              <label class="block text-sm mb-1">Tipo</label>
-              <select id="transactions-type-filter" class="personal-input">
-                <option value="todos">Todos</option>
-                <option value="receita">Receitas</option>
-                <option value="despesa">Despesas</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm mb-1">Mês</label>
-              <input type="month" id="transactions-month-filter" class="personal-input">
-            </div>
-          </div>
-          <button id="open-transaction-modal" class="personal-btn personal-btn-primary">Novo Lançamento</button>
-        </div>
-        <div class="overflow-auto">
-          <table class="w-full min-w-[680px] text-sm">
-            <thead><tr class="text-left personal-table-head"><th class="py-2">Data</th><th class="py-2">Descrição</th><th class="py-2">Categoria</th><th class="py-2">Tipo</th><th class="py-2">Valor</th><th class="py-2">Ações</th></tr></thead>
-            <tbody id="transactions-table-body"></tbody>
-          </table>
-        </div>
-      </article>
-    </section>
-
-    <section id="tab-contas" class="tab-content hidden space-y-5">
-      <div id="bills-summary" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
-      <article class="personal-card p-5">
-        <div class="flex justify-between items-center mb-4"><h3 class="font-bold">Contas Fixas</h3><button id="open-bill-modal" class="personal-btn personal-btn-primary">Nova Conta</button></div>
-        <div id="bills-list" class="space-y-3"></div>
-      </article>
-    </section>
-
-    <section id="tab-investimentos" class="tab-content hidden">
-      <article class="personal-card p-5">
-        <div class="flex justify-between items-center mb-4"><h3 class="font-bold">Metas de Poupança</h3><button id="open-investment-modal" class="personal-btn personal-btn-primary">Nova Meta</button></div>
-        <div id="investments-list" class="space-y-4"></div>
-      </article>
-    </section>
-
-    <section id="tab-dividas" class="tab-content hidden">
-      <article class="personal-card p-5">
-        <div class="flex justify-between items-center mb-4"><h3 class="font-bold">Dívidas Pessoais</h3><button id="open-debt-modal" class="personal-btn personal-btn-primary">Nova Dívida</button></div>
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div><h4 class="font-semibold mb-2 text-rose-300">Devo</h4><div id="debts-i-owe" class="space-y-3"></div></div>
-          <div><h4 class="font-semibold mb-2 text-emerald-300">Me devem</h4><div id="debts-owed-to-me" class="space-y-3"></div></div>
-        </div>
-      </article>
-    </section>
-  </main>
-
-  <div id="modal-overlay" class="personal-modal-overlay hidden"></div>
-  <script src="pessoal.js"></script>
+<body>
+  <p>Redirecionando para o modo pessoal...</p>
 </body>
-
 </html>
