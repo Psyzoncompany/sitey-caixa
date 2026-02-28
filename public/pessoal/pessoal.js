@@ -42,8 +42,8 @@ const init = () => {
             desktopNav.querySelectorAll('a').forEach((link) => link.remove());
             const personalLinks = [
                 { href: 'pessoal.html', label: 'PESSOAL', active: true },
-                { href: '../contas.html', label: 'CONTAS' },
-                { href: '../investimentos.html', label: 'METAS' }
+                { href: 'Contaspessoal.html', label: 'CONTAS' },
+                { href: 'metaspessoal.html', label: 'METAS' }
             ];
             personalLinks.forEach(({ href, label, active }) => {
                 const link = document.createElement('a');
@@ -60,8 +60,8 @@ const init = () => {
             const menuContainer = mobileMenu.querySelector('div');
             const mobileLinks = [
                 { href: 'pessoal.html', label: 'Pessoal', active: true },
-                { href: '../contas.html', label: 'Contas' },
-                { href: '../investimentos.html', label: 'Metas' }
+                { href: 'Contaspessoal.html', label: 'Contas' },
+                { href: 'metaspessoal.html', label: 'Metas' }
             ];
             mobileLinks.forEach(({ href, label, active }) => {
                 const link = document.createElement('a');
@@ -80,8 +80,8 @@ const init = () => {
             const menuButton = bottomNav.querySelector('#mobile-menu-button');
             const bottomLinks = [
                 { href: 'pessoal.html', label: 'Pessoal', active: true },
-                { href: '../contas.html', label: 'Contas' },
-                { href: '../investimentos.html', label: 'Metas' }
+                { href: 'Contaspessoal.html', label: 'Contas' },
+                { href: 'metaspessoal.html', label: 'Metas' }
             ];
             bottomLinks.forEach(({ href, label, active }) => {
                 const link = document.createElement('a');
@@ -97,7 +97,7 @@ const init = () => {
 
     // Variáveis para guardar os Gráficos do Dashboard, 
     // definidas aqui fora para não sumirem quando a tela atualiza
-    let incomeExpenseChart, categoryChart, incomeSourceChart, fabricChart;
+    let incomeExpenseChart, categoryChart, incomeSourceChart;
 
     // Se o botão do menu do celular existir, fazemos ele abrir/fechar o menu ao clicar
     if (mobileMenuButton) {
@@ -111,7 +111,6 @@ const init = () => {
     const profitEl = document.getElementById('profit');
     const totalReceivablesEl = document.getElementById('total-receivables'); // A receber
     const totalPayablesEl = document.getElementById('total-payables');       // A pagar
-    const totalMonthlyExpensesEl = document.getElementById('total-monthly-expenses');
 
     const loggedAccountDisplayEl = document.getElementById('logged-account-display');
 
@@ -151,17 +150,7 @@ const init = () => {
     }
 
     // Barras de progresso e Limites de Gastos (Pessoal e Empresa)
-    const costPerPieceDashboardEl = document.getElementById('cost-per-piece-dashboard');
     const transactionListEl = document.getElementById('transaction-list');
-    const deadlinesListEl = document.getElementById('deadlines-list'); // Lista de prazos (Lembretes)
-
-    const businessSpentEl = document.getElementById('business-spent');
-    const businessLimitTextEl = document.getElementById('business-limit-text');
-    const businessProgressEl = document.getElementById('business-progress');
-
-    const personalSpentEl = document.getElementById('personal-spent');
-    const personalLimitTextEl = document.getElementById('personal-limit-text');
-    const personalProgressEl = document.getElementById('personal-progress');
 
     // Ponto de Equilíbrio e Contas
     const breakEvenRevenueEl = document.getElementById('break-even-revenue');
@@ -275,13 +264,6 @@ const init = () => {
 
     // Formata a Data para padrão brasileiro (ex: 2024-05-10 vira 10/05/2024)
     const formatDate = (dateString) => new Date(dateString + 'T03:00:00').toLocaleDateString('pt-BR');
-
-    // Decide a cor da barra de progresso do Orçamento (Verde, Amarelo ou Vermelho)
-    const getProgressColorClass = (percentage) => {
-        if (percentage <= 50) return 'bg-gradient-green'; // Gastou pouco = Verde
-        if (percentage <= 80) return 'bg-gradient-yellow'; // Chegando perto do limite = Amarelo
-        return 'bg-gradient-red';                         // Passou do limite = Vermelho!
-    };
 
     // Exibe aquelas caixas de alerta pop-up no canto do painel (ex: "Sucesso! Lançamento criado")
     const showNotification = (message, type = 'info') => {
@@ -1065,49 +1047,13 @@ const init = () => {
 
     initDesktopLaunchCardActions();
 
-    // Lê os pedidos do sistema de processos e monta a listinha de "O que vence hoje"
-    const updateDeadlinesCard = () => {
-        productionOrders = JSON.parse(personalStorage.getItem('production_orders')) || [];
-        clients = JSON.parse(personalStorage.getItem('clients')) || [];
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const upcomingOrders = productionOrders.filter(order => order.status !== 'done').map(order => {
-            const deadline = new Date(order.deadline + 'T03:00:00');
-            const diffTime = deadline - today;
-            const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)); // <-- troque Math.ceil por Math.round
-            return { ...order, diffDays };
-        }).sort((a, b) => a.diffDays - b.diffDays).slice(0, 3);
-        deadlinesListEl.innerHTML = '';
-        if (upcomingOrders.length === 0) {
-            deadlinesListEl.innerHTML = '<p class="text-sm text-gray-500">Nenhum prazo pendente.</p>';
-            return;
-        }
-        upcomingOrders.forEach(order => {
-            const client = clients.find(c => c.id === order.clientId);
-            let deadlineColor = 'text-gray-400';
-            let deadlineText = `Vence em ${order.diffDays} dias`;
-            if (order.diffDays < 0) {
-                deadlineColor = 'text-red-500 font-bold animate-pulse';
-                deadlineText = `ATRASADO HÁ ${Math.abs(order.diffDays)} DIAS`;
-            } else if (order.diffDays <= 3) {
-                deadlineColor = 'text-yellow-400 font-semibold';
-            }
-            if (order.diffDays === 0) deadlineText = "Vence Hoje!";
-            if (order.diffDays === 1) deadlineText = "Vence Amanhã!";
-            const item = document.createElement('div');
-            item.className = 'border-b border-white/10 pb-2';
-            item.innerHTML = `<p class="font-semibold">${order.description}</p><div class="flex justify-between items-center text-sm"><span class="text-gray-400">${client ? client.name : 'Cliente'}</span><span class="${deadlineColor}">${deadlineText}</span></div>`;
-            deadlinesListEl.appendChild(item);
-        });
-    };
-
     // Lê da Aba de Contas e monta a listinha de "Contas a Pagar" deste mês
     const updateDashboardBillsCard = () => {
         if (!dashboardBillsSummaryEl) return;
 
         const billsDataRaw = personalStorage.getItem('psyzon_accounts_db_v1');
         if (!billsDataRaw) {
-            dashboardBillsSummaryEl.innerHTML = '<a href="contas.html" class="text-sm text-gray-400 hover:text-cyan-400">Nenhuma conta configurada. Clique para começar.</a>';
+            dashboardBillsSummaryEl.innerHTML = '<a href="Contaspessoal.html" class="text-sm text-gray-400 hover:text-cyan-400">Nenhuma conta configurada. Clique para começar.</a>';
             if (dashboardBillsPaidSummaryEl) {
                 dashboardBillsPaidSummaryEl.innerHTML = '<p class="text-sm text-gray-400">Nenhuma conta paga no mês.</p>';
             }
@@ -1258,9 +1204,6 @@ const init = () => {
 
         incomeEl.textContent = formatCurrency(incomeMonth);
         expenseEl.textContent = formatCurrency(Math.abs(businessExpenseMonth));
-        if (totalMonthlyExpensesEl) {
-            totalMonthlyExpensesEl.textContent = formatCurrency(totalExpensesMonth);
-        }
         profitEl.textContent = formatCurrency(profitMonth);
         profitEl.classList.toggle('text-red-400', profitMonth < 0);
         profitEl.classList.toggle('text-green-400', profitMonth >= 0);
@@ -1330,202 +1273,9 @@ const init = () => {
             `;
         }
 
-        const businessLimit = parseFloat(personalStorage.getItem('businessSpendingLimit')) || 0;
-        const personalLimit = parseFloat(personalStorage.getItem('personalSpendingLimit')) || 0;
-        const businessPercent = businessLimit > 0 ? (Math.abs(businessExpenseMonth) / businessLimit) * 100 : 0;
-        businessSpentEl.textContent = formatCurrency(Math.abs(businessExpenseMonth));
-        businessLimitTextEl.textContent = `de ${formatCurrency(businessLimit)}`;
-        businessProgressEl.style.width = `${Math.min(businessPercent, 100)}%`;
-        businessProgressEl.className = `h-4 rounded-full transition-all duration-500 ${getProgressColorClass(businessPercent)}`;
-        const personalPercent = personalLimit > 0 ? (Math.abs(personalExpenseMonth) / personalLimit) * 100 : 0;
-        personalSpentEl.textContent = formatCurrency(Math.abs(personalExpenseMonth));
-        personalLimitTextEl.textContent = `de ${formatCurrency(personalLimit)}`;
-        personalProgressEl.style.width = `${Math.min(personalPercent, 100)}%`;
-        personalProgressEl.className = `h-4 rounded-full transition-all duration-500 ${getProgressColorClass(personalPercent)}`;
-        const totalMonthlyCosts = totalExpensesMonth;
-        breakEvenRevenueEl.textContent = `Receita: ${formatCurrency(incomeMonth)}`;
-        breakEvenTargetEl.textContent = `Custos: ${formatCurrency(totalMonthlyCosts)}`;
-        const totalValue = incomeMonth + totalMonthlyCosts;
-        let revenueShare = 0, costsShare = 100;
-        if (totalValue > 0) {
-            revenueShare = (incomeMonth / totalValue) * 100;
-            costsShare = (totalMonthlyCosts / totalValue) * 100;
-        } else if (incomeMonth > 0) { revenueShare = 100; costsShare = 0; }
-        breakEvenRevenueBar.style.width = `${revenueShare}%`;
-        breakEvenRevenueBar.textContent = `${revenueShare.toFixed(0)}%`;
-        breakEvenCostsBar.style.width = `${costsShare}%`;
-        breakEvenCostsBar.textContent = `${costsShare.toFixed(0)}%`;
-        if (costPerPieceDashboardEl) {
-            const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-
-            // CUSTOS: Todas despesas empresariais do mês (exclui gastos pessoais)
-            const businessExpenses = monthlyTransactions
-                .filter(t => t.type === 'expense' && t.scope !== 'personal');
-            const totalBusinessCosts = businessExpenses
-                .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-
-            // Custos agrupados por categoria
-            const costsByCategory = {};
-            businessExpenses.forEach(t => {
-                const cat = t.category || 'Outros';
-                costsByCategory[cat] = (costsByCategory[cat] || 0) + Math.abs(t.amount);
-            });
-
-            // PEÇAS: Soma as peças dos pedidos de produção do mês
-            const allOrders = JSON.parse(personalStorage.getItem('production_orders')) || [];
-            const monthOrders = allOrders.filter(o => {
-                const ref = o.createdAt || o.deadline;
-                if (!ref) return false;
-                return String(ref).substring(0, 7) === currentMonthStr;
-            });
-            const piecesFromOrders = monthOrders.reduce((sum, o) => sum + (parseInt(o.quantity, 10) || 0), 0);
-
-            // PEÇAS: Soma as vendas avulsas do mês (monthlyProduction)
-            const monthlyProd = JSON.parse(personalStorage.getItem('monthlyProduction')) || [];
-            const prodData = monthlyProd.find(p => p.month === currentMonthStr);
-            const piecesFromSales = prodData ? (prodData.quantity || 0) : 0;
-
-            // TOTAL de peças = pedidos + vendas avulsas
-            const totalPieces = piecesFromOrders + piecesFromSales;
-
-            const costPerPiece = totalPieces > 0 ? totalBusinessCosts / totalPieces : 0;
-            costPerPieceDashboardEl.textContent = formatCurrency(costPerPiece);
-
-            // Armazena os dados para o modal de explicação
-            window._costBreakdown = {
-                totalBusinessCosts, costsByCategory, piecesFromOrders,
-                piecesFromSales, totalPieces, costPerPiece,
-                incomeMonth, monthOrders: monthOrders.length
-            };
-
-            // Atualiza sub-texto com quantidade de peças
-            const costDetailEl = document.getElementById('cost-per-piece-detail');
-            if (costDetailEl) {
-                costDetailEl.textContent = `${totalPieces} peça${totalPieces !== 1 ? 's' : ''} (pedidos: ${piecesFromOrders} + vendas: ${piecesFromSales})`;
-            }
-
-            // Atualiza a mini-bar (proporção custo/receita)
-            const miniBar = costPerPieceDashboardEl.closest('article')?.querySelector('.mini-bar span');
-            if (miniBar) {
-                const ratio = incomeMonth > 0 ? Math.min((totalBusinessCosts / incomeMonth) * 100, 100) : 0;
-                miniBar.style.width = `${ratio}%`;
-            }
-        }
-
-        // --- MODAL: Explicação do Custo por Peça ---
-        const costCard = document.getElementById('cost-per-piece-card');
-        const costModal = document.getElementById('cost-breakdown-modal');
-        const costModalBody = document.getElementById('cost-breakdown-body');
-        const closeCostModalBtn = document.getElementById('close-cost-modal');
-
-        if (costCard && costModal && !costCard._listenerAttached) {
-            costCard._listenerAttached = true;
-
-            const openCostModal = () => {
-                const d = window._costBreakdown || {};
-                const fmt = formatCurrency;
-
-                // Monta as linhas de categorias de custo
-                let categoryRows = '';
-                const cats = Object.entries(d.costsByCategory || {}).sort((a, b) => b[1] - a[1]);
-                if (cats.length > 0) {
-                    categoryRows = cats.map(([cat, val]) => {
-                        const pct = d.totalBusinessCosts > 0 ? ((val / d.totalBusinessCosts) * 100).toFixed(1) : '0.0';
-                        return `<div class="breakdown-row"><span class="label">${cat}</span><span class="value">${fmt(val)} <span style="color:#9ca3af;font-weight:400;font-size:.75rem">(${pct}%)</span></span></div>`;
-                    }).join('');
-                } else {
-                    categoryRows = '<div class="text-gray-500">Nenhuma despesa empresarial neste mês</div>';
-                }
-
-                // Identifica a maior categoria de custo
-                let topCategory = '—';
-                if (cats.length > 0) topCategory = cats[0][0];
-
-                // Margem por peça
-                const avgPrice = d.totalPieces > 0 && d.incomeMonth > 0 ? d.incomeMonth / d.totalPieces : 0;
-                const marginPerPiece = avgPrice - d.costPerPiece;
-                const marginPct = avgPrice > 0 ? ((marginPerPiece / avgPrice) * 100).toFixed(1) : '0.0';
-
-                // Dica inteligente
-                let tip = '';
-                if (d.totalPieces === 0) {
-                    tip = `<div class="breakdown-tip"><div class="tip-title">⚠️ Sem produção registrada</div>Cadastre pedidos de produção na aba <strong>Processos</strong> ou registre vendas de produto no Dashboard para calcular o custo por peça.</div>`;
-                } else if (d.costPerPiece > avgPrice && avgPrice > 0) {
-                    tip = `<div class="breakdown-tip" style="border-color:rgba(239,68,68,.2);background:linear-gradient(135deg,rgba(239,68,68,.06),rgba(239,68,68,.02));color:#fca5a5"><div class="tip-title">🚨 Margem negativa!</div>Seu custo por peça (${fmt(d.costPerPiece)}) é maior que o preço médio de venda (${fmt(avgPrice)}). A maior despesa é <strong>${topCategory}</strong>. Revise seus custos ou ajuste o preço de venda.</div>`;
-                } else if (marginPct < 30 && avgPrice > 0) {
-                    tip = `<div class="breakdown-tip" style="border-color:rgba(234,179,8,.2);background:linear-gradient(135deg,rgba(234,179,8,.06),rgba(234,179,8,.02));color:#fde68a"><div class="tip-title">⚠️ Margem apertada (${marginPct}%)</div>A margem ideal para vestuário é acima de 40%. Considere renegociar custos de <strong>${topCategory}</strong> ou reajustar preços.</div>`;
-                } else {
-                    tip = `<div class="breakdown-tip"><div class="tip-title">✅ Margem saudável (${marginPct}%)</div>Seu custo está controlado. A receita de ${fmt(d.incomeMonth)} contra ${fmt(d.totalBusinessCosts)} em custos indica boa eficiência operacional.</div>`;
-                }
-
-                costModalBody.innerHTML = `
-                    <div class="breakdown-formula">
-                        <div class="formula-main">Custos Empresariais ÷ Peças Produzidas</div>
-                        <div class="formula-sub">${fmt(d.totalBusinessCosts)} ÷ ${d.totalPieces} peças (pedidos + vendas)</div>
-                    </div>
-
-                    <div class="result-big">${fmt(d.costPerPiece)} / peça</div>
-
-                    <div class="breakdown-section">
-                        <h4>💰 Custos Empresariais do Mês</h4>
-                        ${categoryRows}
-                        <div class="breakdown-total">
-                            <span>Total de Custos</span>
-                            <span class="text-red-400">${fmt(d.totalBusinessCosts)}</span>
-                        </div>
-                    </div>
-
-                    <div class="breakdown-section">
-                        <h4>📦 Peças Produzidas no Mês</h4>
-                        <div class="breakdown-row">
-                            <span class="label">Pedidos de produção (${d.monthOrders || 0} pedidos)</span>
-                            <span class="value">${d.piecesFromOrders} peças</span>
-                        </div>
-                        <div class="breakdown-row">
-                            <span class="label">Vendas avulsas (Dashboard)</span>
-                            <span class="value">${d.piecesFromSales} peças</span>
-                        </div>
-                        <div class="breakdown-total">
-                            <span>Total de Peças</span>
-                            <span class="text-yellow-400">${d.totalPieces} peças</span>
-                        </div>
-                    </div>
-
-                    ${avgPrice > 0 ? `
-                    <div class="breakdown-section">
-                        <h4>📊 Análise de Margem</h4>
-                        <div class="breakdown-row">
-                            <span class="label">Preço médio de venda</span>
-                            <span class="value text-green-400">${fmt(avgPrice)}</span>
-                        </div>
-                        <div class="breakdown-row">
-                            <span class="label">Custo por peça</span>
-                            <span class="value text-red-400">- ${fmt(d.costPerPiece)}</span>
-                        </div>
-                        <div class="breakdown-total">
-                            <span>Margem por peça</span>
-                            <span class="${marginPerPiece >= 0 ? 'text-green-400' : 'text-red-400'}">${fmt(marginPerPiece)} (${marginPct}%)</span>
-                        </div>
-                    </div>` : ''}
-
-                    ${tip}
-                `;
-
-                costModal.classList.remove('hidden');
-            };
-
-            const closeCostModal = () => costModal.classList.add('hidden');
-
-            costCard.addEventListener('click', openCostModal);
-            if (closeCostModalBtn) closeCostModalBtn.addEventListener('click', closeCostModal);
-            costModal.addEventListener('click', (e) => { if (e.target === costModal) closeCostModal(); });
-            document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !costModal.classList.contains('hidden')) closeCostModal(); });
-        }
-
         renderRecentTransactions();
         updateCharts(monthlyTransactions);
         saveTransactions();
-        updateDeadlinesCard();
         updateDashboardBillsCard();
     };
 
@@ -1562,41 +1312,6 @@ const init = () => {
             incomeSourceChart = new Chart(incomeSourceChartCtx, { type: 'pie', data: { labels: Object.keys(incomeByCategory), datasets: [{ data: Object.values(incomeByCategory), backgroundColor: ['#22c55e', '#3b82f6', '#eab308', '#8b5cf6', '#ec4899'], borderColor: '#111827', borderWidth: 4 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } } });
         }
 
-        updateFabricChart(monthlyTransactions);
-    };
-
-    // Desenha o gráfico de barras duplo de Compra de Tecidos (Dinheiro gasto x Peso em Kg)
-    const updateFabricChart = (monthlyTransactions) => {
-        const fabricPurchases = monthlyTransactions.filter(t => t.weightKg > 0);
-        const totalSpent = fabricPurchases.reduce((acc, t) => acc + Math.abs(t.amount), 0);
-        const totalKg = fabricPurchases.reduce((acc, t) => acc + (t.weightKg || 0), 0);
-        const ctx = document.getElementById('fabricChart');
-        if (!ctx) return;
-        const chartOptions = {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { labels: { color: '#e0e0e0' } } },
-            scales: {
-                y: { type: 'linear', display: true, position: 'left', ticks: { color: '#e0e0e0' }, grid: { color: '#ffffff1a' }, title: { display: true, text: 'Gasto (R$)', color: '#e0e0e0' } },
-                y1: { type: 'linear', display: true, position: 'right', ticks: { color: '#e0e0e0' }, grid: { drawOnChartArea: false }, title: { display: true, text: 'Peso (Kg)', color: '#e0e0e0' } }
-            }
-        };
-        if (fabricChart) {
-            fabricChart.data.datasets[0].data = [totalSpent];
-            fabricChart.data.datasets[1].data = [totalKg];
-            fabricChart.update();
-        } else {
-            fabricChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: ['Mês Atual'],
-                    datasets: [
-                        { label: 'Gasto (R$)', data: [totalSpent], backgroundColor: 'rgba(239, 68, 68, 0.7)', yAxisID: 'y' },
-                        { label: 'Peso (Kg)', data: [totalKg], backgroundColor: 'rgba(59, 130, 246, 0.7)', yAxisID: 'y1' }
-                    ]
-                },
-                options: chartOptions
-            });
-        }
     };
 
     // --- EVENT LISTENERS ---
@@ -1668,7 +1383,6 @@ const init = () => {
     updateUI();
 
     // Liga os 3 carrosséis de arrastar da tela do celular
-    setupCarousel('budget-carousel', 'budget-carousel-dots');
     setupCarousel('bills-carousel', 'bills-carousel-dots');
     setupCarousel('charts-carousel', 'charts-carousel-dots');
 };
